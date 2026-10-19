@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.svg">
+    <img alt="UniXNU" src="assets/logo-light.svg" width="200">
+  </picture>
+</p>
+
 # UniXNU
 
 An independent project to run Darwin/XNU userland on non-Apple ARM64 hardware through UEFI.
