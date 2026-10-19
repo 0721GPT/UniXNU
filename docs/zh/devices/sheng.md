@@ -266,8 +266,10 @@ fastboot boot out/sheng/boot/boot.img
 | 原有 ABL 加载启动镜像，BootShim 启动 UEFI 固件 | 工作 |
 | Silicium UEFI 和 UniXNU 启动 | 工作；Silicium 偶尔停住，再次启动同一镜像可继续 |
 | UniXNU 读取负载卷 | 工作 |
-| XNU 与用户态 | 早期工作流的镜像已到达 |
-| 触控驱动 | NT36532E 控制器的分阶段探针 |
+| XNU 与用户态 | 原始 iPadOS 用户态从 IPSW 运行；可跳过 Setup 和 Hello，进入 SpringBoard、锁屏、主屏幕和 Settings |
+| 触控 | SpringBoard 和 backboardd 接受触控事件 |
+| 桌面渲染 | CPU 渲染；图标缺失 |
+| GPU | 未启用 |
 
 触控驱动见[触控驱动示例](/zh/devices/sheng-touch-driver)。
 

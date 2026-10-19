@@ -266,8 +266,10 @@ The current support table is in the [UniXNU-sheng README](https://github.com/Uni
 | Stock ABL loads the boot image and BootShim starts the UEFI firmware | works |
 | Silicium UEFI and UniXNU start | works; Silicium stalls at random and a retry of the same image starts it |
 | UniXNU reads the payload volume | works |
-| XNU and userland | reached with images from the earlier workflow |
-| Touch driver | staged probe with the NT36532E controller |
+| XNU and userland | the original iPadOS userland runs from the IPSW; Setup and Hello can be skipped, and SpringBoard, the lock screen, the home screen and Settings are reached |
+| Touch | accepted by SpringBoard and backboardd |
+| Desktop rendering | CPU-rendered; icons are absent |
+| GPU | not enabled |
 
 The touch driver is documented in [Touch driver example](/devices/sheng-touch-driver).
 
