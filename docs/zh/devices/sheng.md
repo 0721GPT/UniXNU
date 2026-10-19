@@ -257,24 +257,7 @@ fastboot boot out/sheng/boot/boot.img
 
 ## 设备支持
 
-启动链可以到达 XNU。下表记录操作系统中用户可见的设备支持。
-
-| 功能 | 状态 | 说明 |
-| --- | --- | --- |
-| 触控 | ✅ | Novatek NT36532E |
-| 显示 | ✅ | |
-| Wi-Fi | ❌ | |
-| 蓝牙 | ❌ | |
-| 相机 | ❌ | |
-| GPU | ❌ | |
-| USB | ❌ | |
-| 音频 | ❌ | |
-| 传感器 | ❌ | |
-| 电池驱动 | ❌ | |
-| MiPPS | ❌ | |
-| 休眠与唤醒 | ❌ | |
-
-✅ 可用，❌ 不可用。
+当前支持列表见 [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support)。
 
 ## 观察状态
 

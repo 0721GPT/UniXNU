@@ -257,24 +257,7 @@ The board file points at an iPadOS restore image. To boot macOS on the same boar
 
 ## Device support
 
-The boot chain reaches XNU. This table records user-facing device support from the operating system.
-
-| Feature | State | Notes |
-| --- | --- | --- |
-| Touch | ✅ | Novatek NT36532E |
-| Display | ✅ | |
-| Wi-Fi | ❌ | |
-| Bluetooth | ❌ | |
-| Camera | ❌ | |
-| GPU | ❌ | |
-| USB | ❌ | |
-| Audio | ❌ | |
-| Sensors | ❌ | |
-| Battery driver | ❌ | |
-| MiPPS | ❌ | |
-| Suspend and resume | ❌ | |
-
-✅ available, ❌ not available.
+The current support table is in the [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support).
 
 ## Observed state
 
