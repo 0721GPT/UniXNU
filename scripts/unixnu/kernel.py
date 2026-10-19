@@ -17,7 +17,25 @@ def xnu_env(ctx):
     return env
 
 
-def build(ctx):
+def version_env(modules):
+    """Source versions of the Apple references, from feeds.toml, for the kernel scripts."""
+    env = {}
+    for name, prefix in (('xnu', 'XNU'), ('libplatform', 'LIBPLATFORM'), ('libdispatch', 'LIBDISPATCH'), ('AvailabilityVersions', 'AVAILABILITYVERSIONS')):
+        module = modules.get(('refer', name))
+        entry = module.source if module and module.source else {}
+        if entry.get('ref'):
+            env[f'UNIXNU_{prefix}_TAG'] = entry['ref']
+        if entry.get('commit'):
+            env[f'UNIXNU_{prefix}_COMMIT'] = entry['commit']
+    xnu = (modules.get(('refer', 'xnu')) or None) and modules[('refer', 'xnu')].source or {}
+    for key, variable in (('darwin', 'UNIXNU_XNU_DARWIN'), ('version', 'UNIXNU_XNU_VERSION'),
+                          ('driverkit_tag', 'UNIXNU_DRIVERKIT_TAG'), ('trustcache_tag', 'UNIXNU_TRUSTCACHE_TAG')):
+        if xnu.get(key):
+            env[variable] = xnu[key]
+    return env
+
+
+def build(ctx, modules):
     log('kernel: XNU')
     for name in ('git', 'make', 'clang', 'cmake', 'ninja', 'unifdef'):
         tool(name, 'brew install ' + name)
@@ -26,6 +44,7 @@ def build(ctx):
         raise Error(f'{script} missing')
     env = dict(os.environ)
     env.update(xnu_env(ctx))
+    env.update(version_env(modules))
     env['JOBS'] = str(ctx.jobs)
     record = ctx.tree / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json'
     if env.get('XNU_BOOT_PROGRESS') == '1' and not record.is_file():

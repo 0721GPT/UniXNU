@@ -2,10 +2,18 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT"
+# Source versions come from feeds.toml through the unixnu driver; the defaults are the qualified ones.
+XNU_TAG=${UNIXNU_XNU_TAG:-xnu-10063.141.1}
+XNU_COMMIT=${UNIXNU_XNU_COMMIT:-d8b80295118ef25ac3a784134bcf95cd8e88109f}
+XNU_DARWIN=${UNIXNU_XNU_DARWIN:-23.6.0}
+XNU_VERSION=${UNIXNU_XNU_VERSION:-10063.141.1}
+LIBPLATFORM_TAG=${UNIXNU_LIBPLATFORM_TAG:-libplatform-316.100.10}
+LIBDISPATCH_TAG=${UNIXNU_LIBDISPATCH_TAG:-libdispatch-1477.100.9}
+AVAILABILITY_TAG=${UNIXNU_AVAILABILITYVERSIONS_TAG:-AvailabilityVersions-141.1}
 if [ ! -d refer/xnu/.git ]; then
-  git clone --depth 1 --branch xnu-10063.141.1 https://github.com/apple-oss-distributions/xnu.git refer/xnu
+  git clone --depth 1 --branch "$XNU_TAG" https://github.com/apple-oss-distributions/xnu.git refer/xnu
 fi
-if [ "$(git -C refer/xnu rev-parse HEAD)" != d8b80295118ef25ac3a784134bcf95cd8e88109f ]; then
+if [ "$(git -C refer/xnu rev-parse HEAD)" != "$XNU_COMMIT" ]; then
   echo 'error: unexpected XNU reference revision' >&2
   exit 1
 fi
@@ -14,7 +22,7 @@ if [ ! -d .cache/xnu-work/.git ]; then
 fi
 if [ ! -x .cache/fakeroot/usr/local/libexec/availability.pl ]; then
   if [ ! -d refer/AvailabilityVersions/.git ]; then
-    git clone --depth 1 --branch AvailabilityVersions-141.1 https://github.com/apple-oss-distributions/AvailabilityVersions.git refer/AvailabilityVersions
+    git clone --depth 1 --branch "$AVAILABILITY_TAG" https://github.com/apple-oss-distributions/AvailabilityVersions.git refer/AvailabilityVersions
   fi
   mkdir -p .cache/fakeroot
   make -C refer/AvailabilityVersions install -j"${JOBS:-4}" \
@@ -68,7 +76,7 @@ if not stamp.exists() or stamp.read_text() != identity:
     stamp.write_text(identity)
 PY
 if [ ! -d refer/libplatform/.git ]; then
-  git clone --depth 1 --branch libplatform-316.100.10 https://github.com/apple-oss-distributions/libplatform.git refer/libplatform
+  git clone --depth 1 --branch "$LIBPLATFORM_TAG" https://github.com/apple-oss-distributions/libplatform.git refer/libplatform
 fi
 export KERNEL_SDKROOT=$ROOT/.cache/fakeroot
 mkdir -p "$KERNEL_SDKROOT/usr/local/include/kernel" "$ROOT/build/xnu/obj/EXPORT_HDRS/libsa"
@@ -76,7 +84,7 @@ ditto refer/libplatform/include "$KERNEL_SDKROOT/usr/local/include"
 ditto refer/libplatform/private "$KERNEL_SDKROOT/usr/local/include"
 ditto refer/libplatform/private/platform "$KERNEL_SDKROOT/System/Library/Frameworks/Kernel.framework/Versions/A/PrivateHeaders/platform"
 if [ ! -d refer/libdispatch/.git ]; then
-  git clone --depth 1 --branch libdispatch-1477.100.9 https://github.com/apple-oss-distributions/libdispatch.git refer/libdispatch
+  git clone --depth 1 --branch "$LIBDISPATCH_TAG" https://github.com/apple-oss-distributions/libdispatch.git refer/libdispatch
 fi
 python3 - <<'PY'
 from pathlib import Path
@@ -93,13 +101,13 @@ for header in Path('refer/libdispatch/os').glob('*.h'):
     if not target.exists() or target.read_bytes() != result.stdout:
         target.write_bytes(result.stdout)
 PY
-if [ ! -f "$KERNEL_SDKROOT/.xnu-10063.141.1-headers" ]; then
+if [ ! -f "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers" ]; then
   make -C .cache/xnu-work installhdrs SDKROOT=macosx ARCH_CONFIGS=ARM64 \
     MACHINE_CONFIGS=BCM2837 KERNEL_CONFIGS=DEVELOPMENT \
-    RC_DARWIN_KERNEL_VERSION=23.6.0 RC_ProjectSourceVersion=10063.141.1 \
+    RC_DARWIN_KERNEL_VERSION="$XNU_DARWIN" RC_ProjectSourceVersion="$XNU_VERSION" \
     MAKEJOBS=-j"${JOBS:-4}" OBJROOT="$ROOT/build/xnu/obj" \
     SYMROOT="$ROOT/build/xnu/sym" DSTROOT="$KERNEL_SDKROOT"
-  touch "$KERNEL_SDKROOT/.xnu-10063.141.1-headers"
+  touch "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers"
 fi
 if [ ! -f "$KERNEL_SDKROOT/usr/local/lib/kernel/libfirehose_kernel.a" ]; then
   bash scripts/build-firehose.sh
@@ -740,7 +748,7 @@ make -C .cache/xnu-work "${XNU_BUILD_TARGET:-build}" SDKROOT="${XNU_SDKROOT:-iph
   ARM64_LINK_ADDR=0xfffffff007004000 ARM64_PLKSEG_ADDR=0xfffffff004004000 \
   DEPLOYMENT_TARGET_FLAGS="-miphoneos-version-min=17.0 -DXNU_TARGET_OS_IOS" \
   DEPLOYMENT_LINKER_FLAGS="-Wl,-ios_version_min,17.0" \
-  RC_DARWIN_KERNEL_VERSION=23.6.0 RC_ProjectSourceVersion=10063.141.1 \
+  RC_DARWIN_KERNEL_VERSION="$XNU_DARWIN" RC_ProjectSourceVersion="$XNU_VERSION" \
   BUILD_LTO=0 BOUND_CHECKS=0 BUILD_WERROR="${XNU_BUILD_WERROR:-0}" MAKEJOBS=-j"${JOBS:-4}" \
   CFLAGS_EXTRA="$EXTRA_CFLAGS" "${EXTRA_MAKE_ARGS[@]}" \
   OBJROOT="$ROOT/build/xnu/ios-obj" SYMROOT="$ROOT/build/xnu/ios-sym" DSTROOT="$ROOT/build/xnu/ios-dst"

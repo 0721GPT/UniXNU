@@ -3,12 +3,15 @@
 import concurrent.futures
 import hashlib
 import json
+import os
 from pathlib import Path
 import urllib.request
 
-TAG = 'xnu-10063.121.3'
+# Tags of the Apple sources that still carry the headers newer xnu omits; feeds.toml sets them for the unixnu driver.
+TAG = os.environ.get('UNIXNU_DRIVERKIT_TAG', 'xnu-10063.121.3')
+TRUST_TAG = os.environ.get('UNIXNU_TRUSTCACHE_TAG', 'xnu-8796.101.5')
 DESTINATION = Path('.cache/xnu-work/iokit/DriverKit')
-CACHE = Path('.cache/sources/xnu-driverkit-10063.121.3.json')
+CACHE = Path(f'.cache/sources/xnu-driverkit-{TAG.removeprefix("xnu-")}.json')
 URL = f'https://api.github.com/repos/apple-oss-distributions/xnu/contents/iokit/DriverKit?ref={TAG}'
 
 
@@ -36,7 +39,7 @@ if __name__ == '__main__':
         CACHE.parent.mkdir(parents=True, exist_ok=True)
         CACHE.write_bytes(urllib.request.urlopen(URL, timeout=30).read())
     entries = json.loads(CACHE.read_text())
-    crypto_cache = CACHE.with_name('xnu-driverkit-crypto-10063.121.3.json')
+    crypto_cache = CACHE.with_name(f'xnu-driverkit-crypto-{TAG.removeprefix("xnu-")}.json')
     if not crypto_cache.exists():
         crypto_url = URL.replace('/DriverKit?', '/DriverKit/crypto?')
         crypto_cache.write_bytes(urllib.request.urlopen(crypto_url, timeout=30).read())
@@ -45,8 +48,8 @@ if __name__ == '__main__':
         entries.append(entry)
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         restored = [entry for entry in executor.map(restore, entries) if entry]
-        trust_tag = 'xnu-8796.101.5'
-        trust_cache = CACHE.with_name('xnu-trustcache-8796.101.5.json')
+        trust_tag = TRUST_TAG
+        trust_cache = CACHE.with_name(f'xnu-trustcache-{TRUST_TAG.removeprefix("xnu-")}.json')
         if not trust_cache.exists():
             url = ('https://api.github.com/repos/apple-oss-distributions/xnu/'
                    f'contents/EXTERNAL_HEADERS/TrustCache?ref={trust_tag}')
