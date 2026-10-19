@@ -61,7 +61,7 @@ require(metadata['apfs_mount_mode'] == 1 and metadata['apfs_data_mount'] and
         metadata['actual_volume_device'] == '/dev/disk1s1' and not (fixture / 'root.img').exists(), 'actual data-mount mode with a one-file RAM instrument')
 require(positive['native_user_image_sha256'] == fault['native_user_image_sha256'] == hashlib.sha256(own).hexdigest() and
         positive['trust_cache_bundle_sha256'] == fault['trust_cache_bundle_sha256'] == hashlib.sha256(trust).hexdigest(), 'identical signed own process and explicit offline file trust')
-config = (build / 'darwinboot-native-apfs-file-plain/esp/EFI/CrabApple/crabapple.toml').read_text()
+config = (build / 'darwinboot-native-apfs-file-plain/esp/EFI/UniXNU/unixnu.toml').read_text()
 require('rd=md0 ' in config and 'initrd = "Payloads/launchd.macho"' in config, 'explicit own one-file RAM root')
 require(positive['native_user_4k_abi_observed'] and positive['native_user_el0_observed'] and
         all(v == 12 for v in positive['commpage_user64_shifts'].values()), 'actual own EL0 syscall and commpage 4K ABI')

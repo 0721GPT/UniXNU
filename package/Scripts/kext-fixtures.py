@@ -14,7 +14,7 @@ def bundle(root: Path, name: str, code: bool = True) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     (path / "Info.plist").write_text(
         '<plist version="1.0"><dict><key>CFBundleIdentifier</key>'
-        f'<string>org.crabapple.test.{name}</string></dict></plist>\n'
+        f'<string>org.unixnu.test.{name}</string></dict></plist>\n'
     )
     executable = path / "MacOS" / "Test"
     if code:
@@ -39,11 +39,11 @@ def main() -> None:
     )
     for variant in variants:
         esp = args.out / variant
-        ca = esp / "EFI" / "CrabApple"
+        ca = esp / "EFI" / "UniXNU"
         ca.mkdir(parents=True, exist_ok=True)
         boot = esp / "EFI" / "BOOT"
         boot.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(args.binaries / "CrabApple.efi", boot / "BOOTAA64.EFI")
+        shutil.copy2(args.binaries / "UniXNU.efi", boot / "BOOTAA64.EFI")
         shutil.copy2(args.binaries / "XnuTest.efi", ca / "XnuTest.efi")
         code = bundle(ca / "Kexts", "Code")
         bundle(ca / "Kexts", "Codeless", False)
@@ -95,7 +95,7 @@ def main() -> None:
             config = config.replace('executable = "Contents/MacOS/Test"', 'executable = "../outside"')
         elif variant == "bad-type":
             config = config.replace('executable = "Contents/MacOS/Test"', 'executable = false')
-        (ca / "crabapple.toml").write_text(config)
+        (ca / "unixnu.toml").write_text(config)
 
 
 if __name__ == "__main__":

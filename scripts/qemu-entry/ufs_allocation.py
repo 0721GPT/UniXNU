@@ -44,7 +44,7 @@ def walk4k(read_u64, tcr, ttbr1, mair, va):
 
 
 def exercise(packet, feature, resume, kernel, system_registers, output, esp):
-    config = tomllib.loads((esp/'EFI/CrabApple/crabapple.toml').read_text())
+    config = tomllib.loads((esp/'EFI/UniXNU/unixnu.toml').read_text())
     entries = [e for e in config['entry'] if e['id'] == config['boot']['default']]
     if len(entries) != 1:
         raise RuntimeError('Require an unambiguous prepared boot entry')

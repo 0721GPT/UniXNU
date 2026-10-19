@@ -8,7 +8,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/PrintLib.h>
 #include <Library/UefiLib.h>
-#include <Protocol/CrabAppleXnuLoader.h>
+#include <Protocol/UniXNULoader.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/SimpleFileSystem.h>
@@ -445,8 +445,8 @@ STATIC
 EFI_STATUS
 EFIAPI
 Boot (
-  IN CRABAPPLE_XNU_LOADER_PROTOCOL    *This,
-  IN CONST CRABAPPLE_XNU_BOOT_REQUEST *Request
+  IN UNIXNU_LOADER_PROTOCOL    *This,
+  IN CONST UNIXNU_LOADER_BOOT_REQUEST *Request
   )
 {
   EFI_STATUS                      Status;
@@ -658,14 +658,14 @@ Fail:
   return Status;
 }
 
-STATIC CRABAPPLE_XNU_LOADER_PROTOCOL mLoader = { CRABAPPLE_XNU_LOADER_REVISION, Boot };
+STATIC UNIXNU_LOADER_PROTOCOL mLoader = { UNIXNU_LOADER_REVISION, Boot };
 
 STATIC
 EFI_STATUS
 EFIAPI
 Unload (EFI_HANDLE ImageHandle)
 {
-  return gBS->UninstallMultipleProtocolInterfaces (ImageHandle, &gCrabAppleXnuLoaderProtocolGuid, &mLoader, NULL);
+  return gBS->UninstallMultipleProtocolInterfaces (ImageHandle, &gUniXNULoaderProtocolGuid, &mLoader, NULL);
 }
 
 EFI_STATUS
@@ -677,12 +677,12 @@ DarwinBootEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
   VOID                     *Existing;
 
   (VOID)SystemTable;
-  Status = gBS->LocateProtocol (&gCrabAppleXnuLoaderProtocolGuid, NULL, &Existing);
+  Status = gBS->LocateProtocol (&gUniXNULoaderProtocolGuid, NULL, &Existing);
   if (!EFI_ERROR (Status)) { return EFI_ALREADY_STARTED; }
   Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&Loaded);
   if (EFI_ERROR (Status)) { return Status; }
   mImage = ImageHandle;
-  Status = gBS->InstallMultipleProtocolInterfaces (&ImageHandle, &gCrabAppleXnuLoaderProtocolGuid, &mLoader, NULL);
+  Status = gBS->InstallMultipleProtocolInterfaces (&ImageHandle, &gUniXNULoaderProtocolGuid, &mLoader, NULL);
   if (!EFI_ERROR (Status)) {
     Loaded->Unload = Unload;
     Print (L"DARWINBOOT: loader v2 installed EL%u\n", (UINT32)(DarwinCurrentEl () >> 2));

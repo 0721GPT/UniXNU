@@ -10,7 +10,7 @@ curves with round joins and caps.
 
 Outputs:
   ../assets/logo-dark.svg, ../assets/logo-light.svg  the vector logo, transparent
-  CrabApplePkg/Library/CrabAppleLib/LogoShape.h    the same strokes, flattened
+  UniXNUPkg/Library/UniXNULib/LogoShape.h    the same strokes, flattened
                                                    to integer polylines for the
                                                    firmware renderer (Logo.c)
 """
@@ -164,7 +164,7 @@ def main():
                'STATIC CONST UINT16  mLogoStrokes[][3] = {']
     header += ['  { %d, %d, %d },' % s for s in strokes]
     header += ['};', '', '#endif', '']
-    (ROOT / 'CrabApplePkg/Library/CrabAppleLib/LogoShape.h').write_text('\n'.join(header))
+    (ROOT / 'UniXNUPkg/Library/UniXNULib/LogoShape.h').write_text('\n'.join(header))
     print('logo: %d strokes, %d points' % (len(strokes), at))
 
 

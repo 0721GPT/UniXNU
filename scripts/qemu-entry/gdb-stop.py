@@ -1248,7 +1248,7 @@ with (fixture / 'gdb-stderr.log').open('w') as errors:
                           cstring_start_event=cstring_start_event, cstring_events=cstring_events, cstring_log_exhausted=(len(cstring_events) == 128),
                           registry_string_events=registry_string_events,
                           registry_string_log_exhausted=(len(registry_string_events) == 128),
-                          boot_path='uefi-crabapple-darwinboot' if args.esp else 'raw-entry-fixture')
+                          boot_path='uefi-unixnu-darwinboot' if args.esp else 'raw-entry-fixture')
             if block_input:
                 report['virtio_block_input'] = block_input
             if extra_block_input:

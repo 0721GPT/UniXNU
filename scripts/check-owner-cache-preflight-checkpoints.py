@@ -78,7 +78,7 @@ require(permission['cstring_start_event']['pc'] == '0xfffffff00bd5e26c' and not 
             for e in permission['cstring_events']), 'Observe actual native carrier-volume policy refusal after setup begins')
 for name in ('owner-hvf-512-shared-region', 'owner-hvf-512-cache-permission'):
     folder = ROOT / ('build/darwinboot-' + name)
-    require(hashlib.sha256((folder / 'esp/EFI/CrabApple/Payloads/DarwinBoot.efi').read_bytes()).hexdigest() ==
+    require(hashlib.sha256((folder / 'esp/EFI/UniXNU/Payloads/DarwinBoot.efi').read_bytes()).hexdigest() ==
             'b5bf6baa3bad99ad2a10791359480af77053c828c0635ddbc65e6d30c1a3c8e6', 'Pin exact tested DarwinBoot loader')
     require('owned=0x20000000' in (folder / 'gdb-uart.log').read_text(), 'Actual UEFI handoff must own 512 MiB')
 print('PASS: real 512-MiB ownership, 53 original signature objects, 201083 whole signing blocks and 212 native-4K pages')

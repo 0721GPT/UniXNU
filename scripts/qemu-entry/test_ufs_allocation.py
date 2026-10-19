@@ -52,7 +52,7 @@ class StartupGuard(unittest.TestCase):
         for argument in ('native-ufs-root=1','native-ufs-probe=3'):
             with self.subTest(argument=argument), tempfile.TemporaryDirectory() as temp:
                 esp = Path(temp)
-                config = esp/'EFI/CrabApple/crabapple.toml'
+                config = esp/'EFI/UniXNU/unixnu.toml'
                 config.parent.mkdir(parents=True)
                 config.write_text('[boot]\ndefault="test"\n[[entry]]\nid="test"\nargs="'+argument+'"\n')
                 with patch('ufs_allocation.subprocess.check_output') as symbols:

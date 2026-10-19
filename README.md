@@ -7,20 +7,42 @@
 </p>
 
 <p align="center">
+  <a href="https://unixnu.com"><img alt="Documentation" src="https://img.shields.io/badge/docs-unixnu.com-2A5BD7?logo=readthedocs&logoColor=white"></a>
   <a href="https://t.me/unixnu"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-@unixnu-26A5E4?logo=telegram&logoColor=white"></a>
   <a href="https://x.com/unixnu"><img alt="X" src="https://img.shields.io/badge/X-@unixnu-000000?logo=x&logoColor=white"></a>
 </p>
 
 # UniXNU
 
-An independent project to run Darwin/XNU userland on non-Apple ARM64 hardware through UEFI.
+An independent project to run Darwin and XNU userland on non-Apple ARM64 hardware through UEFI.
 
-Work in progress. The `unixnu` driver builds the kernel, the UniXNU package, the device firmware and the
-boot image (developed on macOS, other hosts untested), see [docs/building.md](docs/building.md). The boot payload (kernel, device tree and
-config) and the userdata image for the device are built by the same driver. The target IPSW can be a local file or
-a URL.
+## Documentation
 
-Device adaptations are separate projects:
+The documentation is at [unixnu.com](https://unixnu.com). It covers the boot chain, the build driver, device porting, driver development, the 4 KiB XNU page patches, boot arguments and per-device notes.
 
-- [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng): Xiaomi Pad 6S Pro (sheng)
-- [uefi-sheng](https://github.com/UniXNU/uefi-sheng): UEFI firmware for sheng (Mu-Silicium fork)
+- [Overview](https://unixnu.com/guide/overview)
+- [Build](https://unixnu.com/building)
+- [Boot the image](https://unixnu.com/guide/boot)
+- [Debugging and logs](https://unixnu.com/guide/debugging)
+- [Porting](https://unixnu.com/porting/)
+- [Drivers](https://unixnu.com/drivers/overview)
+- [XNU and 4 KiB pages](https://unixnu.com/xnu/four-k-page-tables)
+- [Devices](https://unixnu.com/devices/)
+
+## Repositories
+
+| Repository | Contents |
+| --- | --- |
+| [UniXNU](https://github.com/UniXNU/UniXNU) | Build driver, UEFI boot manager, DarwinBoot, generic drivers, kits and patches |
+| [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | Device repository for the Xiaomi Pad 6S Pro |
+| [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | UEFI firmware port for the Xiaomi Pad 6S Pro |
+
+Device repositories use the same layout as this repository. Their modules override modules with the same name, and their `package/` becomes a kit in the build tree.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for the repository scope, the development workflow, the commit format and the documentation rules.
+
+## License
+
+BSD-2-Clause-Patent. See [LICENSE](LICENSE).

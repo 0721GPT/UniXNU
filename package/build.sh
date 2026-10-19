@@ -6,13 +6,13 @@
 # UniXNU targets AArch64 UEFI only.
 #
 # The edk2 base defaults to a Mu_Basecore checkout in this directory (not tracked);
-# CRABAPPLE_EDK2 may point at any other edk2 or Project Mu checkout that has MdePkg
+# UNIXNU_EDK2 may point at any other edk2 or Project Mu checkout that has MdePkg
 # with BaseFdtLib.
 # Results are copied to Build/Out/<ARCH>-<TARGET>/.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-EDK2=${CRABAPPLE_EDK2:-$ROOT/Mu_Basecore}
+EDK2=${UNIXNU_EDK2:-$ROOT/Mu_Basecore}
 # Build products go to UNIXNU_BUILD_DIR when the unixnu driver sets it, otherwise next to the sources.
 BUILD_DIR=${UNIXNU_BUILD_DIR:-$ROOT}
 ARCH=AARCH64
@@ -35,7 +35,7 @@ while getopts "b:t:h" opt; do
 done
 
 if [ ! -f "$EDK2/MdePkg/MdePkg.dec" ]; then
-  echo "error: no edk2 tree at $EDK2 (clone https://github.com/microsoft/mu_basecore, branch release/202608, into $ROOT/Mu_Basecore or set CRABAPPLE_EDK2)" >&2
+  echo "error: no edk2 tree at $EDK2 (clone https://github.com/microsoft/mu_basecore, branch release/202608, into $ROOT/Mu_Basecore or set UNIXNU_EDK2)" >&2
   exit 1
 fi
 
@@ -83,12 +83,12 @@ done
 
 echo "== edk2: $EDK2"
 echo "== build $ARCH $TARGET $TOOLCHAIN"
-build -p CrabApplePkg/CrabApplePkg.dsc -a "$ARCH" -b "$TARGET" -t "$TOOLCHAIN" -n "$JOBS"
+build -p UniXNUPkg/UniXNUPkg.dsc -a "$ARCH" -b "$TARGET" -t "$TOOLCHAIN" -n "$JOBS"
 
 OUT=$BUILD_DIR/Build/Out/$ARCH-$TARGET
 mkdir -p "$OUT"
-BIN=$BUILD_DIR/Build/CrabApple/${TARGET}_$TOOLCHAIN/$ARCH
-for m in CrabApple CrabAppleDxe HelloPayload SampleDriver XnuTest; do
+BIN=$BUILD_DIR/Build/UniXNU/${TARGET}_$TOOLCHAIN/$ARCH
+for m in UniXNU UniXNUDxe HelloPayload SampleDriver XnuTest; do
   cp "$BIN/$m.efi" "$OUT/"
 done
 

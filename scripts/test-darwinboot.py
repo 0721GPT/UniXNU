@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise CrabApple -> DarwinBoot -> ExitBootServices -> synthetic Mach-O."""
+"""Exercise UniXNU -> DarwinBoot -> ExitBootServices -> synthetic Mach-O."""
 import argparse
 from pathlib import Path
 import shutil
@@ -27,7 +27,7 @@ if args.gop_high_resolution:
 if args.ramfb_geometry_refusal:
     OUTPUT = OUTPUT.with_name(OUTPUT.name + '-geometry-refusal')
 ESP = OUTPUT / 'esp'
-PAYLOADS = ESP / 'EFI/CrabApple/Payloads'
+PAYLOADS = ESP / 'EFI/UniXNU/Payloads'
 
 OUTPUT.mkdir(parents=True, exist_ok=True)
 PAYLOADS.mkdir(parents=True, exist_ok=True)
@@ -46,10 +46,10 @@ if args.packed_ramdisk:
     pack(raw, packed)
     packed.replace(raw)
 (ESP / 'EFI/BOOT').mkdir(exist_ok=True)
-shutil.copyfile(ROOT / 'crabapple/Build/Out/AARCH64-DEBUG/CrabApple.efi', ESP / 'EFI/BOOT/BOOTAA64.EFI')
+shutil.copyfile(ROOT / 'unixnu/Build/Out/AARCH64-DEBUG/UniXNU.efi', ESP / 'EFI/BOOT/BOOTAA64.EFI')
 for name in ('DarwinBoot', 'DarwinBootValidation'):
     shutil.copyfile(ROOT / f'build/DarwinBoot/DEBUG_CLANGPDB/AARCH64/{name}.efi', PAYLOADS / f'{name}.efi')
-(ESP / 'EFI/CrabApple/crabapple.toml').write_text('''version = 1
+(ESP / 'EFI/UniXNU/unixnu.toml').write_text('''version = 1
 [boot]
 timeout = 1
 default = "synthetic"
@@ -70,10 +70,10 @@ initrd = "Payloads/ramdisk.bin"
 if args.gop_high_resolution or args.ramfb_geometry_refusal:
     driver = ROOT / 'build/DarwinBoot/DEBUG_CLANGPDB/AARCH64/QemuRamfbGeometry.efi'
     shutil.copyfile(driver, PAYLOADS / driver.name)
-    config = ESP / 'EFI/CrabApple/crabapple.toml'
+    config = ESP / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('[[entry]]',
         '[[driver]]\npath = "Payloads/QemuRamfbGeometry.efi"\n[[entry]]', 1))
-subprocess.run(['python3', ROOT / 'crabapple/Scripts/qemu-run.py', ESP,
+subprocess.run(['python3', ROOT / 'unixnu/Scripts/qemu-run.py', ESP,
                 '--log', OUTPUT / 'qemu.log', '--cpus', '1', *([] if args.gop else ['--no-gop']), '--timeout', '25',
                 '--finish-on-expect',
                 '--expect', 'DARWINBOOT: loader v2 installed EL1',

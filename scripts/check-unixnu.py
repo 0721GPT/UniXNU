@@ -91,9 +91,9 @@ def main():
             pass
     with tempfile.TemporaryDirectory() as name:
         root = Path(name)
-        stage = root / 'stage/EFI/CrabApple'
+        stage = root / 'stage/EFI/UniXNU'
         stage.mkdir(parents=True)
-        (stage / 'crabapple.toml').write_text('version = 1\n')
+        (stage / 'unixnu.toml').write_text('version = 1\n')
         import os
         for path in (root / 'stage', *(root / 'stage').rglob('*')):
             os.utime(path, (payload.EPOCH, payload.EPOCH))

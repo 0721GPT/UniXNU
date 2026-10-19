@@ -6,8 +6,8 @@ Copies one or more source trees into OUT (later trees win), compiles every
 places extra files with --put SRC=DEST (DEST relative to OUT).
 
 Example:
-  stage-esp.py -o out/esp CrabApplePkg/Test/Qemu/esp \\
-      --put Build/Out/AARCH64-DEBUG/CrabApple.efi=EFI/BOOT/BOOTAA64.EFI
+  stage-esp.py -o out/esp UniXNUPkg/Test/Qemu/esp \\
+      --put Build/Out/AARCH64-DEBUG/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI
 """
 
 import argparse

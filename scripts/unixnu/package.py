@@ -1,4 +1,4 @@
-"""UniXNU itself: the EDK II build of package/ (CrabApple), output under out/<device>/package."""
+"""UniXNU: the EDK II build of package/, output under out/<device>/package."""
 import os
 import shutil
 
@@ -19,10 +19,10 @@ def edk2_dir(ctx, modules):
 
 
 def build(ctx, modules, target='DEBUG', toolchain='CLANGPDB'):
-    log('package: UniXNU (CrabApple)')
+    log('package: UniXNU')
     edk2 = edk2_dir(ctx, modules)
     tool('clang', 'brew install llvm')
-    env = dict(os.environ, CRABAPPLE_EDK2=str(edk2), UNIXNU_BUILD_DIR=str(ctx.work / 'package'), JOBS=str(ctx.jobs))
+    env = dict(os.environ, UNIXNU_EDK2=str(edk2), UNIXNU_BUILD_DIR=str(ctx.work / 'package'), JOBS=str(ctx.jobs))
     if toolchain == 'CLANGPDB' and 'CLANG_BIN' not in env:
         env['CLANG_BIN'] = clang_bin(ctx.work / 'toolchain')
     (ctx.work / 'package').mkdir(parents=True, exist_ok=True)

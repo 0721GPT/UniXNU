@@ -52,7 +52,7 @@ entry = next(e['entry'] for e in properties if e['key'] == 'UUID' and e['value']
 v = {e['key']: e['value'] for e in properties if e['entry'] == entry}
 require(v['Status'] == 'Online' and v['Sealed'] == 'No' and v['BSD Name'] == 'disk1s1' and
         v['FullName'] == 'DawnUpdate21H461.J120J121J207J208OS', 'actual original OS volume publication')
-config = (build / 'darwinboot-virtio-original-os-bsd-mount/esp/EFI/CrabApple/crabapple.toml').read_text()
+config = (build / 'darwinboot-virtio-original-os-bsd-mount/esp/EFI/UniXNU/unixnu.toml').read_text()
 require('rd=' + v['BSD Name'] + ' ' in config and 'initrd =' not in config, 'root chosen from actual published volume; no RAM root')
 require(mounted['finished_function_entry'] == operation and mounted['function_return_stack_matched'] and
         mounted['sp'] == mounted['function_entry_stack'] and mounted['pc'] == mounted['function_return_target'] and
@@ -89,8 +89,8 @@ require(matched['finished_function_entry'] == operation and matched['function_re
 selection = matched['root_selection']
 require(selection['volume_uuid'] == volume_uuid and not selection['bsd_name_override'] and
         not selection['root_authentication_bypassed'], 'volume matching preserves authentication policy')
-matched_dir = build / 'darwinboot-original-os-uuid-match-mount/esp/EFI/CrabApple'
-config = (matched_dir / 'crabapple.toml').read_text()
+matched_dir = build / 'darwinboot-original-os-uuid-match-mount/esp/EFI/UniXNU'
+config = (matched_dir / 'unixnu.toml').read_text()
 require('rd=' not in config and 'boot-uuid=' not in config and 'initrd =' not in config, 'no BSD-name/resource/RAM override')
 tree = (matched_dir / 'Payloads/kernel.macho.adt').read_bytes()
 

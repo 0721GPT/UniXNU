@@ -4,7 +4,7 @@
 #include <Library/PrintLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
-#include <Protocol/CrabAppleXnuLoader.h>
+#include <Protocol/UniXNULoader.h>
 #include <Protocol/LoadedImage.h>
 #include "../DarwinBootPkg/Driver/BootVideo.h"
 
@@ -63,8 +63,8 @@ ValidationEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
                      L"bad-entry", L"bad-adt", L"missing-adt" };
   CHAR16 Path[128];
   EFI_LOADED_IMAGE_PROTOCOL *Loaded;
-  CRABAPPLE_XNU_LOADER_PROTOCOL *Loader;
-  CRABAPPLE_XNU_BOOT_REQUEST Request;
+  UNIXNU_LOADER_PROTOCOL *Loader;
+  UNIXNU_LOADER_BOOT_REQUEST Request;
   UINTN Index;
   UINT8 RamdiskByte = 0x5a;
   CHAR16 *RamdiskPaths[] = { L"missing-ramdisk-adt", L"stale-ramdisk-adt",
@@ -79,11 +79,11 @@ ValidationEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
   (VOID)SystemTable;
   Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&Loaded);
   if (EFI_ERROR (Status)) { return Status; }
-  Status = gBS->LocateProtocol (&gCrabAppleXnuLoaderProtocolGuid, NULL, (VOID **)&Loader);
+  Status = gBS->LocateProtocol (&gUniXNULoaderProtocolGuid, NULL, (VOID **)&Loader);
   if (EFI_ERROR (Status)) { return Status; }
   ZeroMem (&Request, sizeof (Request));
   Request.Volume = Loaded->DeviceHandle;
-  Request.KernelPath = L"\\EFI\\CrabApple\\Payloads\\kernel.macho";
+  Request.KernelPath = L"\\EFI\\UniXNU\\Payloads\\kernel.macho";
   if (Loader->Boot (Loader, NULL) != EFI_INVALID_PARAMETER) { goto Failed; }
   Request.KextCount = 1;
   if (Loader->Boot (Loader, &Request) != EFI_UNSUPPORTED) { goto Failed; }
@@ -100,11 +100,11 @@ ValidationEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
   if (Loader->Boot (Loader, &Request) != EFI_BAD_BUFFER_SIZE) { goto Failed; }
   Request.RamdiskSize = 1;
   for (Index = 0; Index < ARRAY_SIZE (RamdiskPaths); Index++) {
-    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\CrabApple\\Payloads\\%s.macho", RamdiskPaths[Index]);
+    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\UniXNU\\Payloads\\%s.macho", RamdiskPaths[Index]);
     Request.KernelPath = Path;
     if (Loader->Boot (Loader, &Request) != EFI_COMPROMISED_DATA) { goto Failed; }
   }
-  Request.KernelPath = L"\\EFI\\CrabApple\\Payloads\\kernel.macho";
+  Request.KernelPath = L"\\EFI\\UniXNU\\Payloads\\kernel.macho";
   Request.Ramdisk = NULL;
   Request.RamdiskSize = 0;
   if (Loader->Boot (Loader, &Request) != EFI_UNSUPPORTED) { goto Failed; }
@@ -112,19 +112,19 @@ ValidationEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
   if (Loader->Boot (Loader, &Request) != EFI_BAD_BUFFER_SIZE) { goto Failed; }
   Request.BootArgs = NULL;
   for (Index = 0; Index < ARRAY_SIZE (TrustPaths); Index++) {
-    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\CrabApple\\Payloads\\%s.macho", TrustPaths[Index]);
+    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\UniXNU\\Payloads\\%s.macho", TrustPaths[Index]);
     Request.KernelPath = Path;
     if (Loader->Boot (Loader, &Request) != EFI_COMPROMISED_DATA) { goto Failed; }
   }
-  Request.KernelPath = L"\\EFI\\CrabApple\\Payloads\\unavailable-memory-window.macho";
+  Request.KernelPath = L"\\EFI\\UniXNU\\Payloads\\unavailable-memory-window.macho";
   if (Loader->Boot (Loader, &Request) != EFI_OUT_OF_RESOURCES) { goto Failed; }
   for (Index = 0; Index < ARRAY_SIZE (MemoryPaths); Index++) {
-    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\CrabApple\\Payloads\\%s.macho", MemoryPaths[Index]);
+    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\UniXNU\\Payloads\\%s.macho", MemoryPaths[Index]);
     Request.KernelPath = Path;
     if (Loader->Boot (Loader, &Request) != EFI_COMPROMISED_DATA) { goto Failed; }
   }
   for (Index = 0; Index < ARRAY_SIZE (Paths); Index++) {
-    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\CrabApple\\Payloads\\%s.macho", Paths[Index]);
+    UnicodeSPrint (Path, sizeof (Path), L"\\EFI\\UniXNU\\Payloads\\%s.macho", Paths[Index]);
     Request.KernelPath = Path;
     Status = Loader->Boot (Loader, &Request);
     if (Status != Expected[Index]) {

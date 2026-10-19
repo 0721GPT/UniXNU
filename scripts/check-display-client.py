@@ -77,7 +77,7 @@ result = {
     'presented_generation': display.get('presented_generation'),
     'frame_presented': False,
     'visible_ipados_ui': False,
-    'qemu_screen_shows': 'firmware/CrabApple boot menu, not a SpringBoard frame',
+    'qemu_screen_shows': 'firmware/UniXNU boot menu, not a SpringBoard frame',
     'screen_sha256': screen['sha256'],
     'display_client_class': report.get('native_legacy_client_class'),
     'service_properties_sha256': __import__('hashlib').sha256(

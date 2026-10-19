@@ -1,6 +1,6 @@
 """Boot payload: the FAT volume that becomes the ramdisk of the boot image.
 
-The volume is what CrabApple reads at boot: its config, the kernel Mach-O (optionally with the panic
+The volume is what UniXNU reads at boot: its config, the kernel Mach-O (optionally with the panic
 screen patched into a copy), the device tree sidecar the board script generates, and optionally the
 trust cache and the Data ramdisk seed. The loader (DarwinBoot) is part of the firmware volume.
 
@@ -113,7 +113,7 @@ def build(ctx, kernel=None):
     out, image, report = paths(ctx)
     stage = out / 'stage'
     shutil.rmtree(stage, ignore_errors=True)
-    payloads = stage / 'EFI/CrabApple/Payloads'
+    payloads = stage / 'EFI/UniXNU/Payloads'
     payloads.mkdir(parents=True)
     shutil.copyfile(kernel, payloads / 'kernel.macho')
     if spec.get('panic_screen'):
@@ -139,7 +139,7 @@ def build(ctx, kernel=None):
     run(command, cwd=ctx.tree, env=dict(os.environ, UNIXNU_UEFI=str(ctx.uefi or '')), log_file=ctx.logs / 'payload-adt.log')
     initrd = 'initrd = "Payloads/scratch-data.img"\n' if data else ''
     loader = '' if spec.get('loader', 'firmware') == 'firmware' else '[[driver]]\npath = "Payloads/DarwinBoot.efi"\n'
-    (stage / 'EFI/CrabApple/crabapple.toml').write_text(
+    (stage / 'EFI/UniXNU/unixnu.toml').write_text(
         f'version = 1\n[boot]\ntimeout = {spec.get("timeout", 3)}\ndefault = "xnu"\n[kits]\nautoload = false\n{loader}'
         f'[[entry]]\nid = "xnu"\ntitle = "{spec.get("title", "UniXNU")}"\ntype = "xnu"\npath = "Payloads/kernel.macho"\n{initrd}'
         f'args = "{line}"\n')

@@ -111,7 +111,7 @@ def main() -> int:
     parser.add_argument("--cpus", type=int, default=2, help="number of virtual CPUs (default: 2)")
     parser.add_argument("--finish-on-expect", action="store_true",
                         help="finish two seconds after all expected patterns match")
-    parser.add_argument("--menu-marker", default=r"CRABAPPLE: menu: shown")
+    parser.add_argument("--menu-marker", default=r"UNIXNU: menu: shown")
     args = parser.parse_args()
     if args.cpus < 1:
         parser.error("--cpus must be positive")
@@ -123,7 +123,7 @@ def main() -> int:
         sys.exit("error: qemu-system-aarch64 not found")
     code, vars_template = find_firmware(args.firmware)
 
-    work = Path(tempfile.mkdtemp(prefix="crabapple-qemu-"))
+    work = Path(tempfile.mkdtemp(prefix="unixnu-qemu-"))
     qmp_path = work / "qmp.sock"
     args.log.parent.mkdir(parents=True, exist_ok=True)
     if args.log.exists():

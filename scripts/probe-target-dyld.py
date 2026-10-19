@@ -48,11 +48,11 @@ if hashlib.sha256(args.kernel.read_bytes()).hexdigest() != prelink['candidate_sh
     raise SystemExit('Candidate identity mismatch')
 subprocess.run(['python3', ROOT / 'scripts/audit-xnu-kernel.py', args.kernel], check=True)
 esp = output / 'esp'
-payloads = esp / 'EFI/CrabApple/Payloads'
+payloads = esp / 'EFI/UniXNU/Payloads'
 payloads.mkdir(parents=True, exist_ok=True)
 (esp / 'EFI/BOOT').mkdir(exist_ok=True)
 for source, target in [
-    (ROOT / 'crabapple/Build/Out/AARCH64-DEBUG/CrabApple.efi', esp / 'EFI/BOOT/BOOTAA64.EFI'),
+    (ROOT / 'unixnu/Build/Out/AARCH64-DEBUG/UniXNU.efi', esp / 'EFI/BOOT/BOOTAA64.EFI'),
     (ROOT / 'build/DarwinBoot/DEBUG_CLANGPDB/AARCH64/DarwinBoot.efi', payloads / 'DarwinBoot.efi'),
     (args.kernel, payloads / 'kernel.macho'),
     (fixture / 'original-static-trust.bundle', payloads / 'kernel.macho.trustcache')]:
@@ -94,7 +94,7 @@ if args.os_image:
 if not args.os_image or args.apfs_component_launcher:
     dt_command += ['--ramdisk']
 subprocess.run(dt_command, check=True)
-(esp / 'EFI/CrabApple/crabapple.toml').write_text('''version = 1
+(esp / 'EFI/UniXNU/unixnu.toml').write_text('''version = 1
 [boot]
 timeout = 1
 default = "target-dyld"
@@ -113,7 +113,7 @@ args = "rd=md0 -v serial=3 debug=0x14e kt_fixed_zones=120"
 if args.os_image:
     if 'com.apple.filesystems.apfs' not in prelink['components']:
         raise SystemExit('The genuine original APFS component is required')
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     if args.apfs_component_launcher:
         config.write_text(config.read_text().replace('rd=md0 ', 'rd=md0 offline-apfs-load=1 '))
     else:

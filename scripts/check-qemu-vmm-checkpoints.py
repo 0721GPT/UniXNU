@@ -47,7 +47,7 @@ require(d['kernel_sha256'] == 'cef9ebddda8afc0e407cf933e0bfc97fabb6e754a0a2e3fcf
         int(d['pc'], 16) == 0xfffffff004aae9d8 and int(d['x0'], 16) == 0 and
         struct.unpack_from('<I', bytes.fromhex(d['stack_bytes']), 12)[0] == 1,
         'Require actual successful original AMFI sysctl call and its real stack output 1')
-blob = (folder / 'esp/EFI/CrabApple/Payloads/kernel.macho.adt').read_bytes()
+blob = (folder / 'esp/EFI/UniXNU/Payloads/kernel.macho.adt').read_bytes()
 require(d['offline_qemu_vmm_present_declared'] and hashlib.sha256(blob).hexdigest() == d['offline_device_tree_sha256'],
         'Pin actual QEMU DT input')
 value = tree(blob)
@@ -72,7 +72,7 @@ require(word(0xfffffff004aae9d8) == 0x35000120 and word(0xfffffff004aae9dc) == 0
         'Pin original successful-sysctl/output-dependent VM store and later PMGR branch')
 baseline = ROOT / 'build/darwinboot-owner-cache-shared-region'
 old = json.loads((baseline / 'gdb-stop.json').read_text())
-old_tree = tree((baseline / 'esp/EFI/CrabApple/Payloads/kernel.macho.adt').read_bytes())
+old_tree = tree((baseline / 'esp/EFI/UniXNU/Payloads/kernel.macho.adt').read_bytes())
 require(old['kernel_sha256'] == d['kernel_sha256'] and 'vmm-present' not in
         old_tree['children']['defaults']['properties'] and old['stop_symbol'] == '_panic' and
         'AMFI: No PMGR?' in old['argument_memory']['x0'], 'Preserve absent-VM-declaration control and genuine original PMGR refusal')

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify native 4K XNU translation after the real UEFI/CrabApple handoff."""
+"""Verify native 4K XNU translation after the real UEFI/UniXNU handoff."""
 import argparse
 import hashlib
 import json
@@ -310,11 +310,11 @@ if args.qemu_accel == 'hvf' and not (args.armvirt and args.qemu_vmm_present):
     parser.error('HVF requires the actual QEMU platform and explicit VMM identity')
 output = args.output.resolve()
 esp = output / 'esp'
-payloads = esp / 'EFI/CrabApple/Payloads'
+payloads = esp / 'EFI/UniXNU/Payloads'
 payloads.mkdir(parents=True, exist_ok=True)
 (esp / 'EFI/BOOT').mkdir(exist_ok=True)
 subprocess.run(['python3', ROOT / 'scripts/audit-xnu-kernel.py', args.kernel], check=True)
-shutil.copyfile(ROOT / 'crabapple/Build/Out/AARCH64-DEBUG/CrabApple.efi', esp / 'EFI/BOOT/BOOTAA64.EFI')
+shutil.copyfile(ROOT / 'unixnu/Build/Out/AARCH64-DEBUG/UniXNU.efi', esp / 'EFI/BOOT/BOOTAA64.EFI')
 shutil.copyfile(ROOT / 'build/DarwinBoot/DEBUG_CLANGPDB/AARCH64/DarwinBoot.efi', payloads / 'DarwinBoot.efi')
 shutil.copyfile(args.kernel, payloads / 'kernel.macho')
 trust_sidecar = payloads / 'kernel.macho.trustcache'
@@ -376,7 +376,7 @@ import re as _re
 if not _re.fullmatch(r'[A-Za-z0-9_=. +\-]*', args.kernel_extra_args):
     raise SystemExit('Kernel extra arguments contain unsupported characters')
 kernel_args = ('-v serial=3 debug=0x14e kt_fixed_zones=120 ' + args.kernel_extra_args).strip()
-(esp / 'EFI/CrabApple/crabapple.toml').write_text(f'''version = 1
+(esp / 'EFI/UniXNU/unixnu.toml').write_text(f'''version = 1
 [boot]
 timeout = 1
 default = "source-4k"
@@ -397,7 +397,7 @@ if args.qemu_ramfb_high_resolution:
         parser.error('High-resolution fixture requires the actual QEMU ramfb')
     driver = ROOT / 'build/DarwinBoot/DEBUG_CLANGPDB/AARCH64/QemuRamfbGeometry.efi'
     shutil.copyfile(driver, payloads / driver.name)
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('[[entry]]',
         '[[driver]]\npath = "Payloads/QemuRamfbGeometry.efi"\n[[entry]]', 1))
 if args.native_user:
@@ -408,30 +408,30 @@ if args.native_user:
     if args.native_user_ramdisk:
         root_name = 'root.img'
         shutil.copyfile(args.native_user_ramdisk, payloads / root_name)
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "-v', f'initrd = "Payloads/{root_name}"\nargs = "rd=md0 -v'))
     if args.break_symbol == '_panic':
         args.break_symbol = '_native_user_checkpoint'
 if args.data_ramdisk:
     shutil.copyfile(args.data_ramdisk, payloads / 'scratch-data.img')
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "-v', 'initrd = "Payloads/scratch-data.img"\nargs = "-v'))
 if args.verified_root_probe:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-owner-root-check=1 ', 1))
 if args.load_apfs:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-apfs-load=1 ', 1))
 if args.load_iogpu:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-iogpu-load=1 ', 1))
 if args.load_mobile_graphics:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-mobile-graphics-load=1 ', 1))
 if args.native_air_init:
     if not args.data_ramdisk or not args.trust_cache or not args.inspect_owner_root:
         parser.error('Offline AIR init requires explicit Data, trust bundle and real owner-root checks')
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-air-init=1 ', 1))
 if args.offline_gpu_broker:
     if not args.native_air_init:parser.error('Private GPU broker requires the explicit owned diagnostic')
@@ -448,19 +448,19 @@ if args.original_provider_probe:
     mode={'lifecycle':1,'start':2,'client-factory':3,'client-refusal':4,'descriptor-provision':5,'descriptor-provision-attached':6,'descriptor-provision-attached-only':7}[args.original_provider_probe]
     config.write_text(config.read_text().replace('args = "','args = "offline-original-provider-abi='+str(mode)+' offline-original-client-type='+str(args.original_provider_client_type)+' ',1))
 if args.constant_uploads_probe:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-constants=1 ', 1))
 if args.smmu4k_probe:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-smmu4k=1 ', 1))
 if args.adreno_pm4_probe:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-adreno-pm4=1 ', 1))
 if args.adreno_firmware_probe:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-adreno-firmware=1 ', 1))
 if args.mobile_graphics_client_probe:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', 'args = "offline-mobile-graphics-client=1 ', 1))
 if args.legacy_display_phase:
     if not args.mobile_graphics_client_probe:parser.error('Legacy lifecycle requires the explicit original-family client gate')
@@ -471,37 +471,37 @@ if args.hid_home_input and not args.load_hid_input:
 if args.load_hid_input:
     if not (args.load_mobile_graphics and args.prelink_report and args.legacy_display_phase==4):
         parser.error('HID observation requires the original system/display late-init experiment')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "offline-hid-input=1 ',1))
     if args.hid_home_input:config.write_text(config.read_text().replace('args = "','args = "offline-hid-home=1 ',1))
 if args.smp > 1:
     if not args.armcpu:
         parser.error('--smp requires --armcpu')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "sheng-smp=1 ',1))
 if args.original_cpu_present:
     if not (args.legacy_display_transfer and args.load_mobile_graphics and args.prelink_report) or args.native_air_init or args.native_user:
         parser.error('Original CPU presentation requires original system graphics and validated copy, without an owned renderer')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "offline-legacy-cpu-present=1 ',1))
 if args.legacy_display_retire:
     if not (args.legacy_display_transfer and args.native_air_init):parser.error('Original retirement requires actual validated GOP transfer and the explicit owned diagnostic')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "offline-legacy-retire=1 ',1))
 if args.legacy_display_transfer:
     if not args.legacy_display_validate:parser.error('Bounded GOP transfer requires actual original surface validation')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "offline-legacy-transfer=1 ',1))
 if args.legacy_display_validate:
     if not args.legacy_display_logical_pm:parser.error('Original full-frame validation requires logical scanout scheduling')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "offline-legacy-validate=1 ',1))
 if args.legacy_display_logical_pm:
     if not (args.legacy_display_gop and args.legacy_display_register and args.legacy_display_phase==4):parser.error('Logical scanout PM requires the explicit GOP phase-4 experiment')
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "','args = "offline-legacy-pm=1 ',1))
 if args.legacy_display_unit_scale:
-    config=esp/'EFI/CrabApple/crabapple.toml'
+    config=esp/'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = \"','args = \"offline-legacy-unit-scale=1 ',1))
 if args.legacy_display_gop:
     if args.legacy_display_phase not in (2,4):parser.error('Legacy GOP backend requires the explicit start phase')
@@ -514,13 +514,13 @@ if args.legacy_display_register_only:
     if not args.qemu_ramfb:parser.error('Register-only display needs the actual GOP ramfb')
     config.write_text(config.read_text().replace('args = "','args = "offline-mobile-graphics-load=1 offline-legacy-gop=1 offline-legacy-phase=4 offline-legacy-register=1 ',1))
 if args.root_volume_uuid:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', f'args = "rd=uuid boot-uuid={str(args.root_volume_uuid).upper()} ', 1))
 if args.root_bsd_name:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', f'args = "rd={args.root_bsd_name} ', 1))
 if args.zone_pgz_probe_case:
-    config = esp / 'EFI/CrabApple/crabapple.toml'
+    config = esp / 'EFI/UniXNU/unixnu.toml'
     config.write_text(config.read_text().replace('args = "', f'args = "offline-zone-pgz-case={args.zone_pgz_probe_case} ', 1))
 if args.native_data_user_image:
     user_addresses=json.loads((args.native_data_user_image.parent/'addresses.json').read_text())
@@ -1614,7 +1614,7 @@ if args.check_commpage:
     if any(shift != 12 for shift in report['commpage_user64_shifts'].values()):
         raise SystemExit(f"Incorrect native user ABI: {report['commpage_user64_shifts']}")
 (output / 'gdb-stop.json').write_text(json.dumps(report, indent=2) + '\n')
-print('PASS: real UEFI -> CrabApple -> DarwinBoot -> active native 4K XNU translation')
+print('PASS: real UEFI -> UniXNU -> DarwinBoot -> active native 4K XNU translation')
 print(json.dumps(report['kernel_page_globals'], indent=2))
 if has_provider:
     print(json.dumps(report['crypto14_globals'], indent=2))

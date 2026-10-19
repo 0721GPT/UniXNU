@@ -24,67 +24,67 @@ KEXT_TIMEOUT=${KEXT_TIMEOUT:-60}
 "$ROOT/build.sh" -b "$TARGET" >/dev/null
 mkdir -p "$SMOKE"
 
-python3 "$ROOT/Scripts/stage-esp.py" -o "$ESP" "$ROOT/CrabApplePkg/Test/Qemu/esp" \
-  --put "$OUT/CrabApple.efi=EFI/BOOT/BOOTAA64.EFI" \
-  --put "$OUT/HelloPayload.efi=EFI/CrabApple/Payloads/HelloPayload.efi" \
-  --put "$OUT/SampleDriver.efi=EFI/CrabApple/Kits/SampleDriver.kit/SampleDriver.efi"
+python3 "$ROOT/Scripts/stage-esp.py" -o "$ESP" "$ROOT/UniXNUPkg/Test/Qemu/esp" \
+  --put "$OUT/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI" \
+  --put "$OUT/HelloPayload.efi=EFI/UniXNU/Payloads/HelloPayload.efi" \
+  --put "$OUT/SampleDriver.efi=EFI/UniXNU/Kits/SampleDriver.kit/SampleDriver.efi"
 
 echo "== scenario 1: countdown boots the default entry"
 python3 "$ROOT/Scripts/qemu-run.py" "$ESP" \
   --log "$SMOKE/default.log" --screenshot "$SMOKE/menu.png" \
-  --expect 'CRABAPPLE: UniXNU [0-9.]+ starting as application' \
-  --expect 'CRABAPPLE: config: loaded' \
-  --expect 'CRABAPPLE: kit SampleDriver 1\.0\.0: loaded' \
-  --expect 'CRABAPPLE: kit NeverMatch 0\.0\.1: not loaded' \
-  --expect 'CRABAPPLE: driver .*SampleDriver\.efi \(kit SampleDriver\): started' \
-  --expect 'CRABAPPLE: ui: graphics' \
-  --expect 'CRABAPPLE: menu: shown 4 entries, default 0' \
-  --expect 'CRABAPPLE: menu: timeout, booting default 0' \
-  --expect 'CRABAPPLE: dt: installed' \
-  --expect "CRABAPPLE-HELLO: check dtb PASS \(bootargs='console=ttyAMA0 crabapple.test=1' marker='patched'\)" \
-  --expect 'CRABAPPLE-HELLO: check overlay PASS' \
-  --expect "CRABAPPLE-HELLO: check driver PASS \(sample driver args='from-kit'\)" \
-  --expect 'CRABAPPLE-HELLO: check initrd PASS .*CRABAPPLE-INITRD-OK' \
-  --expect "CRABAPPLE-HELLO: check var PASS \(CrabAppleTest='hello-variable'" \
-  --expect 'CRABAPPLE-HELLO: RESULT PASS 5 passed 0 failed' \
-  --reject 'CRABAPPLE: config: .*(error|needs|unknown)' \
+  --expect 'UNIXNU: UniXNU [0-9.]+ starting as application' \
+  --expect 'UNIXNU: config: loaded' \
+  --expect 'UNIXNU: kit SampleDriver 1\.0\.0: loaded' \
+  --expect 'UNIXNU: kit NeverMatch 0\.0\.1: not loaded' \
+  --expect 'UNIXNU: driver .*SampleDriver\.efi \(kit SampleDriver\): started' \
+  --expect 'UNIXNU: ui: graphics' \
+  --expect 'UNIXNU: menu: shown 4 entries, default 0' \
+  --expect 'UNIXNU: menu: timeout, booting default 0' \
+  --expect 'UNIXNU: dt: installed' \
+  --expect "UNIXNU-HELLO: check dtb PASS \(bootargs='console=ttyAMA0 unixnu.test=1' marker='patched'\)" \
+  --expect 'UNIXNU-HELLO: check overlay PASS' \
+  --expect "UNIXNU-HELLO: check driver PASS \(sample driver args='from-kit'\)" \
+  --expect 'UNIXNU-HELLO: check initrd PASS .*UNIXNU-INITRD-OK' \
+  --expect "UNIXNU-HELLO: check var PASS \(UniXNUTest='hello-variable'" \
+  --expect 'UNIXNU-HELLO: RESULT PASS 5 passed 0 failed' \
+  --reject 'UNIXNU: config: .*(error|needs|unknown)' \
   --reject 'ASSERT'
 
 echo "== scenario 2: keyboard selects the second entry"
 python3 "$ROOT/Scripts/qemu-run.py" "$ESP" \
   --log "$SMOKE/keys.log" --keys down,ret \
-  --expect 'CRABAPPLE: menu: enter, booting 1' \
-  --expect "CRABAPPLE-HELLO: load options 'plain shutdown'" \
-  --expect 'CRABAPPLE-HELLO: RESULT PASS 0 passed 0 failed' \
-  --reject 'CRABAPPLE: menu: timeout' \
+  --expect 'UNIXNU: menu: enter, booting 1' \
+  --expect "UNIXNU-HELLO: load options 'plain shutdown'" \
+  --expect 'UNIXNU-HELLO: RESULT PASS 0 passed 0 failed' \
+  --reject 'UNIXNU: menu: timeout' \
   --reject 'ASSERT'
 
 echo "== scenario 3: no GOP, no config file"
-python3 "$ROOT/Scripts/stage-esp.py" -o "$SMOKE/esp-bare" "$ROOT/CrabApplePkg/Test/Qemu/empty" \
-  --put "$OUT/CrabApple.efi=EFI/BOOT/BOOTAA64.EFI"
+python3 "$ROOT/Scripts/stage-esp.py" -o "$SMOKE/esp-bare" "$ROOT/UniXNUPkg/Test/Qemu/empty" \
+  --put "$OUT/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI"
 python3 "$ROOT/Scripts/qemu-run.py" "$SMOKE/esp-bare" --no-gop --timeout 40 \
   --log "$SMOKE/degraded.log" \
-  --expect 'CRABAPPLE: config: none found, using built-in configuration' \
-  --expect 'CRABAPPLE: config: no boot entry found' \
-  --expect 'CRABAPPLE: ui: text console' \
-  --expect "CRABAPPLE: menu: shown 3 entries, default 0 'exit'" \
-  --expect 'CRABAPPLE: menu: timeout, booting default 0' \
-  --expect 'CRABAPPLE: action: exit' \
+  --expect 'UNIXNU: config: none found, using built-in configuration' \
+  --expect 'UNIXNU: config: no boot entry found' \
+  --expect 'UNIXNU: ui: text console' \
+  --expect "UNIXNU: menu: shown 3 entries, default 0 'exit'" \
+  --expect 'UNIXNU: menu: timeout, booting default 0' \
+  --expect 'UNIXNU: action: exit' \
   --reject 'ASSERT'
 
 echo "== scenario 4: config on a partition head, tail as a block slice"
 FAT_PYTHON=${FAT_PYTHON:-python3}
 if command -v mcopy >/dev/null || "$FAT_PYTHON" -W ignore -c 'import pyfatfs.PyFatFS' 2>/dev/null; then
-  python3 "$ROOT/Scripts/stage-esp.py" -o "$SMOKE/userdata-tree" "$ROOT/CrabApplePkg/Test/Qemu/userdata" \
-    --put "$OUT/HelloPayload.efi=EFI/CrabApple/Payloads/HelloPayload.efi" >/dev/null
+  python3 "$ROOT/Scripts/stage-esp.py" -o "$SMOKE/userdata-tree" "$ROOT/UniXNUPkg/Test/Qemu/userdata" \
+    --put "$OUT/HelloPayload.efi=EFI/UniXNU/Payloads/HelloPayload.efi" >/dev/null
   "$FAT_PYTHON" "$ROOT/Scripts/mk-gpt-disk.py" --out "$SMOKE/gpt-disk.img" --tree "$SMOKE/userdata-tree" \
     --size 256 --fat 64 --name userdata
   python3 "$ROOT/Scripts/qemu-run.py" "$SMOKE/esp-bare" --disk "$SMOKE/gpt-disk.img" \
     --log "$SMOKE/slice.log" \
-    --expect 'CRABAPPLE: config: loaded' \
-    --expect "CRABAPPLE: slice passthrough: partition 'userdata' blocks 131072\\+[0-9]+ \\(512-byte\\), read-only" \
-    --expect "CRABAPPLE-HELLO: check slice PASS \\('passthrough' [0-9]+ blocks ro, block 0 'CRABAPPLE-TAIL-MARKER'" \
-    --expect 'CRABAPPLE-HELLO: RESULT PASS 1 passed 0 failed' \
+    --expect 'UNIXNU: config: loaded' \
+    --expect "UNIXNU: slice passthrough: partition 'userdata' blocks 131072\\+[0-9]+ \\(512-byte\\), read-only" \
+    --expect "UNIXNU-HELLO: check slice PASS \\('passthrough' [0-9]+ blocks ro, block 0 'UNIXNU-TAIL-MARKER'" \
+    --expect 'UNIXNU-HELLO: RESULT PASS 1 passed 0 failed' \
     --reject 'ASSERT'
 else
   echo "   skipped: needs mtools or FAT_PYTHON with pyfatfs"
@@ -93,18 +93,18 @@ fi
 echo "== scenario 5: synthetic kext staging and XNU protocol compatibility"
 python3 "$ROOT/Scripts/kext-fixtures.py" "$SMOKE/kext" "$OUT"
 for variant in v2 v1 v1-empty missing-loader unknown nullboot missing-file bad-image truncated-command empty-plist duplicate bad-path bad-type wrong-entry; do
-  expected='CRABAPPLE: kext: invalid entry configuration; boot refused'
-  reject='CRABAPPLE-XNU-TEST: .* handoff'
+  expected='UNIXNU: kext: invalid entry configuration; boot refused'
+  reject='UNIXNU-XNU-TEST: .* handoff'
   case "$variant" in
-    v2) expected='CRABAPPLE-XNU-TEST: v2 handoff PASS call 1'; reject='CRABAPPLE-XNU-TEST: .* FAIL' ;;
-    v1) expected='CRABAPPLE: xnu: loader revision 1 cannot accept kexts' ;;
-    v1-empty) expected='CRABAPPLE-XNU-TEST: v1 handoff PASS call 1'; reject='CRABAPPLE-XNU-TEST: .* FAIL' ;;
-    missing-loader) expected='CRABAPPLE: xnu: no loader protocol installed' ;;
-    unknown|nullboot) expected='CRABAPPLE: xnu: unsupported loader revision or missing Boot callback' ;;
-    missing-file) expected='CRABAPPLE: kext .*Code.kext: cannot read executable' ;;
-    bad-image|truncated-command) expected='CRABAPPLE: kext .*Code.kext: invalid AArch64 MH_KEXT_BUNDLE; boot refused' ;;
-    empty-plist) expected='CRABAPPLE: kext .*Code.kext: empty plist; boot refused' ;;
-    duplicate) expected='CRABAPPLE: kext .*code.kext: duplicate bundle; boot refused' ;;
+    v2) expected='UNIXNU-XNU-TEST: v2 handoff PASS call 1'; reject='UNIXNU-XNU-TEST: .* FAIL' ;;
+    v1) expected='UNIXNU: xnu: loader revision 1 cannot accept kexts' ;;
+    v1-empty) expected='UNIXNU-XNU-TEST: v1 handoff PASS call 1'; reject='UNIXNU-XNU-TEST: .* FAIL' ;;
+    missing-loader) expected='UNIXNU: xnu: no loader protocol installed' ;;
+    unknown|nullboot) expected='UNIXNU: xnu: unsupported loader revision or missing Boot callback' ;;
+    missing-file) expected='UNIXNU: kext .*Code.kext: cannot read executable' ;;
+    bad-image|truncated-command) expected='UNIXNU: kext .*Code.kext: invalid AArch64 MH_KEXT_BUNDLE; boot refused' ;;
+    empty-plist) expected='UNIXNU: kext .*Code.kext: empty plist; boot refused' ;;
+    duplicate) expected='UNIXNU: kext .*code.kext: duplicate bundle; boot refused' ;;
   esac
   python3 "$ROOT/Scripts/qemu-run.py" "$SMOKE/kext/$variant" --timeout "$KEXT_TIMEOUT" \
     --cpus 1 --finish-on-expect \

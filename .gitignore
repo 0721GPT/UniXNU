@@ -8,6 +8,11 @@
 /.local*/
 /Mu_Basecore/
 
+# Documentation site
+/docs/node_modules/
+/docs/.vitepress/dist/
+/docs/.vitepress/cache/
+
 # Local development files
 *.log
 *.terminal

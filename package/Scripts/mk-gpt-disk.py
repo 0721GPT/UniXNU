@@ -102,7 +102,7 @@ def main() -> int:
     parser.add_argument("--misc", type=int, default=8, help="first partition size, MiB")
     parser.add_argument("--fat", type=int, default=64, help="FAT volume size, MiB (>= 33)")
     parser.add_argument("--name", default="userdata", help="GPT name of the second partition")
-    parser.add_argument("--marker", default="CRABAPPLE-TAIL-MARKER", help="text at the start of the tail")
+    parser.add_argument("--marker", default="UNIXNU-TAIL-MARKER", help="text at the start of the tail")
     args = parser.parse_args()
 
     if args.fat < 33 or args.misc + args.fat + 2 >= args.size:

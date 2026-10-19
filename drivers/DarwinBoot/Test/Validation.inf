@@ -12,7 +12,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  CrabApplePkg/CrabApplePkg.dec
+  UniXNUPkg/UniXNUPkg.dec
 
 [LibraryClasses]
   BaseMemoryLib
@@ -22,5 +22,5 @@
   UefiLib
 
 [Protocols]
-  gCrabAppleXnuLoaderProtocolGuid
+  gUniXNULoaderProtocolGuid
   gEfiLoadedImageProtocolGuid

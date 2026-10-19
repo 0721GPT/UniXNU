@@ -2,9 +2,9 @@
 -ffreestanding
 -fshort-wchar
 -include
-CrabApplePkg/Library/CrabAppleLib/ClangdAutoGen.h
+UniXNUPkg/Library/UniXNULib/ClangdAutoGen.h
 -IMu_Basecore/MdePkg/Include
 -IMu_Basecore/MdePkg/Include/AArch64
 -IMu_Basecore/MdeModulePkg/Include
--ICrabApplePkg/Include
--ICrabApplePkg/Test/Include
+-IUniXNUPkg/Include
+-IUniXNUPkg/Test/Include
