@@ -107,6 +107,10 @@ class Context:
             raise Error(f'no configuration: run "unixnu defconfig NAME" first (see {self.device / "configs"})')
         return self.config
 
+    def option_text(self, flag, env=None):
+        """A string given as a flag or, failing that, an environment variable."""
+        return getattr(self.args, flag, None) or (os.environ.get(env) if env else None)
+
     def option(self, flag, env=None):
         """A path given as a flag or, failing that, an environment variable."""
         value = getattr(self.args, flag, None) or (os.environ.get(env) if env else None)

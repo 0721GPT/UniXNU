@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+from . import ipsw
 from .util import Error, expand, log, run, sha256_file, tool
 
 
@@ -63,8 +64,11 @@ def prelink(ctx):
     if not spec:
         raise Error('board.toml has no [kernel.prelink]')
     cache = ctx.option('kernelcache', 'UNIXNU_KERNELCACHE') or (expand(ctx.tree / spec['kernelcache']) if spec.get('kernelcache') else None)
-    if not cache or not cache.is_file():
-        raise Error('the original decompressed kernelcache is an input you provide: --kernelcache FILE or UNIXNU_KERNELCACHE')
+    if not cache:
+        # Not given: take it from the IPSW (--ipsw PATH_OR_URL, or the url of board.toml [ipsw]).
+        cache = ipsw.kernelcache(ctx, ipsw.Ipsw(ctx))
+    if not cache.is_file():
+        raise Error(f'kernelcache not found: {cache}')
     wanted = spec.get('kernelcache_sha256')
     if wanted and sha256_file(cache) != wanted:
         raise Error(f'{cache} does not match the kernelcache this board was qualified against (sha256 {wanted})')
