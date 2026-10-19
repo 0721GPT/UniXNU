@@ -18,6 +18,8 @@ An independent project to run Darwin/XNU userland on non-Apple ARM64 hardware th
 Work in progress, released in a hurry. There is no documented build yet: the scripts are not generic,
 and you will have to work out how to build it yourself. The development host is macOS.
 
+Building: [docs/building.md](docs/building.md).
+
 Device adaptations are separate projects:
 
 - [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng): Xiaomi Pad 6S Pro (sheng)
