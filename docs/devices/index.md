@@ -2,9 +2,9 @@
 
 A device entry is a pair of repositories and the values that make the generic stack run on that board. The table records the ports with a public repository. Boards with a similar SoC need their own port and their own entry.
 
-| Device | SoC | Device repository | Firmware |
-| --- | --- | --- | --- |
-| Xiaomi Pad 6S Pro (sheng) | SM8550 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
+| Device | SoC | Support | Device repository | Firmware |
+| --- | --- | --- | --- | --- |
+| Xiaomi Pad 6S Pro (sheng) | SM8550 | Touch | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
 
 ## What a device page records
 

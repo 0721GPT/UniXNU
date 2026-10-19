@@ -255,6 +255,26 @@ fastboot boot out/sheng/boot/boot.img
 
 The board file points at an iPadOS restore image. To boot macOS on the same board, point `[ipsw]` at a macOS restore image and update the product, version, build, device class, chip ID, board ID and member pins. Set `[userdata] windows` to `OS` and `Cryptex1,SystemOS`. The kernel, payload, boot image and userdata steps stay the same.
 
+## Device support
+
+The boot chain reaches XNU. This table records user-facing device support from the operating system.
+
+| Feature | State | Notes |
+| --- | --- | --- |
+| Touch | <span class="status-ok">Working</span> | Novatek NT36532E |
+| Display | <span class="status-no">Not working</span> | |
+| Wi-Fi | <span class="status-no">Not working</span> | |
+| Bluetooth | <span class="status-no">Not working</span> | |
+| Camera | <span class="status-no">Not working</span> | |
+| GPU | <span class="status-no">Not working</span> | |
+| USB | <span class="status-no">Not working</span> | |
+| Audio | <span class="status-no">Not working</span> | |
+| Sensors | <span class="status-no">Not working</span> | |
+| Battery and charging | <span class="status-no">Not working</span> | |
+| Suspend and resume | <span class="status-no">Not working</span> | |
+
+Working means the feature is usable from the OS. Not working means no OS driver is present.
+
 ## Observed state
 
 | Stage | State |

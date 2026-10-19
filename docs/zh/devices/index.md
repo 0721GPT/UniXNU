@@ -2,9 +2,9 @@
 
 一个设备条目由两个仓库和一组让通用栈在该板子上运行的数值组成。下表记录有公开仓库的移植。采用类似 SoC 的板子需要自己的移植和条目。
 
-| 设备 | SoC | 设备仓库 | 固件 |
-| --- | --- | --- | --- |
-| 小米平板 6S Pro（sheng） | SM8550 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
+| 设备 | SoC | 支持功能 | 设备仓库 | 固件 |
+| --- | --- | --- | --- | --- |
+| 小米平板 6S Pro（sheng） | SM8550 | 触控 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
 
 ## 设备页面记录什么
 

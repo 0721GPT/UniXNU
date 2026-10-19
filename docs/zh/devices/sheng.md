@@ -255,6 +255,26 @@ fastboot boot out/sheng/boot/boot.img
 
 板级文件指向 iPadOS 恢复镜像。要在同一设备上启动 macOS，把 `[ipsw]` 指向 macOS 恢复镜像，并更新产品、版本、build、device class、chip ID、board ID 和成员哈希。把 `[userdata] windows` 设为 `OS` 和 `Cryptex1,SystemOS`。内核、负载、启动镜像和 userdata 步骤保持不变。
 
+## 设备支持
+
+启动链可以到达 XNU。下表记录操作系统中用户可见的设备支持。
+
+| 功能 | 状态 | 说明 |
+| --- | --- | --- |
+| 触控 | <span class="status-ok">可用</span> | Novatek NT36532E |
+| 显示 | <span class="status-no">不可用</span> | |
+| Wi-Fi | <span class="status-no">不可用</span> | |
+| 蓝牙 | <span class="status-no">不可用</span> | |
+| 相机 | <span class="status-no">不可用</span> | |
+| GPU | <span class="status-no">不可用</span> | |
+| USB | <span class="status-no">不可用</span> | |
+| 音频 | <span class="status-no">不可用</span> | |
+| 传感器 | <span class="status-no">不可用</span> | |
+| 电池与充电 | <span class="status-no">不可用</span> | |
+| 休眠与唤醒 | <span class="status-no">不可用</span> | |
+
+可用表示操作系统中可以使用。不可用表示尚无操作系统驱动。
+
 ## 观察状态
 
 | 阶段 | 状态 |
