@@ -27,6 +27,12 @@ def build(ctx):
     env = dict(os.environ)
     env.update(xnu_env(ctx))
     env['JOBS'] = str(ctx.jobs)
+    record = ctx.tree / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json'
+    if env.get('XNU_BOOT_PROGRESS') == '1' and not record.is_file():
+        # The boot progress layer is generated from the compile record of startup.o, which only a
+        # previous build leaves behind, so a first build from scratch runs once without it.
+        log('kernel: bootstrap pass without boot progress')
+        run(['bash', script], cwd=ctx.tree, env={**env, 'XNU_BOOT_PROGRESS': '0'}, log_file=ctx.logs / 'kernel-bootstrap.log')
     run(['bash', script], cwd=ctx.tree, env=env, log_file=ctx.logs / 'kernel.log')
 
 
