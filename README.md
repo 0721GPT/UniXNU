@@ -6,6 +6,11 @@
   </picture>
 </p>
 
+<p align="center">
+  <a href="https://t.me/unixnu"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-@unixnu-26A5E4?logo=telegram&logoColor=white"></a>
+  <a href="https://x.com/unixnu"><img alt="X" src="https://img.shields.io/badge/X-@unixnu-000000?logo=x&logoColor=white"></a>
+</p>
+
 # UniXNU
 
 An independent project to run Darwin/XNU userland on non-Apple ARM64 hardware through UEFI.
