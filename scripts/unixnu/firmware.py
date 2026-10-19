@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from .config import load_toml
-from .util import Error, git, log, run, tool
+from .util import Error, clang_bin, git, log, run, tool
 
 
 def uefi_config(ctx, uefi):
@@ -25,7 +25,11 @@ def build(ctx, modules, uefi, edk2, target='DEBUG'):
     for name in ('clang', 'python3', 'make'):
         tool(name)
     base, size = config['uefi_fd']['base'], config['uefi_fd']['size']
-    for script in fw.get('preflight', []):
+    if fw.get('submodules'):
+        # Upstream Mu-Silicium submodules the board needs (Mu_Basecore is provided separately).
+        log('firmware: initializing submodules of the Mu-Silicium checkout')
+        run(['git', '-C', uefi, 'submodule', 'update', '--init', '--depth', '1', '--', *fw['submodules']])
+    for script in [] if ctx.args.skip_preflight else fw.get('preflight', []):
         run(['python3', ctx.tree / script], cwd=ctx.tree, log_file=ctx.logs / 'firmware-preflight.log')
     defines = {'FD_BASE': hex(base), 'FD_SIZE': hex(size), 'FD_BLOCKS': str(size // 0x1000)}
     defines.update({key: str(value) for key, value in fw.get('defines', {}).items()})
@@ -43,7 +47,9 @@ def build(ctx, modules, uefi, edk2, target='DEBUG'):
     env = dict(os.environ, WORKSPACE=str(uefi), EDK_TOOLS_PATH=str(tools), CONF_PATH=str(conf), PACKAGES_PATH=packages,
                PYTHON_COMMAND='python3',
                PATH=os.pathsep.join([str(tools / 'BinWrappers/PosixLike'), str(tools / 'Source/C/bin'), os.environ['PATH']]))
-    env.setdefault('CLANG_BIN', os.path.dirname(shutil.which('clang')) + '/')
+    env.setdefault('CLANG_BIN', clang_bin(ctx.work / 'toolchain'))
+    # EDK II embeds the build time; pin it to the commit time so the same sources give the same firmware.
+    env.setdefault('SOURCE_DATE_EPOCH', git(uefi, 'log', '-1', '--format=%ct').strip())
     applied = []
     try:
         # Board patches for the shared edk2 checkout: applied for the build, always reverted.

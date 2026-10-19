@@ -41,4 +41,6 @@ submodules = [
   "MdePkg/Library/BaseFdtLib/libfdt",
   "MdePkg/Library/MipiSysTLib/mipisyst",
   "BaseTools/Source/C/BrotliCompress/brotli",
+  "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli",
+  "SecurityPkg/DeviceSecurity/SpdmLib/libspdm",
 ]
