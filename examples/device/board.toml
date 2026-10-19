@@ -2,9 +2,10 @@
 # your board. Try it as it is with:  ./unixnu defconfig example_defconfig -D examples/device && ./unixnu status
 
 [board]
+example = true                     # marks a sample: unixnu will not build from it
 name = "example"                   # output goes to out/example/
 soc = "SOC"
-description = "Example board"
+description = "EXAMPLE board, not a real device"
 kit = "example"                    # the package/ of the device repository appears as kits/example
 
 [kernel]

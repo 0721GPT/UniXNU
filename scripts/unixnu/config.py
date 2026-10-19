@@ -76,6 +76,7 @@ class Context:
         self.name = self.board.get('board', {}).get('name')
         if not self.name:
             raise Error('board.toml needs [board] name')
+        self.example = bool(self.board['board'].get('example'))
         self.work = self.out_root / self.name
         self.tree = self.work / 'tree'
         self.logs = self.work / 'logs'
@@ -95,6 +96,10 @@ class Context:
     def _save_state(self, state):
         self.out_root.mkdir(parents=True, exist_ok=True)
         self.state_path.write_text(json.dumps(state, indent=2) + '\n')
+
+    def refuse_example(self):
+        if self.example:
+            raise Error(f'{self.device} is an EXAMPLE device repository (example = true in board.toml); copy it and fill in a real board')
 
     def need_config(self):
         if not self.config_path.is_file():

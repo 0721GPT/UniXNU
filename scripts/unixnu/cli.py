@@ -94,6 +94,7 @@ def cmd_fetch(ctx):
 
 
 def cmd_build(ctx):
+    ctx.refuse_example()
     steps = ctx.args.steps
     if 'all' in steps:
         steps = list(STEPS)
@@ -113,6 +114,7 @@ def cmd_build(ctx):
 
 
 def cmd_bootimg(ctx):
+    ctx.refuse_example()
     uefi = need_uefi(ctx)
     fd = expand(ctx.args.fd) if ctx.args.fd else firmware.fd_path(ctx, uefi, ctx.args.target)
     dtb = ctx.option('dtb', 'UNIXNU_DTB')
@@ -121,7 +123,7 @@ def cmd_bootimg(ctx):
 
 
 def cmd_status(ctx):
-    print(f'device   {ctx.device} ({ctx.name})')
+    print(f'device   {ctx.device} ({ctx.name})' + ('  [EXAMPLE]' if ctx.example else ''))
     print(f'output   {ctx.work}')
     print(f'config   {ctx.config_path if ctx.config_path.is_file() else "none (run defconfig)"}')
     modules = feeds.resolve(ctx)
