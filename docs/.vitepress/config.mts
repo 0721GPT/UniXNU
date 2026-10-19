@@ -39,6 +39,7 @@ export default defineConfig({
       { text: 'Devices', link: '/devices/', activeMatch: '^/devices/' },
       { text: 'Reference', link: '/reference/cli', activeMatch: '^/reference/' },
       { text: 'Contributing', link: '/contributing/documentation', activeMatch: '^/contributing/' },
+      { text: 'GitHub', link: 'https://github.com/UniXNU/UniXNU', target: '_blank', rel: 'noopener' },
     ],
     sidebar: {
       '/guide/': [
@@ -190,6 +191,7 @@ export default defineConfig({
           { text: '设备', link: '/zh/devices/', activeMatch: '^/zh/devices/' },
           { text: '参考', link: '/zh/reference/cli', activeMatch: '^/zh/reference/' },
           { text: '参与贡献', link: '/zh/contributing/documentation', activeMatch: '^/zh/contributing/' },
+          { text: 'GitHub', link: 'https://github.com/UniXNU/UniXNU', target: '_blank', rel: 'noopener' },
         ],
         sidebar: {
           '/zh/guide/': [

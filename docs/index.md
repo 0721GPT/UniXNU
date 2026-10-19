@@ -1,7 +1,6 @@
 ---
 layout: home
 hero:
-  name: UniXNU
   text: Darwin and XNU userland on non-Apple ARM64 hardware
   tagline: A UEFI boot manager, a device tree platform, a patched XNU kernel and a complete boot image.
   image:
@@ -17,6 +16,9 @@ hero:
     - theme: alt
       text: Device notes
       link: /devices/
+    - theme: alt
+      text: GitHub
+      link: https://github.com/UniXNU/UniXNU
 ---
 
 ::: warning Documentation status

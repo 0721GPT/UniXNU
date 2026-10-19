@@ -1,7 +1,6 @@
 ---
 layout: home
 hero:
-  name: UniXNU
   text: 在非 Apple ARM64 硬件上运行 Darwin 与 XNU 用户态
   tagline: UEFI 启动管理器、设备树平台、打过补丁的 XNU 内核和完整启动镜像。
   image:
@@ -17,6 +16,9 @@ hero:
     - theme: alt
       text: 设备说明
       link: /zh/devices/
+    - theme: alt
+      text: GitHub
+      link: https://github.com/UniXNU/UniXNU
 ---
 
 ::: warning 文档状态
