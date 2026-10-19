@@ -2,7 +2,7 @@
 layout: home
 hero:
   text: 在非 Apple ARM64 硬件上运行 iOS 与 macOS
-  tagline: UEFI 启动管理器、设备树平台、打过补丁的 XNU 内核和完整启动镜像。iOS 与 macOS 支持暂未经验证。
+  tagline: UEFI 启动管理器、设备树平台、打过补丁的 XNU 内核和完整启动镜像。iOS 支持已验证，macOS 支持暂未经验证。
   image:
     src: /logo-light.svg
     alt: UniXNU 标志

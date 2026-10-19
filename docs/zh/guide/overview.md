@@ -1,6 +1,6 @@
 # 总览
 
-UniXNU 在 ARM64 设备上从 UEFI 环境启动 iOS 或 macOS。iOS 与 macOS 支持暂未经验证。整个栈分为六层，每一层都有对应的仓库、构建产物和交接约定。
+UniXNU 在 ARM64 设备上从 UEFI 环境启动 iOS 或 macOS。iOS 支持已验证，macOS 支持暂未经验证。整个栈分为六层，每一层都有对应的仓库、构建产物和交接约定。
 
 ## 分层模型
 
