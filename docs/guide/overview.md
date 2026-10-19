@@ -1,6 +1,6 @@
 # Overview
 
-UniXNU starts iOS or macOS on an ARM64 device from a UEFI environment. iOS support is verified. macOS support is not yet verified. The stack has six layers. Each layer has a repository, a build output and a handoff contract.
+UniXNU starts iOS or macOS on an ARM64 device from a UEFI environment, with iOS verified and macOS not yet verified. The stack has six layers. Each layer has a repository, a build output and a handoff contract.
 
 ## Layer model
 

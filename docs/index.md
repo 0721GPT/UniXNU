@@ -2,7 +2,7 @@
 layout: home
 hero:
   text: Run iOS and macOS on non-Apple ARM64 hardware
-  tagline: A UEFI boot manager, a device tree platform, a patched XNU kernel and a complete boot image. iOS support is verified. macOS support is not yet verified.
+  tagline: A UEFI boot manager, a device tree platform, a patched XNU kernel and a complete boot image, with iOS verified and macOS not yet verified.
   image:
     src: /logo-light.svg
     alt: UniXNU logo
