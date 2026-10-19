@@ -268,7 +268,7 @@ The current support table is in the [UniXNU-sheng README](https://github.com/Uni
 | UniXNU reads the payload volume | works |
 | XNU and userland | the original iPadOS userland runs from the IPSW; Setup and Hello can be skipped, and SpringBoard, the lock screen, the home screen and Settings are reached |
 | Touch | accepted by SpringBoard and backboardd |
-| Desktop rendering | CPU-rendered; icons are absent |
+| Desktop rendering | CPU-rendered |
 | GPU | not enabled |
 
 The touch driver is documented in [Touch driver example](/devices/sheng-touch-driver).

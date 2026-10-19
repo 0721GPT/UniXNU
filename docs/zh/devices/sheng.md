@@ -268,7 +268,7 @@ fastboot boot out/sheng/boot/boot.img
 | UniXNU 读取负载卷 | 工作 |
 | XNU 与用户态 | 原始 iPadOS 用户态从 IPSW 运行；可跳过 Setup 和 Hello，进入 SpringBoard、锁屏、主屏幕和 Settings |
 | 触控 | SpringBoard 和 backboardd 接受触控事件 |
-| 桌面渲染 | CPU 渲染；图标缺失 |
+| 桌面渲染 | CPU 渲染 |
 | GPU | 未启用 |
 
 触控驱动见[触控驱动示例](/zh/devices/sheng-touch-driver)。
