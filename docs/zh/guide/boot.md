@@ -69,7 +69,7 @@ fastboot boot out/<board>/boot/boot.img
 
 userdata 镜像较大。用 `unixnu build userdata` 构建，并按设备仓库报告中的命令刷写。
 
-Data 种子提供可写 Data 卷。`--skip-setup` 在种子副本中把 Setup 标记为完成，跳过 Hello 页面。
+Data 种子提供可写 Data 卷。`--skip-setup` 在种子副本中把 Setup 标记为完成，跳过 Hello 页面。步骤和偏好改动见[跳过 Setup](/zh/guide/skip-setup)。
 
 ## 日志
 

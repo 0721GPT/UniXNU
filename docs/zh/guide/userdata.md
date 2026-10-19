@@ -85,7 +85,7 @@ ADT 生成器写入 `/chosen/root-matching`，包含 `IOProviderClass = IOMedia`
 ./unixnu build payload --data-ramdisk data.img
 ```
 
-`--skip-setup` 在种子副本中把 Setup 标记为完成。负载报告记录种子哈希和结果镜像哈希。
+`--skip-setup` 在种子副本中把 Setup 标记为完成。负载报告记录种子哈希和结果镜像哈希。偏好改动见[跳过 Setup](/zh/guide/skip-setup)。
 
 ## 下一步
 

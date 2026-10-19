@@ -69,7 +69,7 @@ fastboot boot out/<board>/boot/boot.img
 
 The userdata image is large. Build it with `unixnu build userdata` and flash it from the device repository report.
 
-The Data seed supplies the writable Data volume. The `--skip-setup` option marks Setup as done in a copy of the seed, so the Hello pages do not run.
+The Data seed supplies the writable Data volume. The `--skip-setup` option marks Setup as done in a copy of the seed, so the Hello pages do not run. The procedure and the preference changes are in [Skip Setup](/guide/skip-setup).
 
 ## Logs
 

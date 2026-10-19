@@ -85,7 +85,7 @@ The writable Data volume comes from the Data ramdisk seed in the payload. The se
 ./unixnu build payload --data-ramdisk data.img
 ```
 
-`--skip-setup` marks Setup as done in a copy of the seed. The payload report records the seed hash and the resulting image hash.
+`--skip-setup` marks Setup as done in a copy of the seed. The payload report records the seed hash and the resulting image hash. See [Skip Setup](/guide/skip-setup) for the preference changes.
 
 ## Next steps
 
