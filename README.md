@@ -17,7 +17,8 @@ An independent project to run Darwin/XNU userland on non-Apple ARM64 hardware th
 
 Work in progress. The `unixnu` driver builds the kernel, the UniXNU package, the device firmware and the
 boot image (developed on macOS, other hosts untested), see [docs/building.md](docs/building.md). The boot payload (kernel, device tree and
-config) is built by the same driver. Packaging of the userdata payload is under development.
+config) and the userdata image for the device are built by the same driver. The target IPSW can be a local file or
+a URL.
 
 Device adaptations are separate projects:
 

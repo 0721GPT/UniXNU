@@ -24,7 +24,8 @@ You also provide inputs that are never part of a repository:
 | Input | Used by | Option |
 | --- | --- | --- |
 | A Mu-Silicium checkout for the device (for sheng: uefi-sheng) | firmware, bootimg | `--uefi DIR` or `UNIXNU_UEFI` |
-| The original decompressed kernelcache of the target OS | kernel (prelink) | `--kernelcache FILE` or `UNIXNU_KERNELCACHE` |
+| The target IPSW, a local file or an https URL | kernel (prelink), userdata | `--ipsw PATH_OR_URL` or `UNIXNU_IPSW`; defaults to the url of `board.toml` |
+| The decompressed kernelcache (optional, taken from the IPSW when not given) | kernel (prelink) | `--kernelcache FILE` or `UNIXNU_KERNELCACHE` |
 | A compiled device tree | bootimg | `--dtb FILE` or `UNIXNU_DTB` |
 | A trust cache bundle (optional) | payload | `--trust-cache FILE` |
 | A Data ramdisk seed (optional) | payload | `--data-ramdisk FILE` |
@@ -66,7 +67,8 @@ cd UniXNU
 
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng      # the device is remembered afterwards
 ./unixnu fetch                                             # shallow, sparse clones, writes unixnu.lock
-./unixnu build kernel --kernelcache /path/to/kernelcache.decompressed
+./unixnu ipsw fetch                                        # kernelcache, device tree and trust caches from the IPSW
+./unixnu build kernel
 ./unixnu build package
 ./unixnu build firmware --uefi ../uefi-sheng
 ./unixnu bootimg --uefi ../uefi-sheng --dtb /path/to/sheng.dtb
@@ -82,7 +84,9 @@ the subcommand.
 | `defconfig [NAME]` | Lists `configs/*_defconfig` of the device repository, or selects one into `out/<board>/.config`. |
 | `fetch [NAME...] [--update]` | Fetches git sources and records the commits in `unixnu.lock`. `--update` ignores the lock. |
 | `tree` | Assembles `out/<board>/tree`, the layout the build scripts expect. |
+| `ipsw info\|fetch [COMPONENT...]` | Lists the components of the target IPSW, or extracts them into `out/ipsw/<build>/`. |
 | `build [kernel] [package] [firmware] [payload] [prelink]` | Builds the steps (default: all four). `prelink` repeats only the prelink. |
+| `build userdata [--dry-run]` | Builds the raw image for the userdata partition (large, only when named). |
 | `bootimg` | Packs BootShim, the firmware volume and the device tree into an Android boot image. |
 | `status` | Shows the device, the configuration, and where every module comes from. |
 | `clean` | Removes the build output of the board and keeps fetched sources. |
@@ -94,9 +98,15 @@ Environment: `UNIXNU_DEVICE`, `UNIXNU_OUT`, `UNIXNU_UEFI`, `UNIXNU_EDK2`, `UNIXN
 
 ## Steps
 
+**ipsw** is not a step but the source of the original OS files. `--ipsw` takes a local file or an https URL.
+A remote IPSW is never downloaded as a whole: the zip directory and each needed member are read with HTTP range
+requests. Members are cached in `out/ipsw/<build>/` and checked against the sha256 pins of `board.toml [ipsw.sha256]`.
+The image must match `[ipsw]` (product, version, build, device class, chip and board id).
+
 **kernel** applies `patches/xnu` and the prelink patches to Apple's xnu-10063.141.1, builds the kernel with
 the switches of the defconfig, then prelinks it against the original kernelcache with
-`kits/NativePrelink`. The result is `out/<board>/kernel/kernel.macho`. If the board lists a
+`kits/NativePrelink`. The kernelcache is taken from the IPSW (the LZFSE payload of its IM4P, arm64 slice, checked against
+`kernelcache_sha256`) unless `--kernelcache` gives one; decoding it uses macOS `compression_tool`. The result is `out/<board>/kernel/kernel.macho`. If the board lists a
 `kernelcache_sha256`, any other kernelcache is refused. The XNU sources, libplatform, libdispatch and
 AvailabilityVersions are fetched on demand.
 
@@ -114,7 +124,13 @@ with a `payload.json` report. The volume is written with mtools without mounting
 random seed, so the payload differs between runs. The loader (DarwinBoot) is part of the firmware volume, and the
 IPSW is not read by this step: its inputs are the kernel, which comes from the original kernelcache, and the
 files you provide. `--skip-setup` marks Setup as done in a copy of the Data seed given with `--data-ramdisk`, so the Hello pages are skipped.
-The userdata payload (the Data seed itself) is not built here; its packaging is under development.
+The Data seed itself is an input.
+
+**userdata** builds the raw image for the `userdata` partition: the unchanged OS and SystemOS disk images of the
+IPSW, byte for byte, behind a manifest (`SHNGROOT`). The disk images are extracted from the IPSW (about 8 GiB) and
+attached read-only with `hdiutil`. The result is `out/<board>/userdata/userdata-root.img` with a report. Nothing is
+flashed: the report prints the `fastboot flash userdata` command for you to run. `--dry-run` only checks the IPSW and
+the sizes.
 
 **bootimg** compiles the BootShim, appends the firmware volume, compresses it with gzip, appends the device
 tree (after adding the board's `dtb_node` entries), and runs `mkbootimg.py` with the parameters of the
@@ -147,6 +163,9 @@ a build that uses them is not reproducible.
 | Section | Keys |
 | --- | --- |
 | `[board]` | `name`, `soc`, `description`, `kit` (folder name of the device package under `kits/`), `example` |
+| `[ipsw]` | `url` (default remote source), `product`, `version`, `build`, `device_class`, `chip_id`, `board_id`, `fetch` (components `ipsw fetch` extracts by default) |
+| `[ipsw.sha256]` | sha256 pins by member file name |
+| `[userdata]` | `first_lba`, `last_lba`, `lba_bytes` (the GPT entry of the partition) and `windows` (name and IPSW component of each disk image) |
 | `[kernel]` | `defconfig` |
 | `[kernel.prelink]` | `tool`, `kernel`, `slide`, `roots` (list), `early_security_init`, `kernelcache`, `kernelcache_sha256`, `extra_args` |
 | `[firmware]` | `config` (name of `Resources/Configs/<name>.toml`), `dsc`, `fd` (path of the result, `{target}` is replaced), `packages` (`{uefi}`, `{edk2}`, `{tree}` are replaced), `preflight`, `patches` |
@@ -199,9 +218,11 @@ source, payload with a prelinked kernel, trust cache and Data seed supplied as i
 - The kernel step needs prebuilt static libraries (corecrypto, ArmCpu, NativeUfs, NativeAES, NativeAdreno and
   others) that separate scripts produce. Running them from the driver is planned. Meanwhile pass an existing
   prelinked kernel with `--kernel`.
+- The kernel and userdata steps read the IPSW. Only the iPad7,1 iPadOS 17.7.11 (21H461) image is described by a board.
 - The firmware step needs the vendor binaries of the board (`Binaries/<board>`), and the board preflight script
   still expects the old layout, so use `--skip-preflight`.
 - The firmware volume differs between two builds from the same sources. The boot image is deterministic for the
   same firmware volume, device tree and ramdisk.
 - Many scripts in `scripts/` still use the old layout (`build/`, `.cache/`, `refer/`) and are being generalized.
-- The userdata payload (the Data seed) is an input. Its packaging is under development.
+- The Data seed of the boot payload is an input.
+- The userdata image reproduced a previously built image byte for byte. It has not been flashed from this driver.
