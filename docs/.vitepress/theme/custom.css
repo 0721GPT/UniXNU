@@ -60,6 +60,11 @@
   width: 100%;
 }
 
+.vp-doc table td,
+.vp-doc table th {
+  vertical-align: top;
+}
+
 .vp-doc code {
   white-space: pre-wrap;
 }
