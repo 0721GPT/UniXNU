@@ -13,6 +13,8 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 EDK2=${CRABAPPLE_EDK2:-$ROOT/Mu_Basecore}
+# Build products go to UNIXNU_BUILD_DIR when the unixnu driver sets it, otherwise next to the sources.
+BUILD_DIR=${UNIXNU_BUILD_DIR:-$ROOT}
 ARCH=AARCH64
 TARGET=DEBUG
 TOOLCHAIN=CLANGPDB
@@ -49,10 +51,10 @@ if [ ! -x "$EDK2/BaseTools/Source/C/bin/GenFw" ]; then
   make -C "$EDK2/BaseTools/Source/C" -j"$JOBS" >/dev/null
 fi
 
-export WORKSPACE=$ROOT
+export WORKSPACE=$BUILD_DIR
 export PACKAGES_PATH=$ROOT:$EDK2
 export EDK_TOOLS_PATH=$EDK2/BaseTools
-export CONF_PATH=$ROOT/Build/Conf
+export CONF_PATH=$BUILD_DIR/Build/Conf
 export PYTHON_COMMAND=${PYTHON_COMMAND:-python3}
 export PATH=$EDK_TOOLS_PATH/BinWrappers/PosixLike:$EDK_TOOLS_PATH/Source/C/bin:$PATH
 
@@ -83,9 +85,9 @@ echo "== edk2: $EDK2"
 echo "== build $ARCH $TARGET $TOOLCHAIN"
 build -p CrabApplePkg/CrabApplePkg.dsc -a "$ARCH" -b "$TARGET" -t "$TOOLCHAIN" -n "$JOBS"
 
-OUT=$ROOT/Build/Out/$ARCH-$TARGET
+OUT=$BUILD_DIR/Build/Out/$ARCH-$TARGET
 mkdir -p "$OUT"
-BIN=$ROOT/Build/CrabApple/${TARGET}_$TOOLCHAIN/$ARCH
+BIN=$BUILD_DIR/Build/CrabApple/${TARGET}_$TOOLCHAIN/$ARCH
 for m in CrabApple CrabAppleDxe HelloPayload SampleDriver XnuTest; do
   cp "$BIN/$m.efi" "$OUT/"
 done
