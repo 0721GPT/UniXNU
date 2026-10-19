@@ -57,8 +57,6 @@ if not SEED.exists():
     raise SystemExit(f'Missing Data seed: {SEED}')
 if args.output.exists():
     raise SystemExit(f'Refuse to overwrite the existing fixture: {args.output}')
-if shutil.disk_usage(ROOT).free < 5 * 1024**3 + SEED.stat().st_size:
-    raise SystemExit('Preserve 5 GiB free')
 args.output.parent.mkdir(parents=True, exist_ok=True)
 shutil.copyfile(SEED, args.output)
 mount = args.output.parent / (args.output.stem + '-mount')

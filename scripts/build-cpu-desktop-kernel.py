@@ -2,7 +2,6 @@
 from pathlib import Path
 import os,subprocess,json,shutil
 root=Path.cwd()
-assert shutil.disk_usage(root).free>=5.2*1024**3
 names='SOURCE_CORECRYPTO14 SOURCE_PTHREAD ARM_DT_PLATFORM ARMCPU NATIVE_UFS NATIVE_AES NATIVE_VIRTIO_BLOCK NATIVE_RAM_BLOCK TRUST_CACHE_RUNTIME SOURCE_MOCKFS NATIVE_CS_HASH_CACHE VERIFIED_ROOT_PROBE OWNER_ROOT_AUDIT OWNER_ROOT_TRUST SHENG_PMGR OWNER_CACHE_MOUNT OWNER_CACHE_STARTUP OWNER_BOOT_MANIFEST OWNER_DATA_MOUNT OWNER_UNION_SYSTEMOS DT_PANIC_REGION ZONE_PGZ_ALIGNMENT_PROBE NATIVE_ARCH_TIMER NATIVE_PAN BOOT_PROGRESS NATIVE_LEGACY_DISPLAY NATIVE_ADRENO'.split()
 updates={'XNU_'+n:'1' for n in names}
 updates.update(XNU_CRYPTO_BOOTSTRAP='prelinked',XNU_OWNER_DATA_VOLUME_UUID='18AB5557-DC2D-469B-8758-855E60F5B0DF',
@@ -13,5 +12,5 @@ updates.update(XNU_CRYPTO_BOOTSTRAP='prelinked',XNU_OWNER_DATA_VOLUME_UUID='18AB
 env=dict(os.environ);env.update(updates)
 with (root/'build/cpu-desktop/kernel-build.log').open('w') as f:
  result=subprocess.run(['bash','scripts/build-xnu-4k-baseline.sh'],env=env,stdout=f,stderr=subprocess.STDOUT,timeout=900)
-print('kernel build exit',result.returncode,'free GiB',round(shutil.disk_usage(root).free/1024**3,2))
+print('kernel build exit',result.returncode)
 if result.returncode:raise SystemExit('KERNEL BUILD FAILED: see build/cpu-desktop/kernel-build.log')

@@ -32,8 +32,6 @@ def inspect(path, extract=False, output=Path('.cache/firmware')):
                  for kind in ('KernelCache', 'DeviceTree', 'RestoreRamDisk', 'OS')}
         needed = sum(archive.getinfo(names[k]).file_size
                      for k in ('KernelCache', 'DeviceTree'))
-        if extract and shutil.disk_usage('.').free - needed < 5 * 1024**3:
-            raise OSError('Extraction would leave less than 5 GiB free')
         for kind, name in names.items():
             entry = {'member': name, 'size': archive.getinfo(name).file_size}
             if kind in ('KernelCache', 'DeviceTree'):

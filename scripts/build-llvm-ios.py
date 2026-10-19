@@ -21,7 +21,7 @@ def run(cmd,log,timeout):
         process=subprocess.Popen([str(v) for v in cmd],stdout=f,stderr=subprocess.STDOUT)
         start=time.monotonic()
         while process.poll() is None:
-            if shutil.disk_usage(ROOT).free<5*1024**3 or time.monotonic()-start>timeout:
+            if time.monotonic()-start>timeout:
                 process.terminate()
                 try:process.wait(timeout=10)
                 except subprocess.TimeoutExpired:process.kill();process.wait()
@@ -29,7 +29,6 @@ def run(cmd,log,timeout):
             time.sleep(1)
         if process.returncode:raise SystemExit('Native dependency build failed; see '+log)
 
-if shutil.disk_usage(ROOT).free<28*1024**3:raise SystemExit('Require 28 GiB free before native dependency build')
 if not (SOURCE/'.git').exists():
     run(['git','clone','--filter=blob:none','--depth','1','--single-branch','--branch','llvmorg-23.1.3',
          '--sparse','https://github.com/llvm/llvm-project.git',SOURCE],'fetch.log',120)

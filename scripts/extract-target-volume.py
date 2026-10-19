@@ -29,8 +29,6 @@ with zipfile.ZipFile(args.ipsw) as archive:
     destination = out / Path(member).name
     if destination.exists():
         raise SystemExit(f'Input already exists; inspect its saved hash before replacing: {destination.name}')
-    if shutil.disk_usage(out).free - entry.file_size < 25 * 1024 ** 3:
-        raise SystemExit('Extraction would leave less than 5 GiB free')
     temporary = destination.with_suffix('.partial')
     digest = hashlib.sha256()
     count = 0

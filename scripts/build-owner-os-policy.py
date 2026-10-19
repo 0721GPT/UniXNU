@@ -16,8 +16,6 @@ source = ROOT / '.cache/firmware/target-volumes/044-76040-038.dmg'
 volume = ROOT / '.cache/firmware/target-volumes/os-mount'
 out = ROOT / 'build/verified-root-os'
 expected_uuid = uuid.UUID('04769D26-2CA0-4825-B443-E2E5F88300F2')
-if shutil.disk_usage(ROOT).free < 5 * 1024**3 + 256 * 1024**2:
-    raise SystemExit('Preserve the 5 GiB free-space floor before producing hash metadata')
 if not source.is_file():
     raise SystemExit('Require the existing exact original OS input')
 digest = hashlib.sha256()

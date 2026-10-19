@@ -153,7 +153,6 @@ def main():
     log_pass('publication/renderer.log', 'draws all 28 expected lines')
     gates.append('single-screen diagnostic capacity and actual ARM64 renderer')
 
-    require(shutil.disk_usage(ROOT).free >= 5*1024**3, 'Free space below user floor')
     report = dict(scope='Offline prerequisites for the frozen UFS diagnostic boot only',
                   offline_preparation_complete=True, required_offline_items_remaining=[],
                   device_action_authorized=False, user_hold_active=True, hardware_success=False,

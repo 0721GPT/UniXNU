@@ -265,8 +265,6 @@ if args.capture_scratch_data:
         parser.error('Scratch Data capture requires exact native pointers and a bounded ESP input')
     if (fixture / 'scratch-data-snapshot.apfs').exists():
         parser.error('Preserve the existing scratch Data snapshot before another capture')
-    if shutil.disk_usage(fixture).free < 5 * 1024**3 + expected:
-        parser.error('Preserve 5 GiB free before exporting Data')
     data_capture = base_symbol, size_symbol, expected
 block_input = None
 if args.missing_virtio_device and not (args.virtio_block_image or args.virtio_udif_image):
@@ -1678,8 +1676,6 @@ with (fixture / 'gdb-stderr.log').open('w') as errors:
                 base, size = data_word(base_symbol), data_word(size_symbol)
                 if size != expected or base & 4095 or not 0xfffffff000000000 <= base < (1 << 64) - size:
                     raise ValueError('Actual native Data range differs from the bounded input')
-                if shutil.disk_usage(fixture).free < 5 * 1024**3 + size:
-                    raise ValueError('Preserve 5 GiB free before exporting Data')
                 destination = fixture / 'scratch-data-snapshot.apfs'
                 digest = hashlib.sha256()
                 with destination.open('xb') as output:

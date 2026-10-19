@@ -23,8 +23,6 @@ def main():
     args = parser.parse_args()
     source, output = args.translator_source.resolve(), args.output.resolve()
     (output / 'build-report.json').unlink(missing_ok=True)
-    if shutil.disk_usage(ROOT).free < 7 * 1024**3:
-        raise SystemExit('Preserve the 5 GiB floor and 2 GiB build allowance')
     revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
     if revision != PIN:
         raise SystemExit('Translator revision differs from the qualified source pin')

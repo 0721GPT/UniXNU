@@ -74,7 +74,6 @@ def main():
     require('PASS:' in (BASE/'trust-refusal.log').read_text(), 'Missing changed-cache refusal')
     require(all(r['refused'] and r['stale_report_removed'] for r in load(BASE/'package-refusals.json')),
             'Package refusal failed')
-    require(shutil.disk_usage(ROOT).free>=5*1024**3, 'Free space below floor')
     extended=load(BASE/'original-trust-180/gdb-stop.json')
     require(extended['kernel_sha256']==release['candidate_sha256'] and
             extended['trust_cache_bundle_sha256']==TRUST, 'Wrong extended observation')

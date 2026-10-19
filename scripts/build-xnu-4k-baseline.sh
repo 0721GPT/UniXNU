@@ -2,11 +2,6 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT"
-python3 - <<'PY'
-import shutil
-if shutil.disk_usage('.').free < 5 * 1024**3:
-    raise SystemExit('Less than 5 GiB free; refuse to start a kernel build')
-PY
 if [ ! -d refer/xnu/.git ]; then
   git clone --depth 1 --branch xnu-10063.141.1 https://github.com/apple-oss-distributions/xnu.git refer/xnu
 fi

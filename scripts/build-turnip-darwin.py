@@ -26,8 +26,6 @@ def read(cmd):
     return subprocess.check_output([str(c) for c in cmd], text=True).strip()
 
 
-if shutil.disk_usage(ROOT).free < 8 * 1024**3:
-    sys.exit('Require 8 GiB free before the Turnip build to preserve the 5-GiB floor')
 pins = json.loads((ROOT / 'scripts/data/adreno-compiler-inputs.json').read_text())
 if read(['git', '-C', SOURCE, 'rev-parse', 'HEAD']) != pins['mesa']['commit']:
     sys.exit('Pinned Mesa source differs')

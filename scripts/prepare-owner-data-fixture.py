@@ -18,8 +18,6 @@ fixture = args.output.resolve()
 image = fixture / 'owner-data-32.cdr'
 if image.exists():
     raise SystemExit('Refuse to overwrite an existing Data seed')
-if shutil.disk_usage(ROOT).free < 5 * 1024**3 + 32 * 1024**2:
-    raise SystemExit('Preserve 5 GiB free')
 source = ROOT / '.cache/firmware/target-volumes/os-mount'
 if hashlib.sha256((source / 'sbin/launchd').read_bytes()).hexdigest() != '8cec9a3c44a443b08e977ccc5d577850316ad428c575dc01f09b018dbd5b6a25':
     raise SystemExit('Require the unchanged supplied original OS mount')

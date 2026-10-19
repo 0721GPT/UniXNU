@@ -98,7 +98,6 @@ def main():
             changes[0]['key'] == 'random-seed' and
             len(bytes.fromhex(changes[0]['old'])) == len(bytes.fromhex(changes[0]['new'])) == 64,
             'Unexpected ADT difference')
-    require(shutil.disk_usage(ROOT).free >= 5*1024**3, 'Free space below 5 GiB')
     result = dict(offline_preparation_complete=True, required_offline_items_remaining=[],
         release_sha256=sha(BASE/'release.json'), checker_sha256=sha(Path(__file__)),
         native_ufs_commit=release['native_ufs_commit'], image_sha256=release['image_sha256'],

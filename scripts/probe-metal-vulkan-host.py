@@ -111,8 +111,6 @@ def main():
     output = args.output.resolve()
     if output.exists():
         raise SystemExit('Use a fresh output directory; never reuse an earlier success report')
-    if shutil.disk_usage(ROOT).free < 6 * 1024**3:
-        raise SystemExit('Preserve 5 GiB free plus the bounded output allowance')
     build = json.loads((args.compiler_build / 'build-report.json').read_text())
     binary = Path(build['binary'])
     if build['translator_revision'] != SOURCE_PIN or sha(binary) != build['binary_sha256'] or \

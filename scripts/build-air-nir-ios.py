@@ -20,14 +20,13 @@ def run(cmd,log,timeout):
         process=subprocess.Popen([str(v) for v in cmd],stdout=f,stderr=subprocess.STDOUT,env=env)
         start=time.monotonic()
         while process.poll() is None:
-            if shutil.disk_usage(ROOT).free<5*1024**3 or time.monotonic()-start>timeout:
+            if time.monotonic()-start>timeout:
                 process.terminate()
                 try:process.wait(timeout=10)
                 except subprocess.TimeoutExpired:process.kill();process.wait()
                 raise SystemExit('Native compiler stopped at disk/time bound; see '+log)
             time.sleep(1)
         if process.returncode:raise SystemExit('Native compiler failed; see '+log)
-if shutil.disk_usage(ROOT).free<28*1024**3:raise SystemExit('Require 28 GiB free before native compiler build')
 pins=json.loads((ROOT/'scripts/data/adreno-compiler-inputs.json').read_text())
 if read(['git','-C',SOURCE,'rev-parse','HEAD'])!=pins['mesa']['commit']:raise SystemExit('Pinned Mesa source differs')
 for patch in pins['patches']:

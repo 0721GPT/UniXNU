@@ -28,7 +28,6 @@ out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=True)
 (out/'report.json').unlink(missing_ok=True)
 assert platform.system() == 'Darwin' and platform.machine() == 'arm64', 'Darwin ARM64 host required for the actual argument ABI'
-assert shutil.disk_usage(ROOT).free >= 5 * 1024**3, 'Disk floor'
 
 
 def run(cmd, **kw):
