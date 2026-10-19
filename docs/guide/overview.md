@@ -1,6 +1,6 @@
 # Overview
 
-UniXNU starts a Darwin-based operating system on an ARM64 device from a UEFI environment. The stack has six layers. Each layer has a repository, a build output and a handoff contract.
+UniXNU starts iOS or macOS on an ARM64 device from a UEFI environment. iOS and macOS support is not yet verified. The stack has six layers. Each layer has a repository, a build output and a handoff contract.
 
 ## Layer model
 

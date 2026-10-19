@@ -14,7 +14,7 @@
 
 # UniXNU
 
-An independent project to run Darwin and XNU userland on non-Apple ARM64 hardware through UEFI.
+An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI. iOS and macOS support is not yet verified.
 
 ## Documentation
 

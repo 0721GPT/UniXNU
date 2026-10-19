@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   lang: 'en-US',
   title: 'UniXNU',
-  description: 'Run Darwin and XNU userland on non-Apple ARM64 hardware through UEFI.',
+  description: 'Run iOS and macOS on non-Apple ARM64 hardware through UEFI. Support is not yet verified.',
   cleanUrls: true,
   lastUpdated: true,
   locales: {
@@ -22,7 +22,7 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#0b0c0f' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'UniXNU' }],
-    ['meta', { property: 'og:description', content: 'Run Darwin and XNU userland on non-Apple ARM64 hardware through UEFI.' }],
+    ['meta', { property: 'og:description', content: 'Run iOS and macOS on non-Apple ARM64 hardware through UEFI. Support is not yet verified.' }],
   ],
   themeConfig: {
     logo: {

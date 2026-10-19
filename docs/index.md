@@ -1,8 +1,8 @@
 ---
 layout: home
 hero:
-  text: Darwin and XNU userland on non-Apple ARM64 hardware
-  tagline: A UEFI boot manager, a device tree platform, a patched XNU kernel and a complete boot image.
+  text: Run iOS and macOS on non-Apple ARM64 hardware
+  tagline: A UEFI boot manager, a device tree platform, a patched XNU kernel and a complete boot image. iOS and macOS support is not yet verified.
   image:
     src: /logo-light.svg
     alt: UniXNU logo
