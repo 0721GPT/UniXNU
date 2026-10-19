@@ -261,19 +261,21 @@ fastboot boot out/sheng/boot/boot.img
 
 | 功能 | 状态 | 说明 |
 | --- | --- | --- |
-| 触控 | <span class="status-ok">可用</span> | Novatek NT36532E |
-| 显示 | <span class="status-no">不可用</span> | |
-| Wi-Fi | <span class="status-no">不可用</span> | |
-| 蓝牙 | <span class="status-no">不可用</span> | |
-| 相机 | <span class="status-no">不可用</span> | |
-| GPU | <span class="status-no">不可用</span> | |
-| USB | <span class="status-no">不可用</span> | |
-| 音频 | <span class="status-no">不可用</span> | |
-| 传感器 | <span class="status-no">不可用</span> | |
-| 电池与充电 | <span class="status-no">不可用</span> | |
-| 休眠与唤醒 | <span class="status-no">不可用</span> | |
+| 触控 | ✅ | Novatek NT36532E |
+| 显示 | ❌ | |
+| Wi-Fi | ❌ | |
+| 蓝牙 | ❌ | |
+| 相机 | ❌ | |
+| GPU | ❌ | |
+| USB | ❌ | |
+| 音频 | ❌ | |
+| 传感器 | ❌ | |
+| 充电 | ✅ | |
+| 电池驱动 | ❌ | |
+| MiPPS | ❌ | |
+| 休眠与唤醒 | ❌ | |
 
-可用表示操作系统中可以使用。不可用表示尚无操作系统驱动。
+✅ 可用，❌ 不可用。
 
 ## 观察状态
 
