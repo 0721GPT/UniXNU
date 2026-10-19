@@ -15,10 +15,9 @@
 
 An independent project to run Darwin/XNU userland on non-Apple ARM64 hardware through UEFI.
 
-Work in progress, released in a hurry. There is no documented build yet: the scripts are not generic,
-and you will have to work out how to build it yourself. The development host is macOS.
-
-Building: [docs/building.md](docs/building.md).
+Work in progress. The `unixnu` driver builds the kernel, the UniXNU package, the device firmware and the
+boot image (developed on macOS, other hosts untested), see [docs/building.md](docs/building.md). The boot payload (kernel, device tree and
+config) is built by the same driver. Packaging of the userdata payload is under development.
 
 Device adaptations are separate projects:
 
