@@ -14,19 +14,6 @@ index 60e7e8f..5831a6c 100644
  #ifdef __cplusplus
  extern "C" {
  #endif
-diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
-index 8bba078..7bfca65 100644
---- a/bsd/kern/kern_exec.c
-+++ b/bsd/kern/kern_exec.c
-@@ -183,7 +183,7 @@
- 
- #include "kern_exec_internal.h"
- 
--#include <CodeSignature/Entitlements.h>
-+#include <CoreEntitlements/CoreEntitlements.h>
- 
- #include <mach/exclaves.h>
- 
 diff --git a/bsd/net/necp_client.c b/bsd/net/necp_client.c
 index 74562d8..c5d1f29 100644
 --- a/bsd/net/necp_client.c
