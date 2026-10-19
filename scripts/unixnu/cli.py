@@ -4,11 +4,12 @@ import platform
 import shutil
 import sys
 
-from . import bootimg, feeds, firmware, kernel, package, payload, tree
+from . import bootimg, feeds, firmware, ipsw, kernel, package, payload, tree, userdata
 from .config import LOCAL_KINDS, Context, parse_config
 from .util import Error, expand, git, log
 
 STEPS = ('kernel', 'package', 'firmware', 'payload')
+OPTIONAL_STEPS = ('userdata',)   # large; built only when named
 
 
 def common():
@@ -30,6 +31,8 @@ def common():
     p.add_argument('--skip-setup', action='store_true', help='mark Setup as done in the Data seed, so the Hello pages are skipped (needs --data-ramdisk; optional)')
     p.add_argument('--data-ramdisk', metavar='FILE', help='Data ramdisk seed for the payload (an input; not built here)')
     p.add_argument('--unique-chip-id', metavar='HEX', help='platform seed for the device tree; or UNIXNU_UNIQUE_CHIP_ID')
+    p.add_argument('--ipsw', metavar='PATH_OR_URL', help='the target IPSW: a local file or an https URL (default: url of board.toml [ipsw]); or UNIXNU_IPSW')
+    p.add_argument('--dry-run', action='store_true', help='userdata: check sizes and pins, write nothing')
     p.add_argument('--target', default='DEBUG', choices=('DEBUG', 'RELEASE'), help='EDK II build target')
     return p
 
@@ -45,12 +48,15 @@ def parser():
     f.add_argument('--update', action='store_true', help='ignore the lock and move to the newest ref')
     sub.add_parser('tree', parents=[c], help='assemble the build tree')
     b = sub.add_parser('build', parents=[c], help='build kernel, package and firmware')
-    b.add_argument('steps', nargs='*', choices=STEPS + ('all', 'prelink'), default=['all'])
+    b.add_argument('steps', nargs='*', choices=STEPS + OPTIONAL_STEPS + ('all', 'prelink'), default=['all'])
     i = sub.add_parser('bootimg', parents=[c], help='pack the boot image from the firmware volume and a device tree')
     i.add_argument('--fd', metavar='FILE', help='firmware volume (default: the build output under --uefi)')
     i.add_argument('--dtb', metavar='FILE', help='compiled device tree; or UNIXNU_DTB')
     i.add_argument('--ramdisk', metavar='FILE', help='ramdisk image, or none (default: the payload step output when present, else empty)')
     i.add_argument('-o', '--output', metavar='FILE', help='output (default: out/<device>/boot/boot.img)')
+    w = sub.add_parser('ipsw', parents=[c], help='show or extract the components of the target IPSW')
+    w.add_argument('action', choices=('info', 'fetch'))
+    w.add_argument('components', nargs='*', help='components to extract (default: the small ones the board lists)')
     sub.add_parser('status', parents=[c], help='show the device, configuration and where each module comes from')
     sub.add_parser('clean', parents=[c], help='remove the build output of the device (keeps fetched sources)')
     return top
@@ -105,7 +111,13 @@ def cmd_build(ctx):
     steps = ctx.args.steps
     if 'all' in steps:
         steps = list(STEPS)
-    ctx.need_config()
+    if 'userdata' in steps:
+        userdata.build(ctx, ctx.args.dry_run)
+        steps = [step for step in steps if step != 'userdata']
+        if not steps:
+            return
+    if 'kernel' in steps:
+        ctx.need_config()
     if 'firmware' in steps:
         need_uefi(ctx)   # fail before fetching anything
     modules = prepare(ctx, steps + (['kernel'] if 'prelink' in steps else []))
@@ -135,6 +147,24 @@ def cmd_bootimg(ctx):
         ramdisk = payload.paths(ctx)[1]
         log(f'ramdisk: {ramdisk} (use --ramdisk none for an empty one)')
     bootimg.build(ctx, uefi, fd, dtb, ramdisk, expand(ctx.args.output) if ctx.args.output else None)
+
+
+def cmd_ipsw(ctx):
+    source = ipsw.Ipsw(ctx)
+    components = ctx.args.components or ctx.board['ipsw'].get('fetch', [])
+    if ctx.args.action == 'info':
+        print(f'{source.manifest["ProductVersion"]} ({source.manifest["ProductBuildVersion"]}) '
+              f'{source.config["device_class"]}  {"remote" if source.remote else "local"}')
+        for name in sorted(source.identity['Manifest']):
+            if source.identity['Manifest'][name].get('Info', {}).get('Path'):
+                path, size, _ = source.info(name)
+                print(f'{size:>12}  {name:30} {path}')
+        return
+    for component in components:
+        if component == 'KernelCache':
+            print(ipsw.kernelcache(ctx, source))
+        else:
+            print(source.extract(component))
 
 
 def cmd_status(ctx):
@@ -175,7 +205,7 @@ def main(argv=None):
     try:
         ctx = Context(args)
         {'defconfig': cmd_defconfig, 'fetch': cmd_fetch, 'tree': lambda c: prepare(c), 'build': cmd_build,
-         'bootimg': cmd_bootimg, 'status': cmd_status, 'clean': cmd_clean}[args.command](ctx)
+         'bootimg': cmd_bootimg, 'ipsw': cmd_ipsw, 'status': cmd_status, 'clean': cmd_clean}[args.command](ctx)
     except Error as error:
         sys.exit(f'unixnu: {error}')
     except KeyboardInterrupt:
