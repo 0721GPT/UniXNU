@@ -21,8 +21,8 @@ hero:
       link: https://github.com/UniXNU/UniXNU
 ---
 
-::: warning Documentation status
-The documentation is under active maintenance. Some pages may be incomplete or contain inaccurate details. Check the source repository and the build reports when a detail matters.
+::: info Documentation status
+The documentation is revised with the source. For a specific detail, check the linked build report or repository.
 :::
 
 ## What UniXNU provides
