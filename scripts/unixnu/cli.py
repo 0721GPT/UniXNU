@@ -4,11 +4,11 @@ import platform
 import shutil
 import sys
 
-from . import bootimg, feeds, firmware, kernel, package, tree
+from . import bootimg, feeds, firmware, kernel, package, payload, tree
 from .config import LOCAL_KINDS, Context, parse_config
 from .util import Error, expand, git, log
 
-STEPS = ('kernel', 'package', 'firmware')
+STEPS = ('kernel', 'package', 'firmware', 'payload')
 
 
 def common():
@@ -24,6 +24,12 @@ def common():
     p.add_argument('--edk2', metavar='DIR', help='Mu_Basecore checkout; or UNIXNU_EDK2')
     p.add_argument('--kernelcache', metavar='FILE', help='original decompressed kernelcache; or UNIXNU_KERNELCACHE')
     p.add_argument('--skip-preflight', action='store_true', help='skip the board preflight scripts of the firmware step')
+    p.add_argument('--kernel', metavar='FILE', help='prelinked kernel Mach-O for the payload (default: the kernel step output)')
+    p.add_argument('--kernel-arg', action='append', metavar='NAME[=VALUE]', help='extra kernel boot argument (repeatable)')
+    p.add_argument('--trust-cache', metavar='FILE', help='trust cache bundle for the payload')
+    p.add_argument('--skip-setup', action='store_true', help='mark Setup as done in the Data seed, so the Hello pages are skipped (needs --data-ramdisk; optional)')
+    p.add_argument('--data-ramdisk', metavar='FILE', help='Data ramdisk seed for the payload (an input; not built here)')
+    p.add_argument('--unique-chip-id', metavar='HEX', help='platform seed for the device tree; or UNIXNU_UNIQUE_CHIP_ID')
     p.add_argument('--target', default='DEBUG', choices=('DEBUG', 'RELEASE'), help='EDK II build target')
     return p
 
@@ -43,7 +49,7 @@ def parser():
     i = sub.add_parser('bootimg', parents=[c], help='pack the boot image from the firmware volume and a device tree')
     i.add_argument('--fd', metavar='FILE', help='firmware volume (default: the build output under --uefi)')
     i.add_argument('--dtb', metavar='FILE', help='compiled device tree; or UNIXNU_DTB')
-    i.add_argument('--ramdisk', metavar='FILE', help='ramdisk / payload image (default: empty)')
+    i.add_argument('--ramdisk', metavar='FILE', help='ramdisk image, or none (default: the payload step output when present, else empty)')
     i.add_argument('-o', '--output', metavar='FILE', help='output (default: out/<device>/boot/boot.img)')
     sub.add_parser('status', parents=[c], help='show the device, configuration and where each module comes from')
     sub.add_parser('clean', parents=[c], help='remove the build output of the device (keeps fetched sources)')
@@ -110,6 +116,9 @@ def cmd_build(ctx):
         kernel.prelink(ctx)
     if 'package' in steps:
         package.build(ctx, modules, ctx.args.target)
+    if 'payload' in steps:
+        ctx.uefi = ctx.option('uefi', 'UNIXNU_UEFI')
+        payload.build(ctx)
     if 'firmware' in steps:
         firmware.build(ctx, modules, need_uefi(ctx), package.edk2_dir(ctx, modules), ctx.args.target)
 
@@ -119,7 +128,12 @@ def cmd_bootimg(ctx):
     uefi = need_uefi(ctx)
     fd = expand(ctx.args.fd) if ctx.args.fd else firmware.fd_path(ctx, uefi, ctx.args.target)
     dtb = ctx.option('dtb', 'UNIXNU_DTB')
-    ramdisk = expand(ctx.args.ramdisk) if ctx.args.ramdisk else None
+    ramdisk = None
+    if ctx.args.ramdisk and ctx.args.ramdisk != 'none':
+        ramdisk = expand(ctx.args.ramdisk)
+    elif not ctx.args.ramdisk and payload.paths(ctx)[1].is_file():
+        ramdisk = payload.paths(ctx)[1]
+        log(f'ramdisk: {ramdisk} (use --ramdisk none for an empty one)')
     bootimg.build(ctx, uefi, fd, dtb, ramdisk, expand(ctx.args.output) if ctx.args.output else None)
 
 
@@ -156,7 +170,7 @@ def main(argv=None):
     if sys.version_info < (3, 11):
         sys.exit('unixnu needs Python 3.11 or newer')
     if platform.system() != 'Darwin':
-        sys.exit('unixnu supports macOS hosts only')
+        print('unixnu: developed and tested on macOS only; the kernel step needs Xcode and --skip-setup needs hdiutil', file=sys.stderr)
     args = parser().parse_args(argv)
     try:
         ctx = Context(args)

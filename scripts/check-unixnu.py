@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from unixnu import cli, feeds
+from unixnu import cli, feeds, payload
 from unixnu.config import Context, parse_config
 from unixnu.util import Error
 
@@ -51,7 +51,25 @@ def main():
             expect(False, 'missing --local directory accepted')
         except Error:
             pass
-    print('PASS: unixnu defconfig parsing and module precedence')
+    expect(payload.check_args(['-v', 'a=1', 'b=x,y']) == '-v a=1 b=x,y', 'kernel arguments')
+    for bad in (['a b'], ['x' * 1100], ['a;b']):
+        try:
+            payload.check_args(bad)
+            expect(False, f'bad kernel argument accepted: {bad[0][:10]}')
+        except Error:
+            pass
+    with tempfile.TemporaryDirectory() as name:
+        root = Path(name)
+        stage = root / 'stage/EFI/CrabApple'
+        stage.mkdir(parents=True)
+        (stage / 'crabapple.toml').write_text('version = 1\n')
+        import os
+        for path in (root / 'stage', *(root / 'stage').rglob('*')):
+            os.utime(path, (payload.EPOCH, payload.EPOCH))
+        payload.write_volume(root / 'stage', root / 'a.img', 'TEST', 64)
+        payload.write_volume(root / 'stage', root / 'b.img', 'TEST', 64)
+        expect((root / 'a.img').read_bytes() == (root / 'b.img').read_bytes(), 'payload volume is reproducible')
+    print('PASS: unixnu defconfig parsing, module precedence and payload helpers')
 
 
 if __name__ == '__main__':

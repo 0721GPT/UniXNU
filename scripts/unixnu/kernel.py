@@ -39,6 +39,7 @@ def build(ctx, modules):
     log('kernel: XNU')
     for name in ('git', 'make', 'clang', 'cmake', 'ninja', 'unifdef'):
         tool(name, 'brew install ' + name)
+    tool('xcodebuild', 'the kernel step builds with the Xcode iphoneos SDK')
     script = ctx.tree / 'scripts/build-xnu-4k-baseline.sh'
     if not script.is_file():
         raise Error(f'{script} missing')

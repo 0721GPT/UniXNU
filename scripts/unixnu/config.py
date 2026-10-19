@@ -82,6 +82,7 @@ class Context:
         self.logs = self.work / 'logs'
         self.feeds_dir = self.out_root / 'feeds'
         self.config_path = self.work / '.config'
+        self.uefi = None
         self.jobs = args.jobs or int(os.environ.get('JOBS', 0)) or os.cpu_count() or 2
         self._save_state({'device': str(self.device)})
         self.config = parse_config(self.config_path.read_text()) if self.config_path.is_file() else {}
