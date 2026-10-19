@@ -1,0 +1,346 @@
+/* SPDX-License-Identifier: MIT */
+#include "ArmSmmu4KLive.h"
+#define PAGE UINT64_C(4096)
+#define PA_MASK UINT64_C(0x0000fffffffff000)
+
+static int output_width(unsigned bits)
+{return bits==32 || bits==36 || bits==40 || bits==42 || bits==44 || bits==48;}
+static ArmSmmu4KStatus layout(const ArmSmmu4KLiveArena *a,ArmSmmu4KResult *out)
+{
+    if(!a || !a->mapping || ((uintptr_t)a->mapping&4095) || a->upper_region>1 ||
+        a->config.input_bits<32 || a->config.input_bits>48 ||
+        !output_width(a->config.output_bits) || !a->config.leaf_budget ||
+        !a->capacity_pages || a->capacity_pages>SIZE_MAX/4096 ||
+        a->capacity_pages*4096>UINTPTR_MAX-(uintptr_t)a->mapping)return ArmSmmu4KArgument;
+    uint64_t limit=UINT64_C(1)<<a->config.input_bits;
+    uint64_t physical_limit=UINT64_C(1)<<a->config.output_bits;
+    if(!a->bytes || ((a->iova|a->bytes|a->config.table_physical)&4095) ||
+        (a->upper_region ? a->iova<UINT64_MAX-limit+1 : a->iova>=limit) ||
+        a->bytes>limit-(a->iova&(limit-1)) ||
+        a->config.table_physical>=physical_limit ||
+        a->capacity_pages*PAGE>physical_limit-a->config.table_physical)return ArmSmmu4KBadRange;
+    if(a->bytes/PAGE>a->config.leaf_budget)return ArmSmmu4KBudget;
+    unsigned start=4-(a->config.input_bits-12+8)/9;
+    uint64_t low=a->iova&(limit-1),high=low+a->bytes-1;
+    size_t pages=1;
+    for(unsigned level=start;level<3;++level) {
+        unsigned shift=39-9*level;
+        uint64_t extra=(high>>shift)-(low>>shift)+1;
+        if(extra>SIZE_MAX-pages)return ArmSmmu4KCapacity;
+        pages+=(size_t)extra;
+    }
+    if(pages>a->capacity_pages)return ArmSmmu4KCapacity;
+    *out=(ArmSmmu4KResult){a->config.table_physical,0xff44,pages,0,start,a->upper_region};
+    return ArmSmmu4KSuccess;
+}
+static uint64_t descriptor(const ArmSmmu4KRange *r,uint64_t iova)
+{
+    uint64_t attrs=(1u<<11)|(1u<<10)|3u|((uint64_t)r->shareability<<8);
+    if(!(r->permissions&ArmSmmu4KExecute))attrs|=UINT64_C(3)<<53;
+    if(!(r->permissions&ArmSmmu4KPrivileged))attrs|=1u<<6;
+    if(!(r->permissions&ArmSmmu4KWrite))attrs|=1u<<7;
+    if(r->writeback)attrs|=1u<<2;
+    return (r->physical+(iova-r->iova))|attrs;
+}
+static uint64_t expected(const ArmSmmu4KRange *ranges,size_t count,uint64_t iova)
+{
+    size_t low=0,high=count;
+    while(low<high) {
+        size_t mid=low+(high-low)/2;
+        const ArmSmmu4KRange *r=&ranges[mid];
+        if(iova<r->iova)high=mid;
+        else if(iova-r->iova>=r->bytes)low=mid+1;
+        else return descriptor(r,iova);
+    }
+    return 0;
+}
+static int contains(const ArmSmmu4KRange *r,uint64_t iova)
+{return r && iova>=r->iova && iova-r->iova<r->bytes;}
+static ArmSmmu4KStatus validate_range(const ArmSmmu4KLiveArena *a,const ArmSmmu4KRange *r)
+{
+    uint64_t physical_limit=UINT64_C(1)<<a->config.output_bits;
+    uint64_t pool=a->config.table_physical,pool_bytes=a->capacity_pages*PAGE;
+    if(!r || !r->bytes || ((r->iova|r->physical|r->bytes)&4095) ||
+        !(r->permissions&ArmSmmu4KRead) || (r->permissions&~15u) ||
+        r->writeback>1 || (r->shareability!=2 && r->shareability!=3) ||
+        r->physical>=physical_limit || r->bytes>physical_limit-r->physical ||
+        r->iova<a->iova || r->iova-a->iova>=a->bytes ||
+        r->bytes>a->bytes-(r->iova-a->iova))return ArmSmmu4KBadRange;
+    if(r->physical<pool+pool_bytes && pool<r->physical+r->bytes)return ArmSmmu4KOverlap;
+    return ArmSmmu4KSuccess;
+}
+static int conflicting_alias(const ArmSmmu4KRange *a,const ArmSmmu4KRange *b)
+{
+    return (a->writeback!=b->writeback || a->shareability!=b->shareability ||
+        ((a->permissions^b->permissions)&ArmSmmu4KPrivileged)) &&
+        a->physical<b->physical+b->bytes && b->physical<a->physical+a->bytes;
+}
+static ArmSmmu4KStatus validate_ranges(const ArmSmmu4KLiveArena *a,
+    const ArmSmmu4KRange *ranges,size_t count,size_t *leaves)
+{
+    *leaves=0;
+    if((count && !ranges) || count>a->config.leaf_budget ||
+        count>SIZE_MAX/sizeof(*ranges))return ArmSmmu4KArgument;
+    for(size_t i=0;i<count;++i) {
+        ArmSmmu4KStatus status=validate_range(a,&ranges[i]);
+        if(status!=ArmSmmu4KSuccess)return status;
+        if(i && ranges[i].iova<=ranges[i-1].iova+(ranges[i-1].bytes-1))return ArmSmmu4KOverlap;
+        for(size_t j=0;j<i;++j)if(conflicting_alias(&ranges[i],&ranges[j]))return ArmSmmu4KOverlap;
+        size_t pages=(size_t)(ranges[i].bytes/PAGE);
+        if(pages>a->config.leaf_budget-*leaves)return ArmSmmu4KBudget;
+        *leaves+=pages;
+    }
+    return ArmSmmu4KSuccess;
+}
+/* Traverse the actual fixed topology, never generate/copy a reference table.
+ * A fixed owned aperture reserves empty intermediate tables; every other slot
+ * must be zero. Resource expectations are metadata, not translated page tables. */
+static ArmSmmu4KStatus walk(const ArmSmmu4KLiveArena *a,const ArmSmmu4KResult *shape,
+    unsigned level,size_t page,uint64_t prefix,size_t *next,unsigned build,
+    const ArmSmmu4KRange *ranges,size_t count,const ArmSmmu4KRange *change,
+    unsigned map,ArmSmmu4KLiveResult *r)
+{
+    uint64_t limit=UINT64_C(1)<<a->config.input_bits;
+    uint64_t low=a->iova&(limit-1),high=low+a->bytes-1;
+    unsigned shift=39-9*level;
+    unsigned width=level==shape->start_level?a->config.input_bits-shift:9;
+    for(unsigned slot=0;slot<512;++slot) {
+        uint64_t begin=prefix+((uint64_t)slot<<shift),value=0;
+        int reserved=slot<(1u<<width) && begin<=high && low<begin+(UINT64_C(1)<<shift);
+        size_t child=0;
+        if(level<3 && reserved) {
+            child=(*next)++;
+            if(child>=shape->table_pages)return ArmSmmu4KStateMismatch;
+            value=(a->config.table_physical+child*PAGE)|3u;
+        } else if(level==3 && reserved && !build) {
+            uint64_t va=a->upper_region ? begin|~(limit-1) : begin;
+            value=contains(change,va)?(map?descriptor(change,va):0):expected(ranges,count,va);
+        }
+        size_t index=page*512+slot;
+        if(build)a->mapping[index]=value;
+        else {++r->descriptor_reads;if(a->mapping[index]!=value)return ArmSmmu4KStateMismatch;}
+        if(level<3 && reserved) {
+            ArmSmmu4KStatus status=walk(a,shape,level+1,child,begin,next,build,ranges,count,change,map,r);
+            if(status!=ArmSmmu4KSuccess)return status;
+        }
+    }
+    return ArmSmmu4KSuccess;
+}
+static ArmSmmu4KStatus verify(const ArmSmmu4KLiveArena *a,const ArmSmmu4KResult *shape,
+    const ArmSmmu4KRange *ranges,size_t count,const ArmSmmu4KRange *change,
+    unsigned map,ArmSmmu4KLiveResult *r)
+{
+    size_t next=1;
+    ArmSmmu4KStatus status=walk(a,shape,shape->start_level,0,0,&next,0,ranges,count,change,map,r);
+    return status==ArmSmmu4KSuccess && next!=shape->table_pages?ArmSmmu4KStateMismatch:status;
+}
+ArmSmmu4KStatus ArmSmmu4KLivePrepare(const ArmSmmu4KLiveArena *a,ArmSmmu4KLiveState *state)
+{
+    if(!state || state->prepared || state->poisoned)return ArmSmmu4KArgument;
+    ArmSmmu4KResult shape;
+    ArmSmmu4KStatus status=layout(a,&shape);
+    if(status!=ArmSmmu4KSuccess)return status;
+    size_t next=1;
+    status=walk(a,&shape,shape.start_level,0,0,&next,1,0,0,0,0,0);
+    if(status!=ArmSmmu4KSuccess || next!=shape.table_pages) {state->poisoned=1;return ArmSmmu4KStateMismatch;}
+    state->tables=shape;state->generation=0;state->prepared=1;
+    return ArmSmmu4KSuccess;
+}
+static int same_config(const ArmSmmu4KConfig *a,const ArmSmmu4KConfig *b)
+{
+    return a && b && a->input_bits==b->input_bits && a->output_bits==b->output_bits &&
+        a->table_physical==b->table_physical && a->leaf_budget==b->leaf_budget;
+}
+ArmSmmu4KStatus ArmSmmu4KLiveAudit(const ArmSmmu4KLiveArena *a,const ArmSmmu4KLiveState *state,
+    const ArmSmmu4KRange *ranges,size_t count,ArmSmmu4KLiveResult *r)
+{
+    if(!r)return ArmSmmu4KArgument;
+    *r=(ArmSmmu4KLiveResult){0};r->must_retain_resources=1;
+    if(!state || !state->prepared || state->poisoned)return ArmSmmu4KArgument;
+    ArmSmmu4KResult shape;
+    ArmSmmu4KStatus status=layout(a,&shape);
+    if(status!=ArmSmmu4KSuccess)return status;
+    if(state->tables.root_physical!=shape.root_physical || state->tables.mair!=shape.mair ||
+        state->tables.table_pages!=shape.table_pages || state->tables.start_level!=shape.start_level ||
+        state->tables.upper_region!=shape.upper_region)return ArmSmmu4KArgument;
+    size_t leaves=0;
+    status=validate_ranges(a,ranges,count,&leaves);if(status!=ArmSmmu4KSuccess)return status;
+    if(leaves!=state->tables.leaf_pages)return ArmSmmu4KArgument;
+    status=verify(a,&shape,ranges,count,0,0,r);
+    r->complete=status==ArmSmmu4KSuccess;return status;
+}
+static ArmSmmu4KStatus leaf_index(const ArmSmmu4KLiveArena *a,
+    const ArmSmmu4KResult *shape,uint64_t va,size_t *index,ArmSmmu4KLiveResult *r)
+{
+    size_t page=0;
+    for(unsigned level=shape->start_level;level<3;++level) {
+        unsigned shift=39-9*level,width=level==shape->start_level?a->config.input_bits-shift:9;
+        uint64_t entry=a->mapping[page*512+((va>>shift)&((1u<<width)-1))];++r->descriptor_reads;
+        uint64_t physical=entry&PA_MASK;
+        if(entry!=(physical|3u) || physical<a->config.table_physical ||
+            physical-a->config.table_physical>=shape->table_pages*PAGE)return ArmSmmu4KStateMismatch;
+        page=(size_t)((physical-a->config.table_physical)/PAGE);
+    }
+    *index=page*512+((va>>12)&511);
+    return ArmSmmu4KSuccess;
+}
+static int overlaps(uint64_t a,uint64_t abytes,uint64_t b,uint64_t bbytes)
+{return a<b+bbytes && b<a+abytes;}
+static int touches_pool(const ArmSmmu4KRange *r,const ArmSmmu4KLiveArena *a)
+{return overlaps(r->physical,r->bytes,a->config.table_physical,a->capacity_pages*PAGE);}
+static ArmSmmu4KStatus region_metadata(const ArmSmmu4KLiveRegion *region,
+    const ArmSmmu4KConfig *config,const ArmSmmu4KResult *root,unsigned upper)
+{
+    if(!region)return (!config && !root)?ArmSmmu4KSuccess:ArmSmmu4KArgument;
+    if(!region->arena || !region->state || region->arena->upper_region!=upper ||
+        root!=&region->state->tables || !same_config(config,&region->arena->config) ||
+        !region->state->prepared || region->state->poisoned)return ArmSmmu4KArgument;
+    ArmSmmu4KResult shape;
+    ArmSmmu4KStatus status=layout(region->arena,&shape);if(status)return status;
+    const ArmSmmu4KResult *r=&region->state->tables;
+    if(r->root_physical!=shape.root_physical || r->mair!=shape.mair || r->table_pages!=shape.table_pages ||
+        r->start_level!=shape.start_level || r->upper_region!=shape.upper_region)return ArmSmmu4KArgument;
+    size_t leaves=0;
+    status=validate_ranges(region->arena,region->ranges,region->count,&leaves);if(status)return status;
+    return leaves==r->leaf_pages?ArmSmmu4KSuccess:ArmSmmu4KArgument;
+}
+static ArmSmmu4KStatus context_metadata(const ArmSmmu4KContextConfig *context,
+    const ArmSmmu4KLiveRegion *lower,const ArmSmmu4KLiveRegion *upper)
+{
+    if(!context || (!lower && !upper))return ArmSmmu4KArgument;
+    ArmSmmu4KStatus status=region_metadata(lower,context->lower,context->lower_tables,0);if(status)return status;
+    status=region_metadata(upper,context->upper,context->upper_tables,1);if(status)return status;
+    if(lower && upper) {
+        const ArmSmmu4KLiveArena *a=lower->arena,*b=upper->arena;
+        if(lower->state==upper->state || a->config.output_bits!=b->config.output_bits ||
+            overlaps(a->config.table_physical,a->capacity_pages*PAGE,b->config.table_physical,b->capacity_pages*PAGE) ||
+            overlaps((uintptr_t)a->mapping,a->capacity_pages*PAGE,(uintptr_t)b->mapping,b->capacity_pages*PAGE))
+            return ArmSmmu4KOverlap;
+        for(size_t i=0;i<lower->count;++i) {
+            if(touches_pool(&lower->ranges[i],b))return ArmSmmu4KOverlap;
+            for(size_t j=0;j<upper->count;++j)
+                if(conflicting_alias(&lower->ranges[i],&upper->ranges[j]))return ArmSmmu4KOverlap;
+        }
+        for(size_t i=0;i<upper->count;++i)if(touches_pool(&upper->ranges[i],a))return ArmSmmu4KOverlap;
+    }
+    return ArmSmmu4KSuccess;
+}
+ArmSmmu4KStatus ArmSmmu4KLiveAuditContext(const ArmSmmu4KContextConfig *context,
+    const ArmSmmu4KLiveRegion *lower,const ArmSmmu4KLiveRegion *upper,ArmSmmu4KLiveResult *r)
+{
+    if(!r)return ArmSmmu4KArgument;
+    *r=(ArmSmmu4KLiveResult){0};r->must_retain_resources=1;
+    ArmSmmu4KStatus status=context_metadata(context,lower,upper);if(status)return status;
+    const ArmSmmu4KLiveRegion *regions[]={lower,upper};
+    for(unsigned i=0;i<2;++i)if(regions[i]) {
+        const ArmSmmu4KLiveRegion *v=regions[i];
+        status=verify(v->arena,&v->state->tables,v->ranges,v->count,0,0,r);if(status)return status;
+    }
+    r->complete=1;return ArmSmmu4KSuccess;
+}
+static ArmSmmu4KStatus update(const ArmSmmu4KLiveArena *a,ArmSmmu4KLiveState *state,
+    const ArmSmmu4KIo *io,unsigned bank,const ArmSmmu4KContextConfig *context,
+    const ArmSmmu4KLiveVisibility *visibility,const ArmSmmu4KRange *before,size_t count,
+    const ArmSmmu4KLiveRegion *peer,const ArmSmmu4KRange *change,unsigned map,unsigned budget,ArmSmmu4KLiveResult *r)
+{
+    if(!r)return ArmSmmu4KArgument;
+    *r=(ArmSmmu4KLiveResult){0};r->must_retain_resources=1;
+    if(!state || !state->prepared || state->poisoned || !context ||
+        !visibility || !visibility->publish_table_page || map>1 ||
+        !budget || budget>1048576 || state->generation==UINT64_MAX)return ArmSmmu4KArgument;
+    ArmSmmu4KResult shape;
+    ArmSmmu4KStatus status=layout(a,&shape);
+    if(status!=ArmSmmu4KSuccess)return status;
+    const ArmSmmu4KResult *root=a->upper_region?context->upper_tables:context->lower_tables;
+    if((!peer && (a->upper_region?(context->lower || context->lower_tables):(context->upper || context->upper_tables))) ||
+        !same_config(a->upper_region?context->upper:context->lower,&a->config) ||
+        root!=&state->tables || state->tables.root_physical!=shape.root_physical ||
+        state->tables.mair!=shape.mair || state->tables.table_pages!=shape.table_pages ||
+        state->tables.start_level!=shape.start_level || state->tables.upper_region!=shape.upper_region)
+        return ArmSmmu4KArgument;
+    size_t leaves=0;
+    status=validate_ranges(a,before,count,&leaves);if(status!=ArmSmmu4KSuccess)return status;
+    if(leaves!=state->tables.leaf_pages)return ArmSmmu4KArgument;
+    status=validate_range(a,change);if(status!=ArmSmmu4KSuccess)return status;
+    if(peer) {
+        ArmSmmu4KLiveRegion target={a,state,before,count};
+        status=context_metadata(context,a->upper_region?peer:&target,a->upper_region?&target:peer);
+        if(status)return status;
+        if(touches_pool(change,peer->arena))return ArmSmmu4KOverlap;
+        if(map)for(size_t i=0;i<peer->count;++i)
+            if(conflicting_alias(change,&peer->ranges[i]))return ArmSmmu4KOverlap;
+    }
+    size_t changed=(size_t)(change->bytes/PAGE);
+    if(map && changed>a->config.leaf_budget-leaves)return ArmSmmu4KBudget;
+    if(map)for(size_t i=0;i<count;++i)if(conflicting_alias(change,&before[i]))return ArmSmmu4KOverlap;
+    for(uint64_t offset=0;offset<change->bytes;offset+=PAGE) {
+        uint64_t va=change->iova+offset,old=expected(before,count,va);
+        if(map?old!=0:old!=descriptor(change,va))return ArmSmmu4KStateMismatch;
+    }
+    status=ArmSmmu4KObserveOwnedContext(io,bank,context,&r->synchronization);
+    if(status!=ArmSmmu4KSuccess)goto poisoned;
+    status=verify(a,&shape,before,count,0,0,r);if(status!=ArmSmmu4KSuccess)goto poisoned;
+    if(peer) {
+        status=verify(peer->arena,&peer->state->tables,peer->ranges,peer->count,0,0,r);
+        if(status)goto poisoned;
+    }
+    ArmSmmu4KProgramResult initial=r->synchronization;
+    status=ArmSmmu4KObserveOwnedContext(io,bank,context,&r->synchronization);
+    if(status!=ArmSmmu4KSuccess)goto poisoned;
+    if(initial.id0!=r->synchronization.id0 || initial.id1!=r->synchronization.id1 ||
+        initial.id2!=r->synchronization.id2 || initial.context_offset!=r->synchronization.context_offset)
+        {status=ArmSmmu4KStateMismatch;goto poisoned;}
+    /* All validation precedes the first store. Caller keeps every master
+     * quiesced and retains both old/new object references through this call. */
+    for(uint64_t offset=0;offset<change->bytes;offset+=PAGE) {
+        uint64_t va=change->iova+offset;size_t index;
+        status=leaf_index(a,&shape,va,&index,r);if(status!=ArmSmmu4KSuccess)goto poisoned;
+        a->mapping[index]=map?descriptor(change,va):0;++r->descriptor_writes;
+    }
+    size_t last_page=SIZE_MAX;
+    for(uint64_t offset=0;offset<change->bytes;offset+=PAGE) {
+        size_t index;
+        status=leaf_index(a,&shape,change->iova+offset,&index,r);if(status!=ArmSmmu4KSuccess)goto poisoned;
+        size_t page=index/512;
+        if(page!=last_page) {
+            if(visibility->publish_table_page(visibility->cookie,a->mapping+page*512,4096)) {status=ArmSmmu4KIoError;goto poisoned;}
+            ++r->published_pages;last_page=page;
+        }
+    }
+    status=ArmSmmu4KSynchronizeOwnedContext(io,bank,context,budget,&r->synchronization);
+    if(status!=ArmSmmu4KSuccess)goto poisoned;
+    status=verify(a,&shape,before,count,change,map,r);if(status!=ArmSmmu4KSuccess)goto poisoned;
+    if(peer) {
+        status=verify(peer->arena,&peer->state->tables,peer->ranges,peer->count,0,0,r);
+        if(status)goto poisoned;
+    }
+    ArmSmmu4KProgramResult after;
+    status=ArmSmmu4KObserveOwnedContext(io,bank,context,&after);if(status!=ArmSmmu4KSuccess)goto poisoned;
+    if(after.id0!=r->synchronization.id0 || after.id1!=r->synchronization.id1 ||
+        after.id2!=r->synchronization.id2 || after.context_offset!=r->synchronization.context_offset)
+        {status=ArmSmmu4KStateMismatch;goto poisoned;}
+    state->tables.leaf_pages=map?leaves+changed:leaves-changed;++state->generation;
+    r->complete=1;r->translation_removed=!map;r->must_retain_resources=0;
+    return ArmSmmu4KSuccess;
+poisoned:
+    state->poisoned=1;if(peer)peer->state->poisoned=1;return status;
+}
+ArmSmmu4KStatus ArmSmmu4KLiveUpdate(const ArmSmmu4KLiveArena *a,ArmSmmu4KLiveState *state,
+    const ArmSmmu4KIo *io,unsigned bank,const ArmSmmu4KContextConfig *context,
+    const ArmSmmu4KLiveVisibility *visibility,const ArmSmmu4KRange *before,size_t count,
+    const ArmSmmu4KRange *change,unsigned map,unsigned budget,ArmSmmu4KLiveResult *r)
+{return update(a,state,io,bank,context,visibility,before,count,0,change,map,budget,r);}
+ArmSmmu4KStatus ArmSmmu4KLiveUpdateContext(const ArmSmmu4KIo *io,unsigned bank,
+    const ArmSmmu4KContextConfig *context,const ArmSmmu4KLiveRegion *lower,
+    const ArmSmmu4KLiveRegion *upper,unsigned change_upper,const ArmSmmu4KLiveVisibility *visibility,
+    const ArmSmmu4KRange *change,unsigned map,unsigned budget,ArmSmmu4KLiveResult *r)
+{
+    if(!r)return ArmSmmu4KArgument;
+    *r=(ArmSmmu4KLiveResult){0};r->must_retain_resources=1;
+    if(change_upper>1)return ArmSmmu4KArgument;
+    ArmSmmu4KStatus status=context_metadata(context,lower,upper);if(status)return status;
+    const ArmSmmu4KLiveRegion *target=change_upper?upper:lower,*peer=change_upper?lower:upper;
+    if(!target)return ArmSmmu4KArgument;
+    return update(target->arena,target->state,io,bank,context,visibility,target->ranges,target->count,
+        peer,change,map,budget,r);
+}
