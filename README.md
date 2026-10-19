@@ -12,6 +12,10 @@
   <a href="https://x.com/unixnu"><img alt="X" src="https://img.shields.io/badge/X-@unixnu-000000?logo=x&logoColor=white"></a>
 </p>
 
+<p align="center">
+  English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 # UniXNU
 
 An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI.
