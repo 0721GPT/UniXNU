@@ -270,7 +270,6 @@ fastboot boot out/sheng/boot/boot.img
 | USB | ❌ | |
 | 音频 | ❌ | |
 | 传感器 | ❌ | |
-| 充电 | ✅ | |
 | 电池驱动 | ❌ | |
 | MiPPS | ❌ | |
 | 休眠与唤醒 | ❌ | |

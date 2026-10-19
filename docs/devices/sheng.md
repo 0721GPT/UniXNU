@@ -270,7 +270,6 @@ The boot chain reaches XNU. This table records user-facing device support from t
 | USB | ❌ | |
 | Audio | ❌ | |
 | Sensors | ❌ | |
-| Charging | ✅ | |
 | Battery driver | ❌ | |
 | MiPPS | ❌ | |
 | Suspend and resume | ❌ | |
