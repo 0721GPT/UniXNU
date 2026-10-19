@@ -262,7 +262,7 @@ The boot chain reaches XNU. This table records user-facing device support from t
 | Feature | State | Notes |
 | --- | --- | --- |
 | Touch | ✅ | Novatek NT36532E |
-| Display | ❌ | |
+| Display | ✅ | |
 | Wi-Fi | ❌ | |
 | Bluetooth | ❌ | |
 | Camera | ❌ | |

@@ -262,7 +262,7 @@ fastboot boot out/sheng/boot/boot.img
 | 功能 | 状态 | 说明 |
 | --- | --- | --- |
 | 触控 | ✅ | Novatek NT36532E |
-| 显示 | ❌ | |
+| 显示 | ✅ | |
 | Wi-Fi | ❌ | |
 | 蓝牙 | ❌ | |
 | 相机 | ❌ | |
