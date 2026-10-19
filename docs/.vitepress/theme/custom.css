@@ -37,6 +37,28 @@
   border-radius: 6px;
 }
 
+.VPHero .actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 420px;
+}
+
+.VPHero .action {
+  width: 100%;
+}
+
+.VPHero .action .VPButton {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .VPHero .actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 :root {
   --docsearch-key-gradient: #ebedf0;
 }

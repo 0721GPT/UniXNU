@@ -19,6 +19,12 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/UniXNU/UniXNU
+    - theme: alt
+      text: X
+      link: https://x.com/unixnu
+    - theme: alt
+      text: Telegram
+      link: https://t.me/unixnu
 ---
 
 ::: info Documentation status
