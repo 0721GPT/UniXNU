@@ -14,7 +14,7 @@
 
 # UniXNU
 
-An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI, with iOS verified and macOS not yet verified.
+An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI.
 
 ## Documentation
 
