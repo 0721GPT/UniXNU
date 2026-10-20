@@ -151,7 +151,7 @@ CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
 
 GPU 路径见 [Adreno 740 驱动](/zh/drivers/native-adreno)。板级通过 `sheng-gpu-power=9`、`sheng-gpu-metal=1` 和 `sheng-gpu-addon=1` 启用。
 
-运行时链路：Metal、NativeMetal、metal2vulkan（AIR 到 SPIR-V）、Turnip（SPIR-V 到 NIR 到 IR3）、NativeAdreno、GMU 和 CP、Adreno 740、GPU blit 到 scanout、NativeMobileDisplay。
+运行时链路：Metal、NativeMetal、metal2vulkan（AIR 到 SPIR-V）、Turnip（SPIR-V 到 NIR 到 IR3）、NativeAdreno、GMU 和 CP、Adreno 740、GPU 合成到 scanout、NativeMobileDisplay。
 
 | 步骤 | 状态 |
 | --- | --- |
@@ -160,10 +160,11 @@ GPU 路径见 [Adreno 740 驱动](/zh/drivers/native-adreno)。板级通过 `she
 | 原生 4 KiB SMMU context | active |
 | Metal 插件发现 | 工作 |
 | GPU 帧复制到 scanout | 工作，像素一致 |
-| GPU 合成桌面 | 工作，慢 |
-| 稳定 120 FPS | 未达到 |
+| render server 合成 | 工作 |
+| 每进程 Metal 设备 | 工作 |
+| GPU 合成桌面 | 工作 |
 
-没有完整的预编译 Adreno UI shader pack。驱动在设备上把 AIR 编译成 SPIR-V 和 IR3。冷启动会编译它遇到的每个 UI 变体。int-148：77 个 pipeline，约 43 s，cache hit 0。int-150：103 个 Metal pipeline，共 40.1 s；94 个 Vulkan pipeline，共 23.3 s。patch `0004` 和 cache 导出降低了开销。int-152 大幅改善，但未彻底修复。active GPU 4 KiB 证明、显示 vblank 和冷帧 deadline 仍未完成。
+插件通过 `add-gpu-plugin-data.py --publish` 发布给 backboardd，CARenderServer 通过 Adreno 740 合成系统界面。`--clients` 让列入的进程获得自己的设备和驱动连接；其中最多两个还获得 GPU 窗口。驱动在设备上编译每个 UI shader 变体，并在后续启动中复用导出的 pipeline cache。
 
 ## 固件
 
@@ -286,7 +287,7 @@ fastboot boot out/sheng/boot/boot.img
 | Wi-Fi | ❌ | |
 | 蓝牙 | ❌ | |
 | 摄像头 | ❌ | |
-| GPU | ⚠️ | 命令、原生 4 KiB SMMU 和 scanout 复制工作；shader 编译慢，且没有完整的预编译 UI pack |
+| GPU | ✅ | 原生 Metal、GPU 合成、每进程设备和导出的 pipeline cache |
 | USB | ❌ | |
 | 音频 | ❌ | |
 | 传感器 | ❌ | |
@@ -306,8 +307,8 @@ fastboot boot out/sheng/boot/boot.img
 | XNU 与用户态 | 原始 iPadOS 用户态从 IPSW 运行；可跳过 Setup 和 Hello，进入 SpringBoard、锁屏、主屏幕和 Settings |
 | 触控 | SpringBoard 和 backboardd 接受触控事件 |
 | UFS | 原生 UFS 根可用 |
-| 桌面渲染 | 通过原生 Metal 插件由 GPU 合成；首次使用慢 |
-| GPU | 部分：命令、原生 4 KiB SMMU 和 scanout 复制工作；shader 编译慢，且没有完整的预编译 UI pack |
+| 桌面渲染 | 通过原生 Metal 设备由 GPU 合成；render server 和列入的客户端使用它 |
+| GPU | 原生 Metal 设备、GPU 合成、每进程客户端和 pipeline cache 工作 |
 
 触控驱动见 [Novatek 触控驱动](/zh/drivers/native-novatek-touch)。
 

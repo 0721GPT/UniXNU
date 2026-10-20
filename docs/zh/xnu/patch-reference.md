@@ -1,6 +1,6 @@
 # 补丁参考
 
-补丁按名称顺序应用 `patches/xnu/*.patch` 和 `kits/NativePrelink/patches/*.patch`。后置补丁 `zzy-*` 和 `zzz-*` 最后应用。
+补丁按名称顺序应用 `patches/xnu/*.patch` 和 `kits/NativePrelink/patches/*.patch`。后置补丁 `zzw-*`、`zzy-*` 和 `zzz-*` 最后应用。
 
 ## 构建与工具链
 
@@ -64,6 +64,7 @@
 | --- | --- |
 | `offline-native-gpu-broker` | 启动离线 GPU broker |
 | `zzy-native-gpu-addon-mount` | 为 GPU addon 内容和启动任务挂载只读 union 视图 |
+| `zzw-native-adreno-sandbox-grant` | 让 NativeAdreno 在 `NativeSandboxGrantProcess` 中指定 render server，并使其 user client 通过沙箱打开 |
 | `native-aes-personality` | 注册存储和控制台 personality |
 
 ## 诊断
@@ -72,6 +73,7 @@
 | --- | --- |
 | `offline-pgz-alignment-probe` | 加入 PGZ 分配探针和检查点 |
 | `native-work-interval-trace` | 记录最近的 work interval 结果供启动进度页显示 |
+| `native-quiet-managed-page-report` | 关闭 GPU buffer 和 scanout mapping 上的 DEVELOPMENT managed page 报告 |
 | `zzz-boot-progress` | 在内核启动路径加入启动进度检查点 |
 
 ## 行为修复

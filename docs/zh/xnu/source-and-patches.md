@@ -29,14 +29,14 @@ trustcache_tag = "xnu-8796.101.5"
 
 `scripts/build-xnu-4k-baseline.sh` 对 `.cache/xnu-work` 应用补丁：
 
-1. 存在时反向应用两个后置补丁：
+1. 存在时反向应用与更早上下文重叠的补丁：
    - `patches/xnu/zzz-boot-progress.patch`
    - `patches/xnu/zzy-native-gpu-addon-mount.patch`
 2. 按名称顺序应用 `patches/xnu/*.patch` 和 `kits/NativePrelink/patches/*.patch`。
 3. 已应用的补丁跳过。
 4. 运行 `prepare-xnu-source.py` 恢复缺失头文件。
 
-后置补丁修改的区域与更早的补丁重叠，`zzz` 和 `zzy` 前缀让它们最后应用。反向步骤让新构建从这些区域的干净上下文开始。
+后置补丁带有 `zzw`、`zzy` 和 `zzz` 前缀，因此最后应用。反向步骤让新构建从这些被更早补丁同时修改的区域的干净上下文开始。
 
 补丁是幂等的：
 

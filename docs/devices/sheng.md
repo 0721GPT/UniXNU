@@ -151,7 +151,7 @@ CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
 
 The GPU path is documented in [Adreno 740 driver](/drivers/native-adreno). The board enables it with `sheng-gpu-power=9`, `sheng-gpu-metal=1` and `sheng-gpu-addon=1`.
 
-Runtime chain: Metal, NativeMetal, metal2vulkan (AIR to SPIR-V), Turnip (SPIR-V to NIR to IR3), NativeAdreno, GMU and CP, Adreno 740, GPU blit into scanout, NativeMobileDisplay.
+Runtime chain: Metal, NativeMetal, metal2vulkan (AIR to SPIR-V), Turnip (SPIR-V to NIR to IR3), NativeAdreno, GMU and CP, Adreno 740, GPU composite into scanout, NativeMobileDisplay.
 
 | Step | State |
 | --- | --- |
@@ -160,10 +160,11 @@ Runtime chain: Metal, NativeMetal, metal2vulkan (AIR to SPIR-V), Turnip (SPIR-V 
 | Native 4 KiB SMMU context | active |
 | Metal plugin discovery | works |
 | GPU frame copy into scanout | works, pixel-identical |
-| GPU-composited desktop | works, slow |
-| Stable 120 FPS | not achieved |
+| Render server compositing | works |
+| Per-process Metal devices | works |
+| GPU-composited desktop | works |
 
-There is no complete precompiled Adreno UI shader pack. The driver compiles AIR to SPIR-V and IR3 on the device. A cold boot compiles every UI variant it reaches. int-148: 77 pipelines, about 43 s, cache hit 0. int-150: 103 Metal pipelines, 40.1 s total; 94 Vulkan pipelines, 23.3 s. Patch `0004` and the cache export reduce this cost. int-152 improved a lot but is not fixed. Active GPU 4 KiB proof, display vblank and a cold-frame deadline remain open.
+The plugin is published to backboardd with `add-gpu-plugin-data.py --publish`, so CARenderServer composites the system UI through the Adreno 740. `--clients` gives listed processes their own device and driver connection; up to two also get a GPU window. The driver compiles each UI shader variant on the device and reuses exported pipeline caches on later boots.
 
 ## Firmware
 
@@ -286,7 +287,7 @@ The board file points at an iPadOS restore image. To boot macOS on the same boar
 | Wi-Fi | ❌ | |
 | Bluetooth | ❌ | |
 | Camera | ❌ | |
-| GPU | ⚠️ | Commands, native 4 KiB SMMU and scanout copy work. Shader compilation is slow and no complete precompiled UI pack exists. |
+| GPU | ✅ | Native Metal, GPU compositing, per-process devices and exported pipeline caches |
 | USB | ❌ | |
 | Audio | ❌ | |
 | Sensors | ❌ | |
@@ -306,8 +307,8 @@ The board file points at an iPadOS restore image. To boot macOS on the same boar
 | XNU and userland | the original iPadOS userland runs from the IPSW; Setup and Hello can be skipped, and SpringBoard, the lock screen, the home screen and Settings are reached |
 | Touch | accepted by SpringBoard and backboardd |
 | UFS | native UFS root works |
-| Desktop rendering | GPU-composited through the native Metal plugin; slow on first use |
-| GPU | partial: commands, native 4 KiB SMMU and scanout copy work; shader compilation is slow and no complete precompiled UI pack exists |
+| Desktop rendering | GPU-composited through the native Metal device; the render server and listed clients use it |
+| GPU | native Metal device, GPU compositing, per-process clients and pipeline caches work |
 
 The touch driver is documented in [Novatek touch driver](/drivers/native-novatek-touch).
 

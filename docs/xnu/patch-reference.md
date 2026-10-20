@@ -1,6 +1,6 @@
 # Patch reference
 
-Patches apply in name order from `patches/xnu/*.patch` and `kits/NativePrelink/patches/*.patch`. The late patches `zzy-*` and `zzz-*` apply last.
+Patches apply in name order from `patches/xnu/*.patch` and `kits/NativePrelink/patches/*.patch`. The late patches `zzw-*`, `zzy-*` and `zzz-*` apply last.
 
 ## Build and toolchain
 
@@ -64,6 +64,7 @@ Patches apply in name order from `patches/xnu/*.patch` and `kits/NativePrelink/p
 | --- | --- |
 | `offline-native-gpu-broker` | Starts the offline GPU broker |
 | `zzy-native-gpu-addon-mount` | Mounts read-only union views for GPU addon content and launch jobs |
+| `zzw-native-adreno-sandbox-grant` | Lets NativeAdreno name the render server in `NativeSandboxGrantProcess` and open its user client past the sandbox |
 | `native-aes-personality` | Registers the storage and console personalities |
 
 ## Diagnostics
@@ -72,6 +73,7 @@ Patches apply in name order from `patches/xnu/*.patch` and `kits/NativePrelink/p
 | --- | --- |
 | `offline-pgz-alignment-probe` | Adds the PGZ allocation probe and checkpoints |
 | `native-work-interval-trace` | Records the last work interval results for the boot progress page |
+| `native-quiet-managed-page-report` | Stops the DEVELOPMENT managed-page report on GPU buffer and scanout mappings |
 | `zzz-boot-progress` | Adds boot progress checkpoints across the kernel startup path |
 
 ## Behavior fixes

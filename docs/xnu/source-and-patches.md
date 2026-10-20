@@ -29,14 +29,14 @@ trustcache_tag = "xnu-8796.101.5"
 
 `scripts/build-xnu-4k-baseline.sh` applies patches to `.cache/xnu-work`:
 
-1. Reverse the two late patches when they are present:
+1. Reverse the patches that overlap earlier contexts, when they are present:
    - `patches/xnu/zzz-boot-progress.patch`
    - `patches/xnu/zzy-native-gpu-addon-mount.patch`
 2. Apply every `patches/xnu/*.patch` and `kits/NativePrelink/patches/*.patch` in name order.
 3. Skip a patch that is already applied.
 4. Run `prepare-xnu-source.py` to restore omitted headers.
 
-The late patches edit regions that earlier patches also touch. They carry the `zzz` and `zzy` prefixes so they apply last. The reverse step lets a new build start from a clean context for those regions.
+The late patches carry the `zzw`, `zzy` and `zzz` prefixes so they apply last. The reverse step lets a new build start from a clean context for the two regions that earlier patches also edit.
 
 A patch is idempotent:
 

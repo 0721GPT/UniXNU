@@ -48,6 +48,10 @@ The kernel patches `offline-owner-root-*` add the owner root checks used by the 
 | `offline-owner-systemos-mount` | Mounts the SystemOS cryptex |
 | `offline-owner-z-air-init` | Initializes the Z air path for the owner root |
 
+## GPU client grant
+
+NativeAdreno publishes `NativeSandboxGrantProcess` on its accelerator service. The patch `zzw-native-adreno-sandbox-grant` compares the opening process name with that property. The named process opens the user client past `mac_iokit_check_open_service` and `mac_iokit_check_open`. The render server is the named process.
+
 ## Verified root
 
 `kits/VerifiedRoot` supplies a signed policy bundle. The verified block driver checks every read against the policy. The policy can be selected per capacity with `--verified-root-bundle`.
