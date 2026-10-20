@@ -278,7 +278,23 @@ The board file points at an iPadOS restore image. To boot macOS on the same boar
 
 ## Device support
 
-The current support table is in the [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support).
+| Feature | State | Notes |
+| --- | --- | --- |
+| Touch | ✅ | Novatek NT36532E |
+| Display | ✅ | |
+| UFS | ✅ | Native UFS root |
+| Wi-Fi | ❌ | |
+| Bluetooth | ❌ | |
+| Camera | ❌ | |
+| GPU | ⚠️ | Commands, native 4 KiB SMMU and scanout copy work. Shader compilation is slow and no complete precompiled UI pack exists. |
+| USB | ❌ | |
+| Audio | ❌ | |
+| Sensors | ❌ | |
+| Battery driver | ❌ | |
+| MiPPS | ❌ | |
+| Suspend and resume | ❌ | |
+
+✅ available, ⚠️ partial, ❌ not available. The same table is in the [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support).
 
 ## Observed state
 

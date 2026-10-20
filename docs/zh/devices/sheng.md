@@ -278,7 +278,23 @@ fastboot boot out/sheng/boot/boot.img
 
 ## 设备支持
 
-当前支持列表见 [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support)。
+| 功能 | 状态 | 说明 |
+| --- | --- | --- |
+| 触控 | ✅ | Novatek NT36532E |
+| 显示 | ✅ | |
+| UFS | ✅ | 原生 UFS 根 |
+| Wi-Fi | ❌ | |
+| 蓝牙 | ❌ | |
+| 摄像头 | ❌ | |
+| GPU | ⚠️ | 命令、原生 4 KiB SMMU 和 scanout 复制工作；shader 编译慢，且没有完整的预编译 UI pack |
+| USB | ❌ | |
+| 音频 | ❌ | |
+| 传感器 | ❌ | |
+| 电池驱动 | ❌ | |
+| MiPPS | ❌ | |
+| 休眠与唤醒 | ❌ | |
+
+✅ 可用，⚠️ 部分可用，❌ 不可用。同一张表见 [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support)。
 
 ## 观察状态
 
