@@ -309,7 +309,7 @@ fastboot boot out/sheng/boot/boot.img
 | 桌面渲染 | 通过原生 Metal 插件由 GPU 合成；首次使用慢 |
 | GPU | 部分：命令、原生 4 KiB SMMU 和 scanout 复制工作；shader 编译慢，且没有完整的预编译 UI pack |
 
-触控驱动见[触控驱动示例](/zh/devices/sheng-touch-driver)。
+触控驱动见 [Novatek 触控驱动](/zh/drivers/native-novatek-touch)。
 
 ## 设备细节
 
@@ -323,6 +323,6 @@ fastboot boot out/sheng/boot/boot.img
 
 - [移植](/zh/porting/)
 - [Adreno 740 驱动](/zh/drivers/native-adreno)
-- [触控驱动示例](/zh/devices/sheng-touch-driver)
+- [Novatek 触控驱动](/zh/drivers/native-novatek-touch)
 - [调试与日志](/zh/guide/debugging)
 - [故障排查](/zh/reference/troubleshooting)

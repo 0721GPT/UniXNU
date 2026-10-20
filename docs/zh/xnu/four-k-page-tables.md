@@ -155,7 +155,7 @@ flush_dcache((vm_offset_t)ptoa(pp), PAGE_SIZE, TRUE);
 | `ArmSmmu4KLive.c` | live stream 映射 |
 | `ArmSmmu4KTableMemory.c` | 表内存 |
 
-设备驱动用 4 KiB 表映射 DMA 缓冲。触控驱动示例使用 apps SMMU bypass 路径。
+设备驱动用 4 KiB 表映射 DMA 缓冲。Novatek 触控驱动使用 apps SMMU bypass 路径。
 
 ## 验证
 

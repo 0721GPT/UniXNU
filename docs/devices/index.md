@@ -34,4 +34,4 @@ Device pages are the place for board specific values. The general guide uses pla
 
 ## sheng
 
-The [sheng page](/devices/sheng) records the Xiaomi Pad 6S Pro port. It is one device entry. The [touch driver example](/devices/sheng-touch-driver) uses the sheng touch driver as a worked example of a built-in XNU driver.
+The [sheng page](/devices/sheng) records the Xiaomi Pad 6S Pro port. It is one device entry. The [Novatek touch driver](/drivers/native-novatek-touch) uses the sheng touch driver as a worked example of a built-in XNU driver.

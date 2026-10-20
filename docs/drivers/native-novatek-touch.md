@@ -1,19 +1,17 @@
-# Touch driver example
+# Novatek NT36532E touch driver
 
-The sheng device repository contains a complete touch driver for the Novatek NT36532E controller. It shows the structure a new touch driver can follow.
+NativeNovatekTouch is an independent UniXNU module, included by UniXNU-sheng. It is a complete touch driver for the Novatek NT36532E controller and a worked example for new touch drivers.
 
-The source lives in [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng):
-
-| Path | Contents |
-| --- | --- |
-| `drivers/NativeNovatekTouch/NvtTouchCore.c` | Pure touch processing |
-| `drivers/NativeNovatekTouch/NvtProtocol.c` | Controller protocol |
-| `drivers/NativeNovatekTouch/NvtProtocol.h` | Protocol constants and bus interface |
-| `drivers/NativeGeniSpi/GeniSpi.c` | GENI SPI engine |
-| `package/TouchBoard.h` | Board constants and clock helpers |
-| `package/TouchProbe.cpp` | Kernel probe and frame loop |
-| `package/TouchBoardTests.c` | Host tests for the board helpers |
-| `drivers/NativeHidInput/NativeHidInput.cpp` | HID digitizer source |
+| Repository | Path | Contents |
+| --- | --- | --- |
+| [NativeNovatekTouch](https://github.com/UniXNU/NativeNovatekTouch) | `NvtTouchCore.c` | Pure touch processing |
+| NativeNovatekTouch | `NvtProtocol.c` | Controller protocol |
+| NativeNovatekTouch | `NvtProtocol.h` | Protocol constants and bus interface |
+| [NativeGeniSpi](https://github.com/UniXNU/NativeGeniSpi) | `GeniSpi.c` | GENI SPI engine |
+| [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | `package/TouchBoard.h` | Board constants and clock helpers |
+| UniXNU-sheng | `package/TouchProbe.cpp` | Kernel probe and frame loop |
+| UniXNU-sheng | `package/TouchBoardTests.c` | Host tests for the board helpers |
+| [NativeHidInput](https://github.com/UniXNU/NativeHidInput) | `NativeHidInput.cpp` | HID digitizer source |
 
 ## Two layers
 

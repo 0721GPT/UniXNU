@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   lang: 'en-US',
   title: 'UniXNU',
   description: 'Run iOS and macOS on non-Apple ARM64 hardware through UEFI.',
@@ -104,6 +105,7 @@ export default defineConfig({
             { text: 'UEFI drivers', link: '/drivers/uefi-drivers' },
             { text: 'XNU drivers', link: '/drivers/xnu-drivers' },
             { text: 'Adreno 740 driver', link: '/drivers/native-adreno' },
+            { text: 'Novatek touch driver', link: '/drivers/native-novatek-touch' },
             { text: 'Kext bundles', link: '/drivers/kexts' },
             { text: 'Device tree matching', link: '/drivers/device-tree-matching' },
           ],
@@ -126,7 +128,6 @@ export default defineConfig({
           items: [
             { text: 'Supported devices', link: '/devices/' },
             { text: 'Xiaomi Pad 6S Pro (sheng)', link: '/devices/sheng' },
-            { text: 'Touch driver example', link: '/devices/sheng-touch-driver' },
           ],
         },
       ],
@@ -265,6 +266,7 @@ export default defineConfig({
                 { text: 'UEFI 驱动', link: '/zh/drivers/uefi-drivers' },
                 { text: 'XNU 驱动', link: '/zh/drivers/xnu-drivers' },
                 { text: 'Adreno 740 驱动', link: '/zh/drivers/native-adreno' },
+                { text: 'Novatek 触控驱动', link: '/zh/drivers/native-novatek-touch' },
                 { text: 'kext 包', link: '/zh/drivers/kexts' },
                 { text: '设备树匹配', link: '/zh/drivers/device-tree-matching' },
               ],
@@ -287,7 +289,6 @@ export default defineConfig({
               items: [
                 { text: '支持的设备', link: '/zh/devices/' },
                 { text: '小米平板 6S Pro（sheng）', link: '/zh/devices/sheng' },
-                { text: '触控驱动示例', link: '/zh/devices/sheng-touch-driver' },
               ],
             },
           ],
@@ -329,4 +330,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

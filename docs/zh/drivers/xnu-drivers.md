@@ -250,7 +250,7 @@ Adreno 路径见 [Adreno 740 驱动](/zh/drivers/native-adreno)。
 
 ## 完整示例
 
-[sheng 触控驱动](/zh/devices/sheng-touch-driver)展示完整结构：纯处理核心、总线接口后的控制器协议、带来源的板级常量、分阶段探针和 HID 发布。
+[Novatek 触控驱动](/zh/drivers/native-novatek-touch)展示完整结构：纯处理核心、总线接口后的控制器协议、带来源的板级常量、分阶段探针和 HID 发布。
 
 ## 下一步
 

@@ -1,19 +1,17 @@
-# 触控驱动示例
+# Novatek NT36532E 触控驱动
 
-sheng 设备仓库包含一个完整的 Novatek NT36532E 触控驱动，展示新触控驱动的结构。
+NativeNovatekTouch 是 UniXNU 的独立模块，由 UniXNU-sheng 引入。它是 Novatek NT36532E 的完整触控驱动，也是新触控驱动的示例。
 
-源码位于 [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng)：
-
-| 路径 | 内容 |
-| --- | --- |
-| `drivers/NativeNovatekTouch/NvtTouchCore.c` | 纯触控处理 |
-| `drivers/NativeNovatekTouch/NvtProtocol.c` | 控制器协议 |
-| `drivers/NativeNovatekTouch/NvtProtocol.h` | 协议常量和总线接口 |
-| `drivers/NativeGeniSpi/GeniSpi.c` | GENI SPI 引擎 |
-| `package/TouchBoard.h` | 板级常量和时钟辅助函数 |
-| `package/TouchProbe.cpp` | 内核探针和帧循环 |
-| `package/TouchBoardTests.c` | 板级辅助函数的主机测试 |
-| `drivers/NativeHidInput/NativeHidInput.cpp` | HID digitizer 源 |
+| 仓库 | 路径 | 内容 |
+| --- | --- | --- |
+| [NativeNovatekTouch](https://github.com/UniXNU/NativeNovatekTouch) | `NvtTouchCore.c` | 纯触控处理 |
+| NativeNovatekTouch | `NvtProtocol.c` | 控制器协议 |
+| NativeNovatekTouch | `NvtProtocol.h` | 协议常量和总线接口 |
+| [NativeGeniSpi](https://github.com/UniXNU/NativeGeniSpi) | `GeniSpi.c` | GENI SPI 引擎 |
+| [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | `package/TouchBoard.h` | 板级常量和时钟辅助函数 |
+| UniXNU-sheng | `package/TouchProbe.cpp` | 内核探针和帧循环 |
+| UniXNU-sheng | `package/TouchBoardTests.c` | 板级辅助函数的主机测试 |
+| [NativeHidInput](https://github.com/UniXNU/NativeHidInput) | `NativeHidInput.cpp` | HID digitizer 源 |
 
 ## 两层结构
 

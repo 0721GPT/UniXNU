@@ -250,7 +250,7 @@ The Adreno path is documented in [Adreno 740 driver](/drivers/native-adreno).
 
 ## Worked example
 
-The [sheng touch driver](/devices/sheng-touch-driver) shows the full structure: a pure processing core, a controller protocol behind a bus interface, board constants with sources, staged probing and HID publication.
+The [Novatek touch driver](/drivers/native-novatek-touch) shows the full structure: a pure processing core, a controller protocol behind a bus interface, board constants with sources, staged probing and HID publication.
 
 ## Next steps
 

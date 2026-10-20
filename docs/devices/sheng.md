@@ -309,7 +309,7 @@ The board file points at an iPadOS restore image. To boot macOS on the same boar
 | Desktop rendering | GPU-composited through the native Metal plugin; slow on first use |
 | GPU | partial: commands, native 4 KiB SMMU and scanout copy work; shader compilation is slow and no complete precompiled UI pack exists |
 
-The touch driver is documented in [Touch driver example](/devices/sheng-touch-driver).
+The touch driver is documented in [Novatek touch driver](/drivers/native-novatek-touch).
 
 ## Device specifics
 
@@ -323,5 +323,5 @@ The touch driver is documented in [Touch driver example](/devices/sheng-touch-dr
 
 - [Porting](/porting/)
 - [Adreno 740 driver](/drivers/native-adreno)
-- [Touch driver example](/devices/sheng-touch-driver)
+- [Novatek touch driver](/drivers/native-novatek-touch)
 - [Troubleshooting](/reference/troubleshooting)

@@ -34,4 +34,4 @@
 
 ## sheng
 
-[sheng 页面](/zh/devices/sheng)记录小米平板 6S Pro 移植。它是一个设备条目。[触控驱动示例](/zh/devices/sheng-touch-driver)把 sheng 的触控驱动作为内置 XNU 驱动的完整示例。
+[sheng 页面](/zh/devices/sheng)记录小米平板 6S Pro 移植。它是一个设备条目。[Novatek 触控驱动](/zh/drivers/native-novatek-touch)把 sheng 的触控驱动作为内置 XNU 驱动的完整示例。
