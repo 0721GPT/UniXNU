@@ -11,6 +11,7 @@
 #include "bridge/NativeMetalObjects.h"
 #include "bridge/FrontendChecks.h"
 #include "NativeBridgeMetalFrontend.h"
+#include "GpuScanoutClient.h"
 #include <fcntl.h>
 #include <pthread.h>
 #include <sys/mman.h>
@@ -31,6 +32,7 @@ struct Job {
 };
 static Gpu *gGpu;
 static Job *gJob;
+static id gDevice;   // the frontend device of the checks, kept for the scanout stage
 static void mark(uint32_t value) {
     if (gJob) gJob->last = value;
     if (gGpu) gGpu->mark(value);
@@ -45,6 +47,7 @@ static void frontend(Job *job) {
     // The runtime's reasons are per thread: keep this worker's for the report.
     if (!device) {strlcpy(job->error, nmb_last_error(), sizeof job->error); return;}
     job->frontendOpened = true;
+    gDevice = device;
     size_t bytes = 0;
     const void *air = nmb_fixture_air(&bytes);
     id library = native_bridge_metal_library_with_air(air, bytes);
@@ -53,7 +56,13 @@ static void frontend(Job *job) {
     if (!library || !fcLibrary) {strlcpy(job->error, nmb_last_error(), sizeof job->error); return;}
     job->frontend.mark = mark;
     job->frontendRan = true;
-    frontendchecks::run(device, library, fcLibrary, nil, &job->frontend);
+    // An exception escaping a worker thread aborts the whole host process (SpringBoard died that way, int-075/083): report it as a failed check.
+    @try {
+        frontendchecks::run(device, library, fcLibrary, nil, &job->frontend);
+    } @catch (NSException *exception) {
+        ++job->frontend.failed;
+        snprintf(job->frontend.first, sizeof job->frontend.first, "exception %.40s", exception.name.UTF8String ?: "?");
+    }
 }
 static void *worker(void *arg) {
     Job *job = static_cast<Job *>(arg);
@@ -72,6 +81,63 @@ static void *worker(void *arg) {
     if (!job->code) frontend(job);
     __atomic_store_n(&job->done, true, __ATOMIC_RELEASE);
     return nullptr;
+}
+// Serves the display driver's frames with the GPU on `device` (the kernel offers them only with sheng-fb-gpu=1). The calls go through a hand-off-only
+// connection to the accelerator (open type 0x4148: no GPU slot is taken): the original sandbox profiles admit that class and not the presenter's own
+// service. Reports on GPU7 only when the state changes: "P<step> e<hex>" (0 no connection, 1 no selector, 2 mode refused, 3 scanout not
+// mappable/importable, 4 serving), then "PF <frames>/<failures> r<last result> v<verified>/<differing rows> t<ms>" at the first frame, every fifth after
+// and the first failure, "PX ..." when serving stops. Returns when serving stops.
+struct ScanoutContext {
+    Gpu link;
+    Gpu *marker;
+};
+static void serveScanout(Gpu &gpu, id device) {
+    ScanoutContext context;
+    context.marker = &gpu;
+    Gpu &link = context.link;
+    link.call = gpu.call; link.map = gpu.map; link.unmap = gpu.unmap; link.openFn = gpu.openFn; link.closeFn = gpu.closeFn; link.port = gpu.port;
+    gpuscanout::Stats st = {};
+    char line[64];
+    gpu.mark(0x6700);
+    const int openResult = link.openFn ? link.openFn(link.port, mach_task_self(), 0x4148, &link.conn) : -1;
+    if (openResult != 0 || !link.conn) {
+        snprintf(line, sizeof line, "P0 e%x", (unsigned)openResult);
+    } else if (gpu.mark(0x6701), !link.probe()) {
+        snprintf(line, sizeof line, "P1");
+    } else {
+        gpu.mark(0x6702);
+        gpuscanout::Transport transport = {&context,
+            [](void *c, uint32_t method, const void *in, size_t is, void *out, size_t os) -> int {
+                return static_cast<ScanoutContext *>(c)->link.method(0x7000 + method, in, is, out, os);
+            },
+            [](void *c, uint64_t *address, uint64_t *length) -> int {
+                Gpu &g = static_cast<ScanoutContext *>(c)->link;
+                return g.map(g.conn, 0x5343, mach_task_self(), address, length, 0x101);   // anywhere + inhibit cache
+            },
+            [](void *c, uint32_t value) {static_cast<ScanoutContext *>(c)->marker->mark(value);}};
+        gpuscanout::Client client;
+        const bool opened = client.open((id<MTLDevice>)device, transport, &st);
+        snprintf(line, sizeof line, "P%d e%x", st.step, (unsigned)st.error);
+        streamText7(gpu, line);
+        if (opened) {
+            uint64_t reportedFrames = 0, reportedFailures = 0;
+            while (client.serveOne(500)) {
+                const bool frame = st.frames && (st.frames == 1 || st.frames - reportedFrames >= 5);
+                if (frame || (st.failures && !reportedFailures)) {
+                    reportedFrames = st.frames ? st.frames : reportedFrames;
+                    reportedFailures = st.failures ? st.failures : reportedFailures;
+                    const uint64_t served = st.frames + st.failures;
+                    snprintf(line, sizeof line, "PF %llu/%llu r%d v%llu/%llu t%u a%llu", (unsigned long long)st.frames, (unsigned long long)st.failures,
+                             st.lastResult, (unsigned long long)st.verified, (unsigned long long)st.mismatchRows, st.lastMs,
+                             (unsigned long long)(served ? st.totalMs / served : 0));
+                    streamText7(gpu, line);
+                }
+            }
+            snprintf(line, sizeof line, "PX %llu/%llu r%d e%x", (unsigned long long)st.frames, (unsigned long long)st.failures, st.lastResult,
+                     (unsigned)st.error);
+        }
+    }
+    streamText7(gpu, line);
 }
 static void run(Gpu &gpu, const char *turnipPath) {
     gpu.mark(0x6500);
@@ -118,8 +184,14 @@ static void run(Gpu &gpu, const char *turnipPath) {
     const bool ok = !job->code && !r.compute_bad && !r.render_bad && !r.import_bad;
     gpu.mark(ok ? 0x65f0 : 0x65f1);
     if (!job->code) gpu.mark(job->frontendRan && !job->frontend.failed ? 0x66f0 : 0x66f1);
+    const bool scanout = ok && job->frontendRan && !job->frontend.failed && gDevice;
     gJob = nullptr;
-    gGpu = nullptr;
     delete job;
+    // After the checks' verdict has been on the page for a while: serve the display driver's frames with the GPU.
+    if (scanout) {
+        sleep(8);
+        serveScanout(gpu, gDevice);
+    }
+    gGpu = nullptr;
 }
 }  // namespace bridgephase

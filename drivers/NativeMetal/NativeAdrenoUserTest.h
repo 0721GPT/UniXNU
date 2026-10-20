@@ -7,6 +7,7 @@
 #pragma once
 #include <dlfcn.h>
 #include <mach/mach.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -180,15 +181,22 @@ int runTest(Gpu &gpu, uint32_t mapFlags, int &step, int &error) {
 }
 
 // A report line as a marker stream (0x7fff, then 0x70cc per character): works while another connection holds the driver's single slot.
+// Two threads of one process may report (the published mode's status monitor and the scanout client): the driver keeps one text cursor, so a line
+// goes out whole.
+static pthread_mutex_t gStreamLock = PTHREAD_MUTEX_INITIALIZER;
 static void streamText(Gpu &gpu, const char *text) {
+    pthread_mutex_lock(&gStreamLock);
     gpu.mark(0x7fff);
     for (unsigned i = 0; i < 63 && text[i]; ++i) gpu.mark(0x7000 | (uint8_t)text[i]);
+    pthread_mutex_unlock(&gStreamLock);
 }
 
 // Line into report (GPU7) instead of report2 (GPU8).
 __attribute__((unused)) static void streamText7(Gpu &gpu, const char *text) {
+    pthread_mutex_lock(&gStreamLock);
     gpu.mark(0x7ffe);
     for (unsigned i = 0; i < 63 && text[i]; ++i) gpu.mark(0x7000 | (uint8_t)text[i]);
+    pthread_mutex_unlock(&gStreamLock);
 }
 
 // Remap probe (int-064): does the CP read the new pages after a GPU address is moved to other physical pages? int-063's W1 run (the

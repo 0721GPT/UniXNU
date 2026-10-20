@@ -1,6 +1,24 @@
 /* SPDX-License-Identifier: MIT */
 #include "NativeAdrenoUserClient.h"
 extern "C" volatile uint32_t native_adreno_trace_stage;
+/* 0 keeps user BOs cacheable and maintained before every submission (int-070..097); the board sets it from the sheng-gpu-wc boot argument. */
+extern "C" {volatile uint32_t native_adreno_wc_enabled=1;}
+/* BoImport record: [0] calls, [1] refused, [2..5] last refusal (status, stage, bytes, address), [6..9] first refusal. Stages 1..3 are this file's
+ * checks, 10..19 NativeAdrenoMemory::importTask's. */
+extern "C" {volatile uint64_t native_adreno_import_diag[10];}
+extern "C" volatile uint32_t native_adreno_import_stage;
+extern "C" volatile uint32_t native_adreno_io_coherent;
+/* Per kernel method: [method][0] calls, [1] calls that returned non-zero, [2] last status, [3] total time (us, 32-bit). Method numbers are the ABI's (1..16). */
+extern "C" {extern uint64_t (*native_adreno_vm_now_us)(void);volatile uint32_t native_adreno_method_stats[20][4];volatile uint32_t native_adreno_map_fail[7][2];}
+static void noteImport(IOReturn status,uint32_t stage,uint64_t bytes,uint64_t address)
+{
+    if(!status)return;
+    native_adreno_import_diag[1]=native_adreno_import_diag[1]+1;
+    native_adreno_import_diag[2]=(uint32_t)status;native_adreno_import_diag[3]=stage;native_adreno_import_diag[4]=bytes;native_adreno_import_diag[5]=address;
+    if(native_adreno_import_diag[1]==1) {
+        native_adreno_import_diag[6]=(uint32_t)status;native_adreno_import_diag[7]=stage;native_adreno_import_diag[8]=bytes;native_adreno_import_diag[9]=address;
+    }
+}
 #include <IOKit/IOLib.h>
 #include <string.h>
 NativeAdrenoUserClient::Entry *NativeAdrenoUserClient::find(uint64_t handle)
@@ -114,6 +132,12 @@ IOReturn NativeAdrenoUserClient::allocBo(const NativeAdrenoAbiBoAlloc *request,
     }
     if(status)
         status=entry->memory.allocate((size_t)request->bytes,output_bits_,request->contiguous!=0,(size_t)request->bytes);
+    /* User BOs are write-combined for the CPU, as the GPU maps them non-cacheable: no per-submission cache maintenance.
+     * int-147 kept them cacheable under IO coherence and mapped the GPU side write-back: the first Turnip IB executed zeros and the GPU hung
+     * (the kernel's cacheable alias read zeros past the first line too). Turnip maps every BO asking kIOMapWriteCombineCache, the user's
+     * cache bits replace the kernel's (IOUserClient::mapClientMemory64), and XNU's view machinery changes the page attribute to match, so
+     * the aliases disagreed. A coherent own BO needs a client that asks for a write-back view. */
+    if(!status && native_adreno_wc_enabled)status=entry->memory.makeWriteCombined();
     if(status) {
         /* A failed allocation can leave quarantine behind; never reuse it. */
         clear(*entry);
@@ -132,13 +156,17 @@ IOReturn NativeAdrenoUserClient::importBo(const NativeAdrenoAbiBoImport *request
 {
     if(!request || !reply)return kIOReturnBadArgument;reply->handle=0;
     if(!open_)return kIOReturnNotReady;
+    native_adreno_import_diag[0]=native_adreno_import_diag[0]+1;
     const uint64_t limit=UINT64_C(1)<<NativeAdrenoAbiMaxBoBytesShift;
-    if(!task || !request->address || ((request->address|request->bytes)&4095) || !request->bytes || request->bytes>limit)
+    if(!task || !request->address || ((request->address|request->bytes)&4095) || !request->bytes || request->bytes>limit) {
+        noteImport(kIOReturnBadArgument,1,request->bytes,request->address);
         return kIOReturnBadArgument;
+    }
     Entry *entry=free();
-    if(!entry)return kIOReturnNoResources;
+    if(!entry) {noteImport(kIOReturnNoResources,2,request->bytes,request->address);return kIOReturnNoResources;}
     const IOReturn status=entry->memory.importTask(task,request->address,(size_t)request->bytes,output_bits_,(size_t)request->bytes);
     if(status) {
+        noteImport(status,native_adreno_import_stage,request->bytes,request->address);
         clear(*entry);
         if(entry->memory.release()!=kIOReturnSuccess) {entry->used=true;entry->unreleasable=true;}
         return status;
@@ -160,8 +188,14 @@ IOReturn NativeAdrenoUserClient::mapBo(const NativeAdrenoAbiBoMap *request,
     if(!entry || entry->unreleasable)return kIOReturnBadArgument;
     if(entry->mapped_state)return kIOReturnBusy;
     uint64_t handle=0;
-    const IOReturn status=vm_->map(&entry->memory,0,request->iova,request->permissions,
-        request->writeback,request->shareability,&handle);
+    /* Memory the owner maps read-only could only be pinned for reading: the GPU gets the read half of what was asked. */
+    const unsigned permissions=entry->memory.readOnly()?(request->permissions&~2u):request->permissions;
+    /* Imported memory is the owner's cacheable memory (IOSurfaces, no-copy buffers): once the board proved IO coherence, the GPU maps it
+     * write-back inner-shareable (Linux's IOMMU_CACHE PTE) and the CPU caches over it need no maintenance. The GPU's own BOs stay
+     * non-cacheable: their CPU view is write-combined, and a snoop could find a stale line of the kernel's cacheable alias. */
+    const bool coherent=entry->memory.imported() && native_adreno_io_coherent;
+    const IOReturn status=vm_->map(&entry->memory,0,request->iova,permissions,
+        coherent?1u:request->writeback,coherent?3u:request->shareability,&handle);
     if(status)return status;
     entry->mapped=handle;entry->iova=request->iova;entry->mapped_state=true;
     reply->iova=request->iova;
@@ -315,6 +349,24 @@ size_t NativeAdrenoUserClient::outputSize(uint32_t method)
 IOReturn NativeAdrenoUserClient::dispatch(uint32_t method,const void *input,
     size_t input_size,void *output,size_t output_size,const NativeAdrenoRingClock *clock)
 {
+    struct Tally {
+        uint32_t method;uint64_t began;IOReturn *result;const NativeAdrenoRingClock *clock;
+        Tally(uint32_t m,IOReturn *r,const NativeAdrenoRingClock *c):method(m),began(c && c->now_us?c->now_us(c->cookie):0),result(r),clock(c) {}
+        ~Tally() {
+            if(method>=20)return;
+            const uint64_t now=clock && clock->now_us?clock->now_us(clock->cookie):0;
+            native_adreno_method_stats[method][0]=native_adreno_method_stats[method][0]+1;
+            if(*result)native_adreno_method_stats[method][1]=native_adreno_method_stats[method][1]+1;
+            native_adreno_method_stats[method][2]=(uint32_t)*result;
+            native_adreno_method_stats[method][3]=native_adreno_method_stats[method][3]+(uint32_t)(now-began);
+        }
+    };
+    /* The same clock times the VM's table transactions (the board service's probe never ran on this path, so nothing else installed it). */
+    static const NativeAdrenoRingClock *vm_clock=nullptr;
+    vm_clock=clock;
+    native_adreno_vm_now_us=[]()->uint64_t{return vm_clock && vm_clock->now_us?vm_clock->now_us(vm_clock->cookie):0;};
+    IOReturn tally_result=kIOReturnSuccess;
+    Tally tally(method,&tally_result,clock);
     const size_t expected_in=inputSize(method),expected_out=outputSize(method);
     if(expected_in==SIZE_MAX || expected_out==SIZE_MAX)return kIOReturnUnsupported;
     if(input_size!=expected_in || output_size!=expected_out)return kIOReturnBadArgument;
@@ -344,6 +396,14 @@ IOReturn NativeAdrenoUserClient::dispatch(uint32_t method,const void *input,
         NativeAdrenoAbiBoMapReply reply{};
         status=mapBo(&request,&reply);
         if(!status)memcpy(output,&reply,sizeof(reply));
+        else {
+            /* Why maps fail (int-135: 55 of 191, and the translator answers each as a device out-of-memory): status, count, and what the table
+             * held and the failed request asked for the last time. */
+            unsigned at=0;while(at<5 && native_adreno_map_fail[at][0] && native_adreno_map_fail[at][0]!=(uint32_t)status)++at;
+            native_adreno_map_fail[at][0]=(uint32_t)status;native_adreno_map_fail[at][1]=native_adreno_map_fail[at][1]+1;
+            native_adreno_map_fail[5][0]=(uint32_t)vm_->spanCount();native_adreno_map_fail[5][1]=(uint32_t)vm_->objectCount();
+            native_adreno_map_fail[6][0]=(uint32_t)(request.iova>>12);native_adreno_map_fail[6][1]=(uint32_t)(request.handle);
+        }
         break;
     }
     case NativeAdrenoMethodBoFree: {
@@ -426,6 +486,7 @@ IOReturn NativeAdrenoUserClient::dispatch(uint32_t method,const void *input,
     }
     default:return kIOReturnUnsupported;
     }
+    tally_result=status;
     return status;
 }
 IOReturn NativeAdrenoUserClient::cpuMap(const NativeAdrenoAbiBoCpuMap *request,

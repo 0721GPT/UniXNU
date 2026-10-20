@@ -14,6 +14,15 @@ struct NativeAdrenoCpuState {
 IOReturn NativeAdrenoQueryCpu4K(NativeAdrenoCpuState *);
 enum NativeAdrenoCacheOperation {NativeAdrenoClean,NativeAdrenoCleanInvalidate,NativeAdrenoInvalidate};
 IOReturn NativeAdrenoMaintainOwnedPages(void *,size_t,NativeAdrenoCacheOperation);
+/* The same over whole physical pages of DRAM, through the kernel's physical aperture: data cache lines are physically tagged, so this
+ * reaches lines another task's mapping left (an imported IOSurface). Apple's sys_dcache_flush is only a DSB, so user space cannot. */
+IOReturn NativeAdrenoMaintainPhysicalPages(uint64_t physical,size_t bytes,NativeAdrenoCacheOperation);
+/* Every CPU mapping of the spans' pages becomes write-combined (true) or takes the default cacheable attribute again (false). */
+IOReturn NativeAdrenoSetPagesCacheMode(const NativeAdrenoPhysicalSpan *,size_t count,bool write_combined);
+/* int-100 found a write-combined BO's page back at the default (cacheable) attribute with dirty IB lines: XNU's view machinery sets a page's
+ * attribute when it populates or tears down a device-pager view. Every page of the spans no longer write-combined is made so again (the pmap
+ * then rewrites every mapping it tracks and writes the page's cache lines back); *reset counts them. */
+IOReturn NativeAdrenoReassertWriteCombined(const NativeAdrenoPhysicalSpan *,size_t count,uint32_t *reset);
 
 /* Native XNU backing store, not a Metal device or user ABI. No IOMMU mapper,
  * Linux fd/ioctl, hardware address, guessed PA or implicit destructor cleanup.
@@ -25,11 +34,14 @@ IOReturn NativeAdrenoMaintainOwnedPages(void *,size_t,NativeAdrenoCacheOperation
 class NativeAdrenoMemory final {
     IOBufferMemoryDescriptor *descriptor_=nullptr;
     IOMemoryDescriptor *imported_=nullptr;
+    bool read_only_=false;
     void *mapping_=nullptr;
     NativeAdrenoPhysicalSpan *spans_=nullptr;
     size_t bytes_=0,span_count_=0,span_capacity_=0;
     uint32_t device_references_=0;
-    bool prepared_=false,quarantined_=false;
+    bool prepared_=false,quarantined_=false,write_combined_=false,pooled_=false;
+    size_t pool_offset_=0;
+    IOReturn maintainImported(size_t offset,size_t bytes,NativeAdrenoCacheOperation);
 public:
     NativeAdrenoMemory()=default;
     ~NativeAdrenoMemory()=default;
@@ -42,12 +54,27 @@ public:
      * prepare(), raw unmapped physical segments, span/PA bounds and optional
      * physical contiguity are verified before zeroing/PoC publication. */
     IOReturn allocate(size_t bytes,unsigned output_bits,bool contiguous,size_t byte_budget);
+    /* One physically contiguous block taken from the VM early (while memory is not yet fragmented) and cut into BOs afterwards: a BO from it is
+     * one span of the GPU's table instead of one per scattered page (int-137: 59474 spans for 332 MiB, the 65536 span capacity ran out,
+     * BoMap failed, the translator answered out of device memory and the compositor fell back to the CPU; each map also walked every span, 167 ms).
+     * allocate() uses the pool when one is reserved and has room, else the scattered path. Only the board calls this. */
+    static IOReturn reservePool(unsigned output_bits,size_t bytes);
+    static size_t poolBytes();
     /* Pins bytes at address in task (a user task's own pages) instead of allocating; prepare() wires them until release().
      * There is no kernel mapping: the owner keeps its CPU mapping and does its own cache maintenance around GPU use, so
      * publishForDevice/acquireDeviceWrites have nothing to do for this object. Spans and PA bounds are checked as for allocate. */
     IOReturn importTask(void *task,uint64_t address,size_t bytes,unsigned output_bits,size_t byte_budget);
     bool imported() const {return imported_!=nullptr;}
-    bool backed() const {return descriptor_ || imported_;}
+    /* An import of memory the owner maps read-only (the kernel could pin it for reading only): the GPU may read it, never write it. */
+    bool readOnly() const {return read_only_;}
+    /* After allocate(), before any device or client mapping: cleans and invalidates the pages and makes every CPU mapping of them
+     * write-combined, so publishForDevice/acquireDeviceWrites have nothing left to do. release() restores the default attribute. */
+    IOReturn makeWriteCombined();
+    bool writeCombined() const {return write_combined_;}
+    /* NativeAdrenoReassertWriteCombined over this object's pages; nothing for an object that is not write-combined. */
+    IOReturn reassertWriteCombined(uint32_t *reset) const
+    {return write_combined_ && span_count_?NativeAdrenoReassertWriteCombined(spans_,span_count_,reset):kIOReturnSuccess;}
+    bool backed() const {return descriptor_ || imported_ || pooled_;}
     /* Refuses device references/quarantine; only clears ownership after real
      * descriptor complete() succeeds. No automatic reset or resource recycling. */
     IOReturn release();
@@ -57,7 +84,9 @@ public:
     /* Requires real CPU/device exclusion and retained ownership. Before GPU
      * writes, clean+invalidate; after genuine completion, invalidate only.
      * CPU must not dirty these pages while the device owns access. */
-    IOReturn publishForDevice(size_t offset,size_t bytes,bool device_writes);
+    /* A write-combined object is skipped unless include_write_combined: then its pages are maintained through the physical aperture,
+     * for a client whose view turned out to be cacheable after all (NativeAdrenoVm::distrustWriteCombined). */
+    IOReturn publishForDevice(size_t offset,size_t bytes,bool device_writes,bool include_write_combined=false);
     IOReturn acquireDeviceWrites(size_t offset,size_t bytes);
     bool quarantined() const {return quarantined_;}
     uint32_t deviceReferences() const {return device_references_;}

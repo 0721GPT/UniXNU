@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-/* HFI wire facts from the source pinned in scripts/data/adreno-inputs.json. No Linux runtime. */
+/* HFI wire facts from the source pinned by the umbrella. No Linux runtime. */
 #include "AdrenoHfi.h"
 #if !defined(__aarch64__) || __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #error Modern GMU HFI transport requires little-endian AArch64

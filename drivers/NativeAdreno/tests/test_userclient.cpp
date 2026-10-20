@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+extern "C" volatile uint32_t native_adreno_io_coherent;
+extern "C" volatile uint32_t native_adreno_coherent_skips[4];
 #define CHECK(x) do {if(!(x)){std::fprintf(stderr,"line %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
 #define SMMU_BYTES 0x40000
 #define CB 0x22000
@@ -213,10 +215,81 @@ int main()
         CHECK(!untouched.handle);
         NativeAdrenoAbiBoMap map{imported.handle,0x808000,3,0,2,0};
         NativeAdrenoAbiBoMapReply mapped{};
+        const unsigned physical=fixture.physical_calls;
         CHECK(p.client.mapBo(&map,&mapped)==kIOReturnSuccess && mapped.iova==0x808000);
+        CHECK(fixture.physical_calls==physical+4);   /* published at map, one call per scattered span */
+        /* A submission maintains the imported pages before it starts and again when its job is released after completion. */
+        NativeAdrenoAbiBoAlloc ib_alloc{4096,12,1};NativeAdrenoAbiBoAllocReply ib{};
+        CHECK(p.client.allocBo(&ib_alloc,&ib)==kIOReturnSuccess);
+        NativeAdrenoAbiBoMap ib_map{ib.handle,0x800000,3,0,2,0};NativeAdrenoAbiBoMapReply ib_mapped{};
+        CHECK(p.client.mapBo(&ib_map,&ib_mapped)==kIOReturnSuccess);
+        NativeAdrenoAbiSubmit submit{};submit.buffer_count=1;submit.buffers[0]={ib.handle,0x800000,256};
+        NativeAdrenoAbiSubmitReply reply{};
+        const size_t bytes=fixture.physical_bytes;
+        CHECK(p.client.submit(&submit,&reply,&ringclock)==kIOReturnSuccess);
+        CHECK(fixture.physical_bytes==bytes+4*4096);
+        fencemem[1]=reply.fence;
+        NativeAdrenoAbiWaitFence wait{reply.fence,UINT64_C(1000000)};
+        CHECK(p.client.waitFence(&wait,&ringclock)==kIOReturnSuccess);
+        CHECK(fixture.physical_bytes==bytes+2*4*4096);
+        NativeAdrenoAbiBoFree ib_free{ib.handle};
+        CHECK(p.client.freeBo(&ib_free)==kIOReturnSuccess);
         NativeAdrenoAbiBoFree released{imported.handle};
         CHECK(p.client.freeBo(&released)==kIOReturnSuccess);
         CHECK(fixture.imports_live==before && p.client.liveObjects()==0);
+        /* Memory the owner maps read-only cannot be pinned for writing (KERN_PROTECTION_FAILURE): it is pinned for reading, reported read-only,
+         * and the GPU mapping the client asks for read/write comes out read-only. */
+        fixture.write_protected_imports=true;
+        const unsigned prepared=fixture.prepared;
+        NativeAdrenoAbiBoAllocReply ro{};
+        NativeAdrenoAbiBoImport ro_request{0x20000000,2*4096};
+        CHECK(p.client.importBo(&ro_request,task,&ro)==kIOReturnSuccess && ro.handle);
+        CHECK(fixture.prepared==prepared+2);   /* the writable attempt, then the read-only one */
+        NativeAdrenoMemory *ro_memory=p.client.memoryOf(ro.handle);
+        CHECK(ro_memory && ro_memory->readOnly() && ro_memory->imported());
+        NativeAdrenoAbiBoMap ro_map{ro.handle,0x80a000,3,0,2,0};NativeAdrenoAbiBoMapReply ro_mapped{};
+        CHECK(p.client.mapBo(&ro_map,&ro_mapped)==kIOReturnSuccess && ro_mapped.iova==0x80a000);
+        NativeAdrenoAbiBoFree ro_free{ro.handle};
+        CHECK(p.client.freeBo(&ro_free)==kIOReturnSuccess);
+        fixture.write_protected_imports=false;
+        /* Any other prepare failure is still a refusal. */
+        fixture.prepare_fail=true;
+        CHECK(p.client.importBo(&ro_request,task,&ro)==kIOReturnIOError);
+        fixture.prepare_fail=false;
+        CHECK(fixture.imports_live==before && p.client.liveObjects()==0);
+        CHECK(p.client.close()==kIOReturnSuccess);
+    }
+    /* With IO coherence proved, an import maps write-back inner-shareable whatever the client asked, and neither its map, its
+     * submission, its completion nor its free maintains its pages; the GPU's own BOs keep the attributes asked for. */
+    {
+        Path p;CHECK(exposed(p)==kIOReturnSuccess);
+        native_adreno_io_coherent=1;
+        const uint32_t skips[4]={native_adreno_coherent_skips[0],native_adreno_coherent_skips[1],native_adreno_coherent_skips[2],
+                                 native_adreno_coherent_skips[3]};
+        void *task=reinterpret_cast<void *>(0x77);
+        NativeAdrenoAbiBoImport request{0x10000000,4*4096};NativeAdrenoAbiBoAllocReply imported{};
+        CHECK(p.client.importBo(&request,task,&imported)==kIOReturnSuccess && imported.handle);
+        const unsigned physical=fixture.physical_calls;const size_t bytes=fixture.physical_bytes;
+        NativeAdrenoAbiBoMap map{imported.handle,0x808000,3,0,2,0};NativeAdrenoAbiBoMapReply mapped{};
+        CHECK(p.client.mapBo(&map,&mapped)==kIOReturnSuccess && mapped.iova==0x808000);
+        CHECK(fixture.physical_calls==physical && native_adreno_coherent_skips[0]==skips[0]+1);
+        NativeAdrenoAbiBoAlloc ib_alloc{4096,12,1};NativeAdrenoAbiBoAllocReply ib{};
+        CHECK(p.client.allocBo(&ib_alloc,&ib)==kIOReturnSuccess);
+        NativeAdrenoAbiBoMap ib_map{ib.handle,0x800000,3,0,2,0};NativeAdrenoAbiBoMapReply ib_mapped{};
+        CHECK(p.client.mapBo(&ib_map,&ib_mapped)==kIOReturnSuccess);
+        CHECK(native_adreno_coherent_skips[0]==skips[0]+1);   /* the GPU's own BO is not coherent */
+        NativeAdrenoAbiSubmit submit{};submit.buffer_count=1;submit.buffers[0]={ib.handle,0x800000,256};
+        NativeAdrenoAbiSubmitReply reply{};
+        CHECK(p.client.submit(&submit,&reply,&ringclock)==kIOReturnSuccess);
+        CHECK(fixture.physical_bytes==bytes && native_adreno_coherent_skips[2]>skips[2]);
+        fencemem[1]=reply.fence;
+        NativeAdrenoAbiWaitFence wait{reply.fence,UINT64_C(1000000)};
+        CHECK(p.client.waitFence(&wait,&ringclock)==kIOReturnSuccess);
+        CHECK(fixture.physical_bytes==bytes && native_adreno_coherent_skips[3]>skips[3]);
+        NativeAdrenoAbiBoFree ib_free{ib.handle};CHECK(p.client.freeBo(&ib_free)==kIOReturnSuccess);
+        NativeAdrenoAbiBoFree released{imported.handle};CHECK(p.client.freeBo(&released)==kIOReturnSuccess);
+        CHECK(fixture.physical_bytes==bytes && native_adreno_coherent_skips[1]==skips[1]+1 && p.client.liveObjects()==0);
+        native_adreno_io_coherent=0;
         CHECK(p.client.close()==kIOReturnSuccess);
     }
     /* The external-method entry enforces exact record sizes and copies only
@@ -505,4 +578,14 @@ int main()
         CHECK(p.client.createQueue(&after)==kIOReturnNotReady);
     }
     std::printf("PASS: 1 complete user-client transaction with pre-submit wait, 1 CPU mapping lease block, 1 queue lifecycle block, 3 metadata refusals, 1 dispatched transaction, 6 dispatch size/argument refusals, 6 allocation refusals, 7 map refusals and 1 poisoned-commit retention case over software SMMU/CP peers\n");
+}
+/* Physical-page maintenance (imported BOs): record it; no host page is touched. */
+/* Host double: the page attribute change of user BOs has no host equivalent (no host page is touched). */
+IOReturn NativeAdrenoSetPagesCacheMode(const NativeAdrenoPhysicalSpan *spans,size_t count,bool){return spans && count?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoReassertWriteCombined(const NativeAdrenoPhysicalSpan *spans,size_t count,uint32_t *reset)
+{return spans && count && reset?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoMaintainPhysicalPages(uint64_t physical,size_t bytes,NativeAdrenoCacheOperation op)
+{
+    if(!physical || !bytes || ((physical|bytes)&4095) || op>NativeAdrenoInvalidate)std::abort();
+    ++fixture.physical_calls;fixture.physical_bytes+=bytes;return kIOReturnSuccess;
 }

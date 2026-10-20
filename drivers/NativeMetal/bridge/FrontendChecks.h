@@ -4,7 +4,8 @@
 // 1 compute; 2 render to a private texture with a blit readback; 3 render into a real IOSurface read by the CPU, 4 sampling it into a
 // second surface (the composition shape); 5 a compute kernel reading and writing textures; 6 completion handler order; 7 an encoder refusal
 // failing its command buffer; 8 the target's QuartzCore library (when a path is given); 9 function constants (when that fixture is given);
-// 10 a shared event ordering two queues (GPU wait, GPU signal, CPU signal, listener notification) and a fence between two encoders.
+// 10 a shared event ordering two queues (GPU wait, GPU signal, CPU signal, listener notification) and a fence between two encoders;
+// 11 heaps (automatic and placement), a visibility result buffer and setDepthBias.
 #pragma once
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
@@ -379,6 +380,74 @@ static void run(id<MTLDevice> device, id<MTLLibrary> library, id<MTLLibrary> fcL
                 CHECK(!dispatch_semaphore_wait(notified, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC)) && heard >= 3,
                       "listener notification %llu", (unsigned long long)heard);
                 CHECK([event waitUntilSignaledValue:3 timeoutMS:10], "waitUntilSignaledValue");
+            }
+        }
+        step(r, 0x660b);
+        // 11. heaps, a visibility result and a depth bias. An automatic heap's buffer is a buffer of that heap (`heap`, `usedSize`); a placement
+        // heap's two buffers are distinct bytes at their offsets; a pass counts the visible quad into its visibility result buffer (Boolean: 1);
+        // setDepthBias reaches the runtime without failing the command buffer.
+        {
+            MTLHeapDescriptor *hd = [MTLHeapDescriptor new];
+            hd.size = 65536;
+            hd.storageMode = MTLStorageModeShared;
+            id<MTLHeap> heap = [device newHeapWithDescriptor:hd];
+            CHECK(heap && heap.size >= 65536, "automatic heap");
+            if (heap) {
+                id<MTLBuffer> hb = [heap newBufferWithLength:4096 options:MTLResourceStorageModeShared];
+                CHECK(hb && hb.heap == heap, "a heap buffer names its heap");
+                CHECK(heap.usedSize >= 4096, "heap used size %lu", (unsigned long)heap.usedSize);
+                if (hb) {
+                    id<MTLCommandBuffer> cb = [queue commandBuffer];
+                    id<MTLBlitCommandEncoder> fill = [cb blitCommandEncoder];
+                    [fill fillBuffer:hb range:NSMakeRange(0, 4096) value:0x5a];
+                    [fill endEncoding];
+                    if (finish(cb, "heap fill")) CHECK(((const uint8_t *)hb.contents)[0] == 0x5a && ((const uint8_t *)hb.contents)[4095] == 0x5a, "heap buffer contents");
+                }
+            }
+            MTLHeapDescriptor *pd = [MTLHeapDescriptor new];
+            pd.size = 65536;
+            pd.type = MTLHeapTypePlacement;
+            pd.storageMode = MTLStorageModeShared;
+            id<MTLHeap> placed = [device newHeapWithDescriptor:pd];
+            CHECK(placed && placed.type == MTLHeapTypePlacement, "placement heap");
+            if (placed) {
+                id<MTLBuffer> first = [placed newBufferWithLength:4096 options:MTLResourceStorageModeShared offset:0];
+                id<MTLBuffer> second = [placed newBufferWithLength:4096 options:MTLResourceStorageModeShared offset:4096];
+                CHECK(first && second && second.heapOffset == 4096, "placed buffers");
+                if (first && second) {
+                    id<MTLCommandBuffer> cb = [queue commandBuffer];
+                    id<MTLBlitCommandEncoder> fill = [cb blitCommandEncoder];
+                    [fill fillBuffer:first range:NSMakeRange(0, 4096) value:0x11];
+                    [fill fillBuffer:second range:NSMakeRange(0, 4096) value:0x22];
+                    [fill endEncoding];
+                    if (finish(cb, "placement fill"))
+                        CHECK(((const uint8_t *)first.contents)[4095] == 0x11 && ((const uint8_t *)second.contents)[0] == 0x22, "placed buffers overlap");
+                }
+            }
+            MTLTextureDescriptor *td = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm width:8 height:8 mipmapped:NO];
+            td.usage = MTLTextureUsageRenderTarget;
+            td.storageMode = MTLStorageModePrivate;
+            id<MTLTexture> target = [device newTextureWithDescriptor:td];
+            id<MTLBuffer> visible = [device newBufferWithLength:8 options:MTLResourceStorageModeShared];
+            if (target && visible) {
+                memset(visible.contents, 0, 8);
+                MTLRenderPassDescriptor *pass = [MTLRenderPassDescriptor renderPassDescriptor];
+                pass.colorAttachments[0].texture = target;
+                pass.colorAttachments[0].loadAction = MTLLoadActionClear;
+                pass.colorAttachments[0].storeAction = MTLStoreActionStore;
+                pass.visibilityResultBuffer = visible;
+                id<MTLCommandBuffer> cb = [queue commandBuffer];
+                id<MTLRenderCommandEncoder> e = [cb renderCommandEncoderWithDescriptor:pass];
+                [e setRenderPipelineState:colored];
+                [e setVisibilityResultMode:MTLVisibilityResultModeBoolean offset:0];
+                [e setDepthBias:0 slopeScale:0 clamp:0];
+                std::vector<float> colors;
+                for (unsigned i = 0; i < 6; ++i) colors.insert(colors.end(), {1.0f, 0.2f, 0.0f, 1.0f});
+                [e setVertexBytes:kQuarter length:sizeof(float) * 2 * 6 atIndex:0];
+                [e setVertexBytes:colors.data() length:colors.size() * sizeof(float) atIndex:1];
+                [e drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:6];
+                [e endEncoding];
+                if (finish(cb, "visibility result")) CHECK(*(const uint64_t *)visible.contents != 0, "visibility result stayed 0 for a visible quad");
             }
         }
         if (layer) CFRelease(layer);

@@ -249,3 +249,13 @@ int main()
     }
     std::printf("PASS: 1 userspace-to-kernel round trip including CPU mapping leases and queue lifecycle, 1 version mismatch, 1 altered-size rejection and 8 client-side refusals over software SMMU/CP peers\n");
 }
+/* Physical-page maintenance (imported BOs): record it; no host page is touched. */
+/* Host double: the page attribute change of user BOs has no host equivalent (no host page is touched). */
+IOReturn NativeAdrenoSetPagesCacheMode(const NativeAdrenoPhysicalSpan *spans,size_t count,bool){return spans && count?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoReassertWriteCombined(const NativeAdrenoPhysicalSpan *spans,size_t count,uint32_t *reset)
+{return spans && count && reset?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoMaintainPhysicalPages(uint64_t physical,size_t bytes,NativeAdrenoCacheOperation op)
+{
+    if(!physical || !bytes || ((physical|bytes)&4095) || op>NativeAdrenoInvalidate)std::abort();
+    ++fixture.physical_calls;fixture.physical_bytes+=bytes;return kIOReturnSuccess;
+}
