@@ -1158,6 +1158,34 @@ AddEntry (
   Entry->Path   = MakePath (UNIXNU_CONFIG_DIR, Path);
   Entry->Args   = UniXNUAsciiToUnicode (TomlGetString (Table, "args", NULL));
   Entry->Confirm = UniXNUAsciiToUnicode (TomlGetString (Table, "confirm", NULL));
+  {
+    TOML_NODE  *Titles = TomlGet (Table, "confirm_titles");
+    TOML_NODE  *Extra  = TomlGet (Table, "confirm_args");
+    TOML_NODE  *T;
+    TOML_NODE  *A;
+    UINTN      N;
+
+    if ((Titles != NULL) && (Extra != NULL) && (Titles->Type == TomlArray) && (Extra->Type == TomlArray) &&
+        (TomlCount (Titles) == TomlCount (Extra)) && (TomlCount (Titles) > 0) && (Entry->Confirm != NULL))
+    {
+      N                    = TomlCount (Titles);
+      Entry->ConfirmTitles = AllocateZeroPool (N * sizeof (CHAR16 *));
+      Entry->ConfirmArgs   = AllocateZeroPool (N * sizeof (CHAR16 *));
+      if ((Entry->ConfirmTitles != NULL) && (Entry->ConfirmArgs != NULL)) {
+        for (T = Titles->Child, A = Extra->Child; (T != NULL) && (A != NULL); T = T->Next, A = A->Next) {
+          if ((T->Type != TomlString) || (A->Type != TomlString)) {
+            break;
+          }
+
+          Entry->ConfirmTitles[Entry->ConfirmCount] = UniXNUAsciiToUnicode (T->String);
+          Entry->ConfirmArgs[Entry->ConfirmCount]   = UniXNUAsciiToUnicode (A->String);
+          Entry->ConfirmCount++;
+        }
+      }
+    } else if ((Titles != NULL) || (Extra != NULL)) {
+      ConfigError (Config, "entry '%a': confirm_titles and confirm_args must be arrays of strings of equal length, with confirm", (Entry->Id != NULL) ? Entry->Id : "?");
+    }
+  }
   Entry->Initrd = MakePath (UNIXNU_CONFIG_DIR, TomlGetString (Table, "initrd", NULL));
   List = TomlGet (Table, "kext");
   if (List != NULL) {

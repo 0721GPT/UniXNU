@@ -213,6 +213,9 @@ typedef struct {
   CHAR16           *Path;       ///< "\\EFI\\x.efi" or "fv:<GUID>".
   CHAR16           *Args;
   CHAR16           *Confirm;    ///< NULL, or the question shown before this entry boots (it never boots by countdown).
+  CHAR16           **ConfirmTitles;  ///< Optional choices offered with the question; each adds ConfirmArgs[i] to Args.
+  CHAR16           **ConfirmArgs;
+  UINTN            ConfirmCount;
   CHAR16           *Dtb;        ///< NULL, L"firmware" or a file path.
   CHAR16           *Initrd;
   UNIXNU_DT_PATCH      *Patches;    ///< Entry patches, chosen properties last.
@@ -579,16 +582,18 @@ UniXNUMenuRun (
   );
 
 /**
-  Ask the user to confirm an entry that has a `confirm` text. Only the Enter key (the power key on a device with hardware keys)
-  confirms; any other key, or no input device at all, cancels. Keys pressed before the question appeared are discarded.
+  Ask the user to confirm an entry that has a `confirm` text. Without choices only the Enter key (the power key on a device with
+  hardware keys) confirms and any other key cancels. With choices, Up/Down step through them and a final Cancel (selected first),
+  Enter picks the shown one. No input device at all cancels. Keys pressed before the question appeared are discarded.
 
   @retval TRUE   Confirmed.
   @retval FALSE  Cancelled.
 **/
 BOOLEAN
 UniXNUMenuConfirm (
-  IN UNIXNU_UI      *Ui,
-  IN UNIXNU_ENTRY   *Entry
+  IN  UNIXNU_UI      *Ui,
+  IN  UNIXNU_ENTRY   *Entry,
+  OUT UINTN      *Choice
   );
 
 #endif
