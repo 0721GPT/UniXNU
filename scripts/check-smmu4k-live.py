@@ -45,9 +45,22 @@ counts = re.search(r'(\d+) native4K lower/upper mapping profiles, (\d+) I/O/cach
 if not counts or int(counts[1]) != 3264:
     raise SystemExit('Expected independent profile coverage absent')
 pairs = re.search(r'(\d+) dual-region native4K profiles and (\d+) dual-region failure/alias/isolation controls', host.stdout)
-if not pairs or tuple(map(int,pairs.groups())) != (1632,619):
+if not pairs or tuple(map(int,pairs.groups())) != (1632,339):
     raise SystemExit('Expected dual-region coverage absent')
-(out / 'host.log').write_text(host.stdout)
+batches = re.search(r'(\d+) batched scattered-page map/unmap transactions', host.stdout)
+if not batches or int(batches[1]) != 174:
+    raise SystemExit('Expected batched update coverage absent')
+alias_test = out / 'test-alias'
+subprocess.run(['xcrun', 'clang', '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-fsanitize=address,undefined',
+                '-DARM_SMMU4K_TEST_COVERAGE', '-fsanitize-coverage=trace-pc-guard',
+                '-I', kit, kit / 'test_alias.c', *[s for s in sources if s.stem != 'ArmSmmu4KLive'], '-o', alias_test], check=True, timeout=60)
+alias = subprocess.run([alias_test], check=True, capture_output=True, text=True, timeout=120)
+print(alias.stdout, end='')
+if not re.search(r'PASS: 15000 sorted alias checks', alias.stdout):
+    raise SystemExit('Expected sorted alias coverage absent')
+if 'PASS: mixed-size alias gap/long-range controls and bounded compiler-coverage work' not in alias.stdout:
+    raise SystemExit('Expected bounded mixed-size alias controls absent')
+(out / 'host.log').write_text(host.stdout + alias.stdout)
 
 flags = ['-target', 'arm64-apple-ios17.0', '-O2', '-Wall', '-Wextra', '-Werror',
          '-Wno-incompatible-sysroot', '-ffreestanding', '-mgeneral-regs-only']
