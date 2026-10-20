@@ -4,7 +4,7 @@
 
 | 设备 | SoC | 支持功能 | 设备仓库 | 固件 |
 | --- | --- | --- | --- | --- |
-| 小米平板 6S Pro（sheng） | SM8550 | 显示、触控 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
+| 小米平板 6S Pro（sheng） | SM8550 | 显示、触控、GPU（部分） | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
 
 ## 设备页面记录什么
 

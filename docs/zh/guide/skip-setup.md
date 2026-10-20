@@ -104,7 +104,7 @@ out/<board>/payload/payload.json
 3. 启动镜像。
 4. 日志到达 SpringBoard，不再停留在 Setup 页面。
 
-参考实现是本仓库的 `scripts/seed-data-skip-setup.py`。sheng 移植在 `blu-sharky/sheng-ipados` 的提交 `5eba9f5` 中记录了使用这些改动的首次硬件启动。
+参考实现是本仓库的 `scripts/seed-data-skip-setup.py`。sheng 移植记录了使用这些改动的首次硬件启动。
 
 ## 下一步
 

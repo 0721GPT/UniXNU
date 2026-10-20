@@ -64,5 +64,6 @@ A device repository can override any of these directories with its own version.
 
 - [UEFI drivers](/drivers/uefi-drivers)
 - [XNU drivers](/drivers/xnu-drivers)
+- [Adreno 740 driver](/drivers/native-adreno)
 - [Kext bundles](/drivers/kexts)
 - [Device tree matching](/drivers/device-tree-matching)

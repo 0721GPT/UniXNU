@@ -147,6 +147,24 @@ CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
 CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
 ```
 
+## GPU
+
+GPU 路径见 [Adreno 740 驱动](/zh/drivers/native-adreno)。板级通过 `sheng-gpu-power=9`、`sheng-gpu-metal=1` 和 `sheng-gpu-addon=1` 启用。
+
+运行时链路：Metal、NativeMetal、metal2vulkan（AIR 到 SPIR-V）、Turnip（SPIR-V 到 NIR 到 IR3）、NativeAdreno、GMU 和 CP、Adreno 740、GPU blit 到 scanout、NativeMobileDisplay。
+
+| 步骤 | 状态 |
+| --- | --- |
+| GMU 冷启动、HFI 和功耗票 | 工作 |
+| GPU context 和 CP 命令 | 工作 |
+| 原生 4 KiB SMMU context | active |
+| Metal 插件发现 | 工作 |
+| GPU 帧复制到 scanout | 工作，像素一致 |
+| GPU 合成桌面 | 工作，慢 |
+| 稳定 120 FPS | 未达到 |
+
+没有完整的预编译 Adreno UI shader pack。驱动在设备上把 AIR 编译成 SPIR-V 和 IR3。冷启动会编译它遇到的每个 UI 变体。int-148：77 个 pipeline，约 43 s，cache hit 0。int-150：103 个 Metal pipeline，共 40.1 s；94 个 Vulkan pipeline，共 23.3 s。patch `0004` 和 cache 导出降低了开销。int-152 大幅改善，但未彻底修复。active GPU 4 KiB 证明、显示 vblank 和冷帧 deadline 仍未完成。
+
 ## 固件
 
 ```toml
@@ -268,8 +286,8 @@ fastboot boot out/sheng/boot/boot.img
 | UniXNU 读取负载卷 | 工作 |
 | XNU 与用户态 | 原始 iPadOS 用户态从 IPSW 运行；可跳过 Setup 和 Hello，进入 SpringBoard、锁屏、主屏幕和 Settings |
 | 触控 | SpringBoard 和 backboardd 接受触控事件 |
-| 桌面渲染 | CPU 渲染 |
-| GPU | 未启用 |
+| 桌面渲染 | 通过原生 Metal 插件由 GPU 合成；首次使用慢 |
+| GPU | 部分：命令、原生 4 KiB SMMU 和 scanout 复制工作；shader 编译慢，且没有完整的预编译 UI pack |
 
 触控驱动见[触控驱动示例](/zh/devices/sheng-touch-driver)。
 
@@ -284,6 +302,7 @@ fastboot boot out/sheng/boot/boot.img
 ## 下一步
 
 - [移植](/zh/porting/)
+- [Adreno 740 驱动](/zh/drivers/native-adreno)
 - [触控驱动示例](/zh/devices/sheng-touch-driver)
 - [调试与日志](/zh/guide/debugging)
 - [故障排查](/zh/reference/troubleshooting)

@@ -243,7 +243,10 @@ A driver that fails `start()` releases its resources and returns `false`.
 | `ArmCpu` | CPU, GIC and timer |
 | `NativeUfs` | Storage, SMMU and command queues |
 | `NativeAES` | Accelerator subclass with original ABI |
-| `NativeAdreno` | GPU power, firmware, rings and user client |
+| `NativeAdreno` | GPU power, GMU firmware, native 4 KiB SMMU, rings and user client |
+| `NativeMetal` | Metal API frontend and metal2vulkan translation to Turnip |
+
+The Adreno path is documented in [Adreno 740 driver](/drivers/native-adreno).
 
 ## Worked example
 

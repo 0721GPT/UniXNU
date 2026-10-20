@@ -4,7 +4,7 @@ A device entry is a pair of repositories and the values that make the generic st
 
 | Device | SoC | Support | Device repository | Firmware |
 | --- | --- | --- | --- | --- |
-| Xiaomi Pad 6S Pro (sheng) | SM8550 | Display, Touch | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
+| Xiaomi Pad 6S Pro (sheng) | SM8550 | Display, Touch, GPU (partial) | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
 
 ## What a device page records
 

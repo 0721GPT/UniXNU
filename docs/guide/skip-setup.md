@@ -104,7 +104,7 @@ The edited seed is cached by the hash of the original. A different seed produces
 3. Boot the image.
 4. The log reaches SpringBoard instead of the Setup pages.
 
-The reference implementation is `scripts/seed-data-skip-setup.py` in this repository. The sheng port recorded the first hardware boot with these changes in commit `5eba9f5` of `blu-sharky/sheng-ipados`.
+The reference implementation is `scripts/seed-data-skip-setup.py` in this repository. The sheng port recorded the first hardware boot with these changes.
 
 ## Next steps
 
