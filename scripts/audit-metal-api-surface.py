@@ -158,4 +158,5 @@ def main():
     print('PASS: Metal API surface audit (static); written to build/gpu-analysis/metal-api-surface.json')
 
 
-main()
+if __name__ == '__main__':
+    main()

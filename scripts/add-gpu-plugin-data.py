@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Stage the owner-built Adreno Metal plugin into a copy of a packed Data seed.
 
-  add-gpu-plugin-data.py BASE.dbr OUTPUT.dbr
+  add-gpu-plugin-data.py [--publish] [--clients NAME,...] BASE.dbr OUTPUT.dbr
+
+With --publish the seed also carries /private/var/ngpu/addons/NativeAdrenoMetal.publish: the plugin then returns the native Metal device to the original
+discovery in backboardd (NativeAdrenoMetalPlugin.mm), so the render server composites through it. Without the file the plugin only runs its tests.
+With --clients the seed also carries /private/var/ngpu/addons/NativeAdrenoMetal.clients: the processes besides backboardd that get their own native
+Metal device ("*" = every process); any other process keeps the software renderer.
 
 Adds /private/var/ngpu/addons/NativeAdrenoMetal.bundle, /private/var/ngpu/bin/adrenoprobed and /private/var/ngpu/daemons/*.plist (from build/adreno-metal-plugin, see build-adreno-metal-plugin.py). The
 kernel's boot-time addon mount (sheng-gpu-addon=1) presents that directory as a read-only union view over
@@ -24,9 +29,18 @@ BUNDLE = ROOT / 'build/adreno-metal-plugin/NativeAdrenoMetal.bundle'
 
 
 def main():
-    if len(sys.argv) != 3:
+    args = [a for a in sys.argv[1:] if a != '--publish']
+    publish = len(args) != len(sys.argv) - 1
+    clients = None
+    if '--clients' in args:
+        at = args.index('--clients')
+        clients = [name for name in args[at + 1].split(',') if name]
+        del args[at:at + 2]
+        if not clients or any(not all(c.isalnum() or c in '._-*' for c in name) for name in clients):
+            sys.exit('--clients takes process names separated by commas')
+    if len(args) != 2:
         sys.exit(__doc__)
-    base, output = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
+    base, output = Path(args[0]).resolve(), Path(args[1]).resolve()
     if output.exists():
         sys.exit('Refuse to overwrite ' + str(output))
     if not (BUNDLE / 'NativeAdrenoMetal').is_file():
@@ -56,6 +70,13 @@ def main():
             for directory in (mount / 'ngpu', mount / 'ngpu/addons'):
                 os.chmod(directory, 0o755)
             shutil.copytree(BUNDLE, target, symlinks=False)
+            if clients:
+                (mount / 'ngpu/addons/NativeAdrenoMetal.clients').write_text('\n'.join(clients) + '\n')
+                os.chmod(mount / 'ngpu/addons/NativeAdrenoMetal.clients', 0o644)
+            marker = mount / 'ngpu/addons/NativeAdrenoMetal.publish'
+            if publish:
+                marker.write_text('1\n')
+                os.chmod(marker, 0o644)
             daemon_dir, bin_dir = mount / 'ngpu/daemons', mount / 'ngpu/bin'
             for directory in (daemon_dir, bin_dir):
                 if directory.exists():
@@ -69,6 +90,19 @@ def main():
                     continue   # build input, not a launchd job
                 shutil.copyfile(plist, daemon_dir / plist.name)
                 os.chmod(daemon_dir / plist.name, 0o644)
+            if publish:
+                # The render server (backboardd) picks a 10-bit "deep" framebuffer unless told not to; the preference is read when the process
+                # starts, before any plugin code can run, so the seed carries it for the process's user (mobile) and for root.
+                # Both the process's own domain and the global one (the lookup falls back to it), in case the process name is not the domain.
+                for home, name in [(h, n) for h in ('mobile', 'root') for n in ('backboardd.plist', '.GlobalPreferences.plist')]:
+                    directory = mount / home / 'Library/Preferences'
+                    directory.mkdir(parents=True, exist_ok=True)
+                    file = directory / name
+                    values = plistlib.loads(file.read_bytes()) if file.exists() else {}
+                    values.update({'CAEnableDeepFramebuffer': False, 'CAEnableFramebufferCompression': False,
+                                   'CAEnableIOSurfaceCompression': False})
+                    file.write_bytes(plistlib.dumps(values, fmt=plistlib.FMT_BINARY))
+                    os.chmod(file, 0o644)
             for path in [target, *target.rglob('*')]:
                 os.chmod(path, 0o755 if path.is_dir() or path.name in ('NativeAdrenoMetal', 'libvulkan_freedreno.dylib') else 0o644)
             print('staged', target.relative_to(mount), sorted(p.name for p in target.iterdir()))
@@ -77,7 +111,7 @@ def main():
         if raw.read_bytes()[32:36] != b'NXSB':
             sys.exit('The edited image is no APFS container any more')
         metadata = packed_ramdisk.pack(raw, output)
-    report = dict(base_sha256=packed_ramdisk.inspect(base)[0]['sha256'], output=metadata,
+    report = dict(base_sha256=packed_ramdisk.inspect(base)[0]['sha256'], output=metadata, publish=publish, clients=clients,
                   plugin=json.loads((ROOT / 'build/adreno-metal-plugin/trust.json').read_text()))
     output.with_suffix('.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))

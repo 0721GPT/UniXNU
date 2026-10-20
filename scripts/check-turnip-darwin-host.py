@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 kit = ROOT / 'drivers/NativeAdreno'
@@ -67,6 +68,35 @@ if result.stderr.strip():
     print(result.stderr[-3000:], end='')
 if result.returncode or 'PASS' not in result.stdout:
     sys.exit('Turnip darwin host smoke failed (exit %d); see %s' % (result.returncode, out / 'smoke.log'))
+# Keep a software ring fence pending while freeing an unrelated mapped allocation.
+# The actual KMD must defer native handle/view/IOVA retirement, bound pressure waits,
+# and preserve ownership on failures. This exercises real transport code, not pixels.
+deferred = out / 'deferred_bo'
+subprocess.run(['xcrun', 'clang++', '-std=c++23', '-O1', '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter',
+                '-I', '/opt/homebrew/include', '-I', kit, sim / 'deferred_bo.cpp', '-o', deferred], check=True)
+deferred_env = dict(env, TU_DARWIN_RETIRE_TRACE='1')
+deferred_env.pop('HOSTSIM_FAIL_USER_UNMAP', None)
+for mode in ['normal', 'busy', 'fence-error', 'free-error', 'lease-error', 'view-error', 'map-cleanup-error', 'pressure']:
+    test = subprocess.run([str(deferred), str(library), mode], env=deferred_env, capture_output=True, text=True, timeout=60)
+    (out / ('deferred-' + mode + '.log')).write_text(test.stdout + test.stderr)
+    verdict = [line for line in test.stdout.splitlines() if line.startswith('PASS:')]
+    if test.returncode or not verdict:
+        sys.exit('Deferred BO %s failed (exit %d); see %s' % (mode, test.returncode, out / ('deferred-' + mode + '.log')))
+    if mode == 'pressure' and 'pressure=1' not in test.stderr:
+        sys.exit('Deferred BO pressure control did not reach its bounded queue limit')
+    print(verdict[0])
+# Driver cache controls compile Adreno code but submit/execute no shader.
+subprocess.run([sys.executable, ROOT / 'scripts/check-turnip-pipeline-cache-host.py'], check=True)
+# Original UI recipes additionally cover graphics-library caches, strict driver
+# feedback and genuine UUID/empty-cache refusals. The software peer runs no shader.
+with tempfile.TemporaryDirectory(prefix='quartzcore-driver-cache-', dir=out) as temporary:
+    subprocess.run([sys.executable, ROOT / 'scripts/check-quartzcore-turnip-cache-host.py',
+                    '--output', Path(temporary) / 'control'], check=True, timeout=660)
+
+with tempfile.TemporaryDirectory(prefix='priming-driver-cache-', dir=out) as temporary:
+    subprocess.run([sys.executable, ROOT / 'scripts/check-priming-cache-host.py',
+                    '--output', Path(temporary) / 'control'], check=True, timeout=360)
+
 env_plugin = dict(env)
 plugin = subprocess.run([str(plugin_smoke), str(library)], env=env_plugin, capture_output=True, text=True, timeout=300)
 (out / 'plugin_smoke.log').write_text(plugin.stdout + plugin.stderr)

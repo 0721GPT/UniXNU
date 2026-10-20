@@ -7,6 +7,7 @@ is committed. Output: build/native-metal-bridge/<target>/libnative_metal_bridge.
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -19,8 +20,32 @@ parser.add_argument('--target', choices=['ios', 'host'], default='ios')
 args = parser.parse_args()
 if subprocess.check_output(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD'], text=True).strip() != PIN:
     raise SystemExit('Translator revision differs from the qualified source pin')
-if subprocess.check_output(['git', '-C', str(SOURCE), 'diff', 'HEAD', '--'], text=True):
-    raise SystemExit('Translator source must be unmodified')
+PATCHES = [ROOT / 'drivers/NativeMetal/bridge/patches' / name for name in [
+    '0001-optional-constant-output-members.patch', '0002-resource-wait-storage-dependencies.patch',
+    '0003-cache-device-entry-point-priming.patch', '0004-fold-constant-global-field-loads.patch',
+    '0005-keep-module-decodes-and-profile-fingerprints.patch']]
+tree_diff = subprocess.check_output(['git', '-C', str(SOURCE), 'diff', 'HEAD', '--'], text=True)
+def canonical_diff(diff):
+    # Independent patches touch disjoint files; Git orders the combined diff by
+    # filename, rather than by the order the patches were applied.
+    blocks = [block for block in re.split(r'(?=^diff --git )', diff, flags=re.M) if block]
+    names = [block.splitlines()[0] for block in blocks]
+    if len(set(names)) != len(names):
+        raise SystemExit('Overlapping recorded patches require an explicit combined-source update')
+    return ''.join(sorted(blocks, key=lambda block: block.splitlines()[0]))
+
+
+expected = ''
+states = [expected]
+for patch in PATCHES:
+    expected += patch.read_text()
+    states.append(canonical_diff(expected))
+if tree_diff not in states:
+    raise SystemExit('Translator source differs from the pinned revision plus its recorded patches')
+for patch in PATCHES[states.index(tree_diff):]:
+    subprocess.run(['git', '-C', str(SOURCE), 'apply', str(patch)], check=True)
+if subprocess.check_output(['git', '-C', str(SOURCE), 'diff', 'HEAD', '--'], text=True) != canonical_diff(expected):
+    raise SystemExit('Translator patch result differs from its exact recorded source')
 out = ROOT / 'build/native-metal-bridge'
 out.mkdir(parents=True, exist_ok=True)
 llvm_as = next((p for p in ['/opt/homebrew/opt/llvm/bin/llvm-as', shutil.which('llvm-as') or ''] if p and Path(p).exists()), None)
@@ -38,6 +63,9 @@ manifest.write_text('\n'.join([
     'metal2vulkan = { path = ' + json.dumps(str(SOURCE / 'crates/metal2vulkan')) + ', features = ["ash"] }',
     'metal2vulkan-runtime = { path = ' + json.dumps(str(SOURCE / 'crates/metal2vulkan-runtime')) + ' }',
     'libc = "0.2"',
+    # The runtime hashes every shader-cache key and entry; without asm, sha2 0.10 on aarch64 is the portable software rounds, not the
+    # ARMv8 SHA-256 instructions every target CPU has (cpufeatures answers sha2 true on Apple platforms).
+    'sha2 = { version = "0.10", features = ["asm"] }',
     '[profile.release]', 'panic = "unwind"', 'debug = 1', '',
 ]))
 triple = 'aarch64-apple-ios' if args.target == 'ios' else 'aarch64-apple-darwin'
