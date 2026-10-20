@@ -24,6 +24,8 @@ class NativeAdrenoGpuContext final {
     uint64_t handles_[GpuBufferCount]{};
     NativeAdrenoSmmuContext smmu_;
     NativeAdrenoVm vm_;
+    /* The alias checks' sort scratch: one entry per range of the smaller compared side, at most half the aperture's leaves. */
+    uint32_t alias_scratch_[NativeAdrenoSmmuContext::MaxLeaves/2];
     bool ready_=false,used_=false;
 public:
     enum Step : uint32_t {Allocate=1,Prepare,Program,Attach,VmAttach,Map,Ready};

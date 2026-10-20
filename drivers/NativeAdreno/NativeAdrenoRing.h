@@ -93,6 +93,7 @@ public:
         uint32_t timeout_us,uint32_t *observed);
     bool poisoned() const {return poisoned_;}
     uint32_t outstanding() const {return seqno_-completed_;}
+    uint32_t lastSubmitted() const {return seqno_;}      /* the newest fence number handed out */
     uint32_t completedFence() const {return completed_;}
     uint32_t submissions() const {return submissions_;}
     uint32_t readPointer() const {return rptr_shadow_;}

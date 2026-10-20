@@ -85,7 +85,9 @@ static kern_return_t shim_IOConnectMapMemory64(io_connect_t,uint32_t type,task_p
     if(kr==KERN_SUCCESS) {*address=reinterpret_cast<mach_vm_address_t>(mapping);*size=bytes;}
     return kr;
 }
-static kern_return_t shim_IOConnectUnmapMemory64(io_connect_t,uint32_t,task_port_t,mach_vm_address_t) {return KERN_SUCCESS;}
+static kern_return_t shim_IOConnectUnmapMemory64(io_connect_t,uint32_t,task_port_t,mach_vm_address_t) {
+    return getenv("HOSTSIM_FAIL_USER_UNMAP") ? kIOReturnIOError : KERN_SUCCESS;
+}
 /* HOSTSIM_PAGE_SIZE=4096: Turnip sizes and places BOs with the page size (os_get_page_size, getpagesize), 16 KiB on this Mac and 4 KiB on the
  * tablet, so a recording meant to match the tablet's GPU address layout reports the tablet's page size. */
 static long pageSize(){static long p=-1;if(p<0)p=getenv("HOSTSIM_PAGE_SIZE")?atol(getenv("HOSTSIM_PAGE_SIZE")):0;return p;}

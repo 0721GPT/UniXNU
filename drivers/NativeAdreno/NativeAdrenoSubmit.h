@@ -13,6 +13,9 @@ struct NativeAdrenoSubmitBuffer {
  * through DRAM before and through DRAM after the CPU cache maintenance of every mapped BO (~0 when unreadable); [4] samples whose
  * three values differ and [5..7] the first such sample. */
 extern "C" volatile uint32_t native_adreno_coherence[8];
+/* The write-combine audit (int-100), see NativeAdrenoSubmit.cpp, and the submission (1-based) that ended the trust; 0 = never. */
+extern "C" volatile uint32_t native_adreno_wc_audit[6];
+extern "C" volatile uint32_t native_adreno_wc_distrusted;
 struct NativeAdrenoSubmitStats {
     uint32_t submissions,completed,timeouts,poisoned_jobs;
     size_t references_held,references_retired,peak_jobs;
@@ -38,6 +41,7 @@ class NativeAdrenoSubmit final {
     NativeAdrenoRing *ring_=nullptr;
     NativeAdrenoSubmitStats stats_{};
     bool attached_=false,poisoned_=false;
+    uint32_t audit_tick_=0;   /* submissions since attach; every eighth one audits its IB lines */
     Job *find(uint32_t fence);
     Job *free();
     IOReturn release(Job &);

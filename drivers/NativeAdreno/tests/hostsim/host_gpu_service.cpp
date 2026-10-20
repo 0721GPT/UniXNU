@@ -9,7 +9,10 @@
 #include "NativeAdrenoTimer.h"
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <thread>
+#include <atomic>
+#include <mutex>
 
 IOReturn NativeAdrenoQueryCpu4K(NativeAdrenoCpuState *state) {*state={};return kIOReturnSuccess;}
 IOReturn NativeAdrenoMaintainOwnedPages(void *,size_t,NativeAdrenoCacheOperation) {return kIOReturnSuccess;}
@@ -31,15 +34,27 @@ int sbarrier(void *) {return 0;}
 std::vector<uint32_t> regs(0x10000);
 volatile uint32_t *memptrs=nullptr;
 unsigned submissions=0;
+std::atomic<bool> holdCompletion{false};
+std::recursive_mutex serviceLock;
+unsigned calls[32]={},successes[32]={};
+uint32_t faultRemaining[32]={};
+IOReturn faultStatus[32]={};
+uint64_t lastMapIova=0;
+void completeIfReleased() {
+    if(!holdCompletion.load(std::memory_order_acquire)) {
+        regs[0x0806]=regs[0x0807];
+        if(memptrs)memptrs[1]=submissions;
+    }
+}
 int cwrite(void *,uint32_t reg,uint32_t v) {
     regs[reg]=v;
-    if(reg==0x0807) {regs[0x0806]=v;++submissions;if(memptrs)memptrs[1]=submissions;}
+    if(reg==0x0807) {++submissions;completeIfReleased();}
     return 0;
 }
-int cread(void *,uint32_t reg,uint32_t *v) {*v=regs[reg];return 0;}
+int cread(void *,uint32_t reg,uint32_t *v) {completeIfReleased();*v=regs[reg];return 0;}
 int cbarrier(void *) {return 0;}
 int cpublish(void *,const volatile uint32_t *,size_t) {return 0;}
-int cacquire(void *,volatile uint32_t *,size_t) {return 0;}
+int cacquire(void *,volatile uint32_t *,size_t) {completeIfReleased();return 0;}
 uint64_t cnow(void *) {
     return uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -66,6 +81,11 @@ bool built=false,opened=false;
 
 bool build() {
     if(built)return true;
+    /* HOSTSIM_SCATTER=1: non-contiguous BOs come back one physical page per span, as on the tablet (int-070's bridge ran out of
+     * device memory there while the contiguous host model passed). */
+    if(const char *scatter=std::getenv("HOSTSIM_SCATTER");scatter && *scatter=='1')fixture.mode=ScatterUnlessContiguous;
+    /* HOSTSIM_CONTIGUOUS_MAX=<bytes>: larger physically contiguous allocations fail, so they fall back to scattered pages. */
+    if(const char *limit=std::getenv("HOSTSIM_CONTIGUOUS_MAX"))fixture.contiguous_limit=std::strtoull(limit,nullptr,0);
     std::memset(mmio,0,sizeof(mmio));
     mmio[0]=0x002f0406;mmio[0x20/4]=0x4c017e18;mmio[0x24/4]=0x40000016;mmio[0x28/4]=0x1433;
     for(unsigned i=0;i<24;++i)mmio[(0xc00+4*i)/4]=0x20000;
@@ -93,22 +113,28 @@ IOReturn translate(IOReturn status) {return status;}
 extern "C" {
 /* Return codes are the fixture's IOReturn values; the shim translates them. */
 int host_gpu_open() {
+    std::lock_guard<std::recursive_mutex> guard(serviceLock);
     if(!build() || opened)return kIOReturnBusy;
     const IOReturn st=client.open(NativeAdrenoAbiVersion,context->vm(),&execbuf,&ring,31,40);
     if(st) {std::fprintf(stderr,"host gpu: client open failed %d\n",st);return kIOReturnNotReady;}
+    std::setvbuf(stderr,nullptr,_IONBF,0);
     client.attachTimer(&timer);
     client.attachDeviceInfo(&info);
     opened=true;
     return kIOReturnSuccess;
 }
 int host_gpu_close() {
+    std::lock_guard<std::recursive_mutex> guard(serviceLock);
     if(!opened)return kIOReturnNotReady;
     const IOReturn status=client.releaseAll(&clock_,2000000);
     if(!status)opened=false;
     return translate(status);
 }
 int host_gpu_call(uint32_t method,const void *in,size_t in_size,void *out,size_t out_size) {
+    std::lock_guard<std::recursive_mutex> guard(serviceLock);
     if(!opened)return kIOReturnNotReady;
+    if(method<32)++calls[method];
+    if(method<32 && faultRemaining[method]){--faultRemaining[method];return faultStatus[method];}
     /* As the IOKit wrapper does (NativeAdrenoPublish.cpp): an import is the calling task's pages, here a stand-in task. */
     if(method==NativeAdrenoMethodBoImport) {
         if(!in || in_size!=sizeof(NativeAdrenoAbiBoImport) || !out || out_size!=sizeof(NativeAdrenoAbiBoAllocReply))return kIOReturnBadArgument;
@@ -118,13 +144,45 @@ int host_gpu_call(uint32_t method,const void *in,size_t in_size,void *out,size_t
         if(!status)std::memcpy(out,&reply,sizeof(reply));
         return translate(status);
     }
-    return translate(client.dispatch(method,in,in_size,out,out_size,&clock_));
+    const IOReturn status=client.dispatch(method,in,in_size,out,out_size,&clock_);
+    if(!status && method<32)++successes[method];
+    if(!status && method==NativeAdrenoMethodBoMap && in)
+        lastMapIova=static_cast<const NativeAdrenoAbiBoMap *>(in)->iova;
+    /* HOSTSIM_TRACE=1: every failing call, and every allocation size, on stderr. */
+    static const bool trace=std::getenv("HOSTSIM_TRACE") && *std::getenv("HOSTSIM_TRACE")=='1';
+    if(trace && method==NativeAdrenoMethodBoAlloc && in)
+        std::fprintf(stderr,"hostgpu alloc %llu -> %d spans-live %zu\n",(unsigned long long)static_cast<const NativeAdrenoAbiBoAlloc *>(in)->bytes,
+            status,context->vm()->spanCount());
+    else if(trace && status)std::fprintf(stderr,"hostgpu method %u -> %d\n",method,status);
+    return translate(status);
 }
 int host_gpu_map(uint32_t token,void **address,uint64_t *bytes) {
+    std::lock_guard<std::recursive_mutex> guard(serviceLock);
     NativeAdrenoMemory *memory=opened?client.memoryForToken(token):nullptr;
     if(!memory)return kIOReturnBadArgument;
     *address=memory->mapping();*bytes=memory->bytes();return kIOReturnSuccess;
 }
-unsigned host_gpu_submissions() {return submissions;}
-unsigned host_gpu_live_objects() {return unsigned(client.liveObjects());}
+unsigned host_gpu_submissions() {std::lock_guard<std::recursive_mutex> guard(serviceLock);return submissions;}
+unsigned host_gpu_live_objects() {std::lock_guard<std::recursive_mutex> guard(serviceLock);return unsigned(client.liveObjects());}
+unsigned host_gpu_calls(uint32_t method) {std::lock_guard<std::recursive_mutex> guard(serviceLock);return method<32?calls[method]:0;}
+unsigned host_gpu_successes(uint32_t method) {std::lock_guard<std::recursive_mutex> guard(serviceLock);return method<32?successes[method]:0;}
+uint64_t host_gpu_last_map_iova() {std::lock_guard<std::recursive_mutex> guard(serviceLock);return lastMapIova;}
+// Only the atomic peer-release flag changes off-thread. The next actual ring read/acquire
+// publishes the software peer's completion under the service lock, like the existing CP model.
+void host_gpu_hold_completion(int hold) {holdCompletion.store(hold!=0,std::memory_order_release);}
+void host_gpu_inject_failure(uint32_t method,int status,uint32_t count) {
+    std::lock_guard<std::recursive_mutex> guard(serviceLock);
+    if(method<32){faultStatus[method]=status;faultRemaining[method]=count;}
+    else std::memset(faultRemaining,0,sizeof faultRemaining);
+}
+}
+/* Physical-page maintenance (imported BOs): record it; no host page is touched. */
+/* Host double: the page attribute change of user BOs has no host equivalent (no host page is touched). */
+IOReturn NativeAdrenoSetPagesCacheMode(const NativeAdrenoPhysicalSpan *spans,size_t count,bool){return spans && count?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoReassertWriteCombined(const NativeAdrenoPhysicalSpan *spans,size_t count,uint32_t *reset)
+{return spans && count && reset?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoMaintainPhysicalPages(uint64_t physical,size_t bytes,NativeAdrenoCacheOperation op)
+{
+    if(!physical || !bytes || ((physical|bytes)&4095) || op>NativeAdrenoInvalidate)std::abort();
+    ++fixture.physical_calls;fixture.physical_bytes+=bytes;return kIOReturnSuccess;
 }

@@ -46,6 +46,8 @@ extern "C" const uint64_t native_adreno_firmware_image_size __attribute__((weak)
 extern "C" const uint8_t native_adreno_sqe_firmware_image[] __attribute__((weak));
 extern "C" const uint64_t native_adreno_sqe_firmware_image_size __attribute__((weak));
 #include "NativeAdrenoUserClient.h"
+/* Physical address of the fence page (the CP writes its timestamps there): the board log reads it from DRAM and through the CPU cache. */
+extern "C" {volatile uint64_t native_adreno_fence_phys=0;}
 
 class NativeAdrenoGpuClient;
 static IOUserClient *createGpuClient(task_t,void *,UInt32,OSDictionary *,NativeAdrenoUserClient *);
@@ -181,8 +183,12 @@ uint64_t NativeAdrenoGpuService::ring_now(void *)
     NativeAdrenoKernelTime::now_us(nullptr,&microseconds);
     return microseconds;
 }
+extern "C" uint64_t (*native_adreno_vm_now_us)(void);
+extern "C" volatile uint32_t native_adreno_pool_mib;
+static uint64_t vm_clock_us(void) {uint64_t microseconds=0;NativeAdrenoKernelTime::now_us(nullptr,&microseconds);return microseconds;}
 IOService *NativeAdrenoGpuService::probe(IOService *provider,SInt32 *score)
 {
+    native_adreno_vm_now_us=vm_clock_us;
     if(!advertisesAdreno(provider))return nullptr;
     if(score)*score=1000;
     return this;
@@ -289,6 +295,9 @@ bool NativeAdrenoGpuService::start(IOService *provider)
      * bank, attaches the stream and maps the GMU payloads. Do not run it before the read-only power/clock observation
      * (sheng-gpu-power, docs/gpu-hardware-plan.md) shows the GPU SMMU powered and writable: the apps SMMU on this board is
      * hypervisor-managed (docs/native-ufs.md) and the adreno SMMU has not been shown to differ. */
+    {
+        uint32_t mib=384;PE_parse_boot_argn("sheng-gpu-pool",&mib,sizeof(mib));native_adreno_pool_mib=mib;
+    }
     uint32_t bringup=0;
     if(PE_parse_boot_argn("sheng-gpu-bringup",&bringup,sizeof(bringup)) && bringup) {
         NativeAdrenoSmmuService *node=OSDynamicCast(NativeAdrenoSmmuService,smmu);
@@ -414,6 +423,7 @@ bool NativeAdrenoGpuService::start(IOService *provider)
                                             ring_status=sqe_mem_.allocate(size_t(sqe_bytes),40,true,size_t(sqe_bytes));
                                         if(!ring_status)ring_status=vm_.map(&ring_mem_,1,ring_iova,3,0,2,&ring_map_);
                                         if(!ring_status)ring_status=vm_.map(&fence_mem_,1,fence_iova,3,0,2,&fence_map_);
+                                        if(!ring_status && fence_mem_.spanCount())native_adreno_fence_phys=fence_mem_.spans()[0].physical;
                                         if(!ring_status)ring_status=vm_.map(&sqe_mem_,1,sqe_iova,3,0,2,&sqe_map_);
                                         if(ring_status) {
                                             IOLog("NativeAdreno: ring/SQE setup stopped at 0x%x\n",ring_status);

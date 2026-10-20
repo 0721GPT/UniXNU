@@ -64,6 +64,9 @@ static uint32_t ilog2(size_t value)
 {
     uint32_t result=0;while(value>1) {value>>=1;++result;}return result;
 }
+/* The last submissions as the CP will read them: [slot] fence, start index, end index, word count, then up to 112 ring words from the start. The board log
+ * prints them, so a fence the GPU never wrote can be compared with the packets that should have written it. */
+extern "C" {volatile uint32_t native_adreno_ring_log[4][4+112];volatile uint32_t native_adreno_ring_log_count;}
 IOReturn NativeAdrenoRing::poison()
 {
     poisoned_=true;return kIOReturnIOError;
@@ -229,6 +232,14 @@ IOReturn NativeAdrenoRing::submitWords(const uint32_t *words,size_t word_count,u
     if(status)return status;
     /* Whole-ring publication is deliberate: a submission may wrap, and one
      * clean of the owned pool is cheaper than a split range proof. */
+    {
+        const uint32_t slot=native_adreno_ring_log_count&3;
+        const uint32_t total=(end-next_)&mask;
+        volatile uint32_t *record=native_adreno_ring_log[slot];
+        record[0]=seqno_+1;record[1]=next_;record[2]=end;record[3]=total;
+        for(uint32_t i=0;i<112;++i)record[4+i]=i<total?ring_[(next_+i)&mask]:0;
+        native_adreno_ring_log_count=native_adreno_ring_log_count+1;
+    }
     if(cache_.publish(cache_.cookie,ring_,ring_bytes_))return poison();
     if(io_.barrier(io_.cookie))return poison();
     if(io_.write32(io_.cookie,RingWptr,end))return poison();

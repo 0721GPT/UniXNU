@@ -79,7 +79,7 @@ static void smmuReset(void)
     for(unsigned i=0;i<8;++i)mmio[(0xc00+4*i)/4]=0x20000;
     mmio[0x800/4]=1u<<31|9;mmio[0xc00/4]=3;
 }
-static int exposed(Path &p)
+static int exposed(Path &p,bool write_combined=false)
 {
     smmuReset();cp=CpPeer{};clock_us=0;
     std::memset(ringmem,0xef,sizeof(ringmem));std::memset(fencemem,0,sizeof(fencemem));
@@ -100,6 +100,7 @@ static int exposed(Path &p)
     NativeAdrenoVmRegion lower={&p.tables,&p.arena,&p.state};
     if(p.vm.attach(&smmuio,&context,&streams,&lower,nullptr,32,1000))return kIOReturnBadArgument;
     if(p.object.allocate(8192,40,false,8192))return kIOReturnNoMemory;
+    if(write_combined && p.object.makeWriteCombined())return kIOReturnNoMemory;
     if(p.vm.map(&p.object,0,0x800000,3,0,2,&p.handle))return kIOReturnBadArgument;
     if(p.ring.attach(&ringio,&ringcache,ringmem,sizeof(ringmem),0x100000,fencemem,sizeof(fencemem),0x108000))
         return kIOReturnBadArgument;
@@ -145,6 +146,62 @@ int main()
         native_adreno_dram_read32=nullptr;
         fencemem[1]=2;
         CHECK(p.submit.wait(2,&ringclock,1000)==kIOReturnSuccess);
+        CHECK(p.submit.detach()==kIOReturnSuccess);
+    }
+    /* int-100: a write-combined BO is not maintained while the IB audit finds no dirty line; a dirty line or a failed audit ends the
+     * trust, and that submission already maintains every BO through its physical pages. */
+    {
+        Path p;CHECK(exposed(p,true)==kIOReturnSuccess);
+        NativeAdrenoSubmitBuffer buffer{p.handle,0x800000,4096};
+        static std::vector<uint64_t> audited;static uint32_t dirty_lines,fail;
+        audited.clear();dirty_lines=0;fail=0;
+        native_adreno_line_audit=[](uint64_t physical,size_t bytes,uint32_t *dirty,uint32_t *stale) {
+            audited.push_back(physical);audited.push_back(bytes);
+            if(fail)return 1;
+            *dirty+=dirty_lines;*stale+=1;return 0;};
+        const uint32_t submissions=native_adreno_wc_audit[0],lines=native_adreno_wc_audit[1];
+        const unsigned physical=fixture.physical_calls,owned=fixture.cache_calls;
+        uint32_t fence=0;
+        CHECK(p.submit.submit(&buffer,1,0,&fence)==kIOReturnSuccess && fence==1);
+        CHECK(audited.size()==2 && audited[0]==p.object.spans()[0].physical && audited[1]==4096);
+        CHECK(native_adreno_wc_audit[0]==submissions+1 && native_adreno_wc_audit[1]==lines+64 && native_adreno_wc_distrusted==0);
+        CHECK(fixture.physical_calls==physical && fixture.cache_calls==owned && p.vm.writeCombinedTrusted());   /* no maintenance */
+        fencemem[1]=1;CHECK(p.submit.wait(1,&ringclock,1000)==kIOReturnSuccess);
+        dirty_lines=2;
+        CHECK(p.submit.submit(&buffer,1,0,&fence)==kIOReturnSuccess && fence==2);
+        CHECK(!p.vm.writeCombinedTrusted() && native_adreno_wc_distrusted==native_adreno_coherence[0]);
+        CHECK(fixture.physical_calls>physical);   /* this submission maintained the write-combined BO */
+        const size_t calls=audited.size();
+        fencemem[1]=2;CHECK(p.submit.wait(2,&ringclock,1000)==kIOReturnSuccess);
+        CHECK(p.submit.submit(&buffer,1,0,&fence)==kIOReturnSuccess && audited.size()==calls);   /* no audit once distrusted */
+        fencemem[1]=3;CHECK(p.submit.wait(3,&ringclock,1000)==kIOReturnSuccess);
+        CHECK(p.submit.detach()==kIOReturnSuccess);
+    }
+    /* The audit compares the first 16 submissions after attach, then every eighth (17, 25, ...); the re-assertion runs at each. */
+    {
+        Path p;CHECK(exposed(p,true)==kIOReturnSuccess);
+        NativeAdrenoSubmitBuffer buffer{p.handle,0x800000,4096};
+        static unsigned calls;calls=0;
+        native_adreno_line_audit=[](uint64_t,size_t,uint32_t *,uint32_t *stale) {++calls;*stale+=0;return 0;};
+        const uint32_t submissions=native_adreno_wc_audit[0];
+        for(uint32_t n=1;n<=24;++n) {
+            uint32_t fence=0;
+            CHECK(p.submit.submit(&buffer,1,0,&fence)==kIOReturnSuccess && fence==n);
+            fencemem[1]=n;CHECK(p.submit.wait(n,&ringclock,1000)==kIOReturnSuccess);
+        }
+        CHECK(calls==17 && native_adreno_wc_audit[0]==submissions+17 && p.vm.writeCombinedTrusted());
+        native_adreno_line_audit=nullptr;
+        CHECK(p.submit.detach()==kIOReturnSuccess);
+    }
+    {
+        Path p;CHECK(exposed(p,true)==kIOReturnSuccess);
+        NativeAdrenoSubmitBuffer buffer{p.handle,0x800000,4096};
+        native_adreno_line_audit=[](uint64_t,size_t,uint32_t *,uint32_t *) {return 1;};
+        uint32_t fence=0;
+        CHECK(p.submit.submit(&buffer,1,0,&fence)==kIOReturnSuccess && fence==1);
+        CHECK(!p.vm.writeCombinedTrusted() && native_adreno_wc_audit[4]==kIOReturnIOError);
+        native_adreno_line_audit=nullptr;native_adreno_wc_distrusted=0;
+        fencemem[1]=1;CHECK(p.submit.wait(1,&ringclock,1000)==kIOReturnSuccess);
         CHECK(p.submit.detach()==kIOReturnSuccess);
     }
     /* Refusals precede references, ring bytes and WPTR updates. */
@@ -197,5 +254,15 @@ int main()
         CHECK(submit.detach()==kIOReturnNotReady);
         CHECK(submit.submit(nullptr,1,0,nullptr)==kIOReturnBadArgument);
     }
-    std::printf("PASS: 1 execbuf submission with exact IB packet and fence, 8 pre-reference refusals, 1 duplicate-buffer reference case and 1 poisoned-commit retention case over software SMMU/CP peers\n");
+    std::printf("PASS: 1 execbuf submission with exact IB packet and fence, 8 pre-reference refusals, 1 duplicate-buffer reference case and 1 poisoned-commit retention case over software SMMU/CP peers; 2 write-combine audit cases (trusted, dirty and failed)\n");
+}
+/* Physical-page maintenance (imported BOs): record it; no host page is touched. */
+/* Host double: the page attribute change of user BOs has no host equivalent (no host page is touched). */
+IOReturn NativeAdrenoSetPagesCacheMode(const NativeAdrenoPhysicalSpan *spans,size_t count,bool){return spans && count?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoReassertWriteCombined(const NativeAdrenoPhysicalSpan *spans,size_t count,uint32_t *reset)
+{return spans && count && reset?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoMaintainPhysicalPages(uint64_t physical,size_t bytes,NativeAdrenoCacheOperation op)
+{
+    if(!physical || !bytes || ((physical|bytes)&4095) || op>NativeAdrenoInvalidate)std::abort();
+    ++fixture.physical_calls;fixture.physical_bytes+=bytes;return kIOReturnSuccess;
 }

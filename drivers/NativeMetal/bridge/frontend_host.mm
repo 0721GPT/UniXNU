@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
         if (!library || !fcLibrary) {std::printf("FAIL fixture libraries\n"); return 1;}
         frontendchecks::Report r = {};
         frontendchecks::run(device, library, fcLibrary, argc > 3 && argv[3][0] ? @(argv[3]) : nil, &r);
-        if (r.qcFunctions) std::printf("QuartzCore: %u functions, kernels %u/%u, pairs %u/%u\n", r.qcFunctions, r.qcKernelsOk, r.qcKernels, r.qcPairsOk, r.qcPairs);
+        if (r.qcFunctions) std::printf("QuartzCore bare-descriptor probe: %u functions, kernels %u/%u, pairs %u/%u (not complete shader coverage)\n", r.qcFunctions, r.qcKernelsOk, r.qcKernels, r.qcPairsOk, r.qcPairs);
         for (auto &m : missing) std::printf("missing selector: %s\n", m.c_str());
         if (r.failed) {std::printf("FAILED %u checks, first: %s\n", r.failed, r.first); return 1;}
         std::printf("PASS: native Metal frontend over the bridge on %s: compute, render, IOSurface render, surface sampling, texture compute, "

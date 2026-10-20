@@ -13,14 +13,14 @@ use metal2vulkan::metal::{
     TextureUsage, TriangleFillMode, VertexFormat, VertexStepFunction, Winding,
 };
 use metal2vulkan::pipeline::{
-    ColorAttachmentDescriptor, RenderPipelineDescriptor, StageSource, VertexAttributeDescriptor, VertexBufferLayoutDescriptor,
+    ColorAttachmentDescriptor, ComputePipelineDescriptor, RenderPipelineDescriptor, StageSource, VertexAttributeDescriptor, VertexBufferLayoutDescriptor,
     VertexDescriptor,
 };
 use metal2vulkan_runtime::{
-    BlitCommandEncoder, BlitOption, Buffer, ClearColor, CommandBuffer, CommandQueue, ComputeCommandEncoder,
-    ComputePipelineState, DepthStencilState, Device, DeviceOptions, Event, EventRef, Fence, Function, HostMemory, IoSurfacePlane, Library, LoadAction,
-    MetalLevel, Origin, PipelineOptions, Region, RenderCommandEncoder, RenderPassDescriptor, RenderPipelineState, ResourceOptions,
-    SamplerState, ScissorRect, SharedEvent, SharedEventListener, Size, StoreAction, Texture, TextureDescriptor, Viewport,
+    BinaryArchive, BinaryArchiveDescriptor, BlitCommandEncoder, FamilyRow, FeatureRow, GpuFamily, RowState, BlitOption, Buffer, ClearColor, CommandBuffer, CommandQueue, ComputeCommandEncoder,
+    ComputePipelineState, DebugMessage, DepthStencilState, Device, DeviceOptions, MessageSeverity, MessageSink, Event, EventRef, Fence, Function, Heap, HeapDescriptor, HeapType, HostMemory, IoSurfacePlane, Library, LoadAction,
+    MetalLevel, Origin, PipelineOption, PipelineOptions, PurgeableState, PrivateCount, PrivateFlag, PrivateProperties, MAX_COLOR_ATTACHMENTS, Region, RenderCommandEncoder, RenderPassDescriptor, RenderPipelineState, ResourceOptions,
+    SamplerState, ScissorRect, SharedEvent, SharedEventListener, Size, StoreAction, Texture, TextureDescriptor, Viewport, VisibilityResultMode,
 };
 use std::cell::RefCell;
 use std::ffi::{c_char, c_void, CStr};
@@ -140,7 +140,14 @@ pub unsafe extern "C" fn nmb_function_constant_air(length: *mut usize) -> *const
 
 // ---- device ----
 
-pub struct NmbDevice(Device);
+pub struct NmbDevice(Device, std::sync::OnceLock<PrivateProperties>, std::sync::Mutex<()>);
+
+impl NmbDevice {
+    /// The runtime judges the private properties by the family rows once.
+    fn private(&self) -> &PrivateProperties {
+        self.1.get_or_init(|| self.0.private_properties())
+    }
+}
 
 /// # Safety
 /// `loader` and `cache` are C strings.
@@ -156,8 +163,112 @@ pub unsafe extern "C" fn nmb_device_open(loader: *const c_char, cache: *const c_
         options.loader = Some(PathBuf::from(loader.to_string_lossy().into_owned()));
         options.metal_level = Some(MetalLevel::NEWEST);
         options.shader_cache = metal2vulkan_runtime::ShaderCacheOptions::in_directory(cache.to_string_lossy().into_owned());
-        Ok(boxed(NmbDevice(Device::system_default_with(&options).map_err(e("device"))?)))
+        options.messages = Some(MessageSink::new(observe_message));
+        Ok(boxed(NmbDevice(Device::system_default_with(&options).map_err(e("device"))?, std::sync::OnceLock::new(), std::sync::Mutex::new(()))))
     })
+}
+
+// What the runtime says through the device's sink, kept as numbers for the plugin's telemetry: each render VkPipeline making the
+// creation log (METAL2VULKAN_LOG_PIPELINES) reports ("... made in <ms> ms[ after waiting <ms> ms for its turn]"), and the other
+// messages by severity with the last warning's text.
+static PIPELINE_MAKINGS: [std::sync::atomic::AtomicU64; 5] = [const { std::sync::atomic::AtomicU64::new(0) }; 5]; // n, us, max us, waited us, failed
+static OTHER_MESSAGES: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];      // info, warning or worse
+static LAST_WARNING: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+
+fn millis_after(text: &str, marker: &str) -> Option<f64> {
+    let at = text.find(marker)? + marker.len();
+    let rest = &text[at..];
+    let end = rest.find(' ').unwrap_or(rest.len());
+    rest[..end].parse().ok()
+}
+
+fn observe_message(message: &DebugMessage) {
+    use std::sync::atomic::Ordering::Relaxed;
+    if message.id_name == "metal2vulkan-pipeline-creation" {
+        let made = millis_after(&message.text, " made in ");
+        let us = made.or_else(|| millis_after(&message.text, " failed in ")).map_or(0, |ms| (ms * 1000.0) as u64);
+        PIPELINE_MAKINGS[0].fetch_add(1, Relaxed);
+        PIPELINE_MAKINGS[1].fetch_add(us, Relaxed);
+        PIPELINE_MAKINGS[2].fetch_max(us, Relaxed);
+        PIPELINE_MAKINGS[3].fetch_add(millis_after(&message.text, " after waiting ").map_or(0, |ms| (ms * 1000.0) as u64), Relaxed);
+        if made.is_none() {
+            PIPELINE_MAKINGS[4].fetch_add(1, Relaxed);
+        }
+        return;
+    }
+    if message.severity >= MessageSeverity::Warning {
+        OTHER_MESSAGES[1].fetch_add(1, Relaxed);
+        if let Ok(mut last) = LAST_WARNING.lock() {
+            *last = message.text.chars().take(160).collect();
+        }
+    } else {
+        OTHER_MESSAGES[0].fetch_add(1, Relaxed);
+    }
+}
+
+/// The sink's counts into the caller's ten words: pipeline makings (count, total us, longest us, waited us, failed), messages (info,
+/// warning or worse), and the device's shader cache hits, misses and writes.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_device_work_stats(device: *const NmbDevice, out: *mut u64) -> bool {
+    use std::sync::atomic::Ordering::Relaxed;
+    guard(false, || {
+        if out.is_null() {
+            return Err("null stats".into());
+        }
+        // SAFETY: the header's ten words.
+        let out = unsafe { std::slice::from_raw_parts_mut(out, 10) };
+        for (i, v) in PIPELINE_MAKINGS.iter().enumerate() {
+            out[i] = v.load(Relaxed);
+        }
+        out[5] = OTHER_MESSAGES[0].load(Relaxed);
+        out[6] = OTHER_MESSAGES[1].load(Relaxed);
+        let cache = get(device)?.0.shader_cache_statistics();
+        out[7] = cache.hits;
+        out[8] = cache.misses;
+        out[9] = cache.writes;
+        Ok(true)
+    })
+}
+
+/// Separate artifact and driver-record counters, mirroring the C ABI.
+#[repr(C)]
+pub struct NmbShaderCacheStats {
+    pub hits: u64,
+    pub misses: u64,
+    pub rejected: u64,
+    pub read_failures: u64,
+    pub writes: u64,
+    pub write_failures: u64,
+    pub evictions: u64,
+    pub driver_loads: u64,
+    pub driver_hits: u64,
+    pub driver_misses: u64,
+    pub driver_saves: u64,
+    pub driver_truncated: u64,
+    pub driver_mismatched: u64,
+    pub driver_unchanged: u64,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_device_shader_cache_stats(device: *const NmbDevice, out: *mut NmbShaderCacheStats) -> bool {
+    guard(false, || {
+        let out = get_mut(out)?;
+        let stats = get(device)?.0.shader_cache_statistics();
+        *out = NmbShaderCacheStats {
+            hits: stats.hits, misses: stats.misses, rejected: stats.rejected,
+            read_failures: stats.read_failures, writes: stats.writes, write_failures: stats.write_failures, evictions: stats.evictions,
+            driver_loads: stats.driver_loads, driver_hits: stats.driver_pipeline_hits, driver_misses: stats.driver_pipeline_misses,
+            driver_saves: stats.driver_saves, driver_truncated: stats.driver_data_truncated,
+            driver_mismatched: stats.driver_data_mismatched, driver_unchanged: stats.driver_data_unchanged,
+        };
+        Ok(true)
+    })
+}
+
+/// The last warning the device's sink received, as a C string; returns its length.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_last_warning(out: *mut c_char, size: usize) -> usize {
+    guard(0, || Ok(copy_out(&LAST_WARNING.lock().map(|s| s.clone()).unwrap_or_default(), out, size)))
 }
 
 #[unsafe(no_mangle)]
@@ -173,6 +284,188 @@ pub extern "C" fn nmb_device_name(device: *const NmbDevice, out: *mut c_char, si
 #[unsafe(no_mangle)]
 pub extern "C" fn nmb_device_max_buffer_length(device: *const NmbDevice) -> u64 {
     guard(0, || Ok(get(device)?.0.properties().max_buffer_length))
+}
+
+/// `maxThreadsPerThreadgroup` into the caller's three words.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_device_max_threads_per_threadgroup(device: *const NmbDevice, out: *mut u64) -> bool {
+    guard(false, || {
+        if out.is_null() {
+            return Err("null size".into());
+        }
+        let s = get(device)?.0.properties().max_threads_per_threadgroup;
+        // SAFETY: the header's three words.
+        unsafe { std::slice::from_raw_parts_mut(out, 3) }.copy_from_slice(&[s.width, s.height, s.depth]);
+        Ok(true)
+    })
+}
+
+/// The device selectors `nmb_device_answer` takes beyond Apple's private counts and flags: the selector and its kind
+/// (the header's NMB_ANSWER_* values).
+const PUBLIC_ANSWERS: &[(&str, u32)] = &[
+    ("maxThreadgroupMemoryLength", 0),
+    ("argumentBuffersSupport", 0),
+    ("readWriteTextureSupport", 0),
+    ("maxColorAttachments", 0),
+    ("minConstantBufferAlignmentBytes", 0),
+    ("deviceLinearReadOnlyTextureAlignmentBytes", 0),
+    ("areRasterOrderGroupsSupported", 1),
+    ("supportsRasterOrderGroups", 1),
+    ("isDepth24Stencil8PixelFormatSupported", 1),
+    ("areProgrammableSamplePositionsSupported", 1),
+    ("supports32BitFloatFiltering", 1),
+    ("supportsMemorylessRenderTargets", 1),
+    ("supportsSamplerReductionMode", 1),
+    ("supportsYCBCRFormats12", 1),
+    ("supportsYCBCRPackedFormats12", 1),
+    ("supportsSIMDGroup", 1),
+    ("minimumLinearTextureAlignmentForPixelFormat:", 2),
+    ("supportsTextureSampleCount:", 3),
+    ("supportsVertexAmplificationCount:", 3),
+    ("supportsRasterizationRateMapWithLayerCount:", 3),
+    ("supportsFamily:", 3),
+    ("supportsPrimitiveType:", 3),
+    ("supportsTextureWriteRoundingMode:", 3),
+];
+
+/// Every selector `nmb_device_answer` takes, with its kind, as C strings.
+fn answer_selectors() -> &'static [(std::ffi::CString, u32)] {
+    static ALL: std::sync::OnceLock<Vec<(std::ffi::CString, u32)>> = std::sync::OnceLock::new();
+    ALL.get_or_init(|| {
+        let counts = PrivateCount::ALL.into_iter().map(|c| (c.selector(), 0));
+        let flags = PrivateFlag::ALL.into_iter().map(|f| (f.selector(), 1));
+        counts
+            .chain(flags)
+            .chain(PUBLIC_ANSWERS.iter().copied())
+            .map(|(s, kind)| (std::ffi::CString::new(s).expect("selector"), kind))
+            .collect()
+    })
+}
+
+/// The selector at `index` of the ones `nmb_device_answer` takes and its kind; null past the last.
+///
+/// # Safety
+/// `kind` is writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_device_answer_selector(index: usize, kind: *mut u32) -> *const c_char {
+    let Some((selector, k)) = answer_selectors().get(index) else { return std::ptr::null() };
+    // SAFETY: the caller's contract.
+    if let Some(kind) = unsafe { kind.as_mut() } {
+        *kind = *k;
+    }
+    selector.as_ptr()
+}
+
+fn device_answer(device: &NmbDevice, selector: &str, arg: u64) -> Result<u64, String> {
+    let d = &device.0;
+    let p = d.properties();
+    let none = || format!("the device has no answer for {selector}");
+    if let Some(c) = PrivateCount::ALL.into_iter().find(|c| c.selector() == selector) {
+        return device.private().count(c).value().ok_or_else(none);
+    }
+    if let Some(f) = PrivateFlag::ALL.into_iter().find(|f| f.selector() == selector) {
+        return device.private().flag(f).value().map(u64::from).ok_or_else(none);
+    }
+    let gap = |r: Result<bool, metal2vulkan_runtime::RuntimeGap>| r.map(u64::from).map_err(|g| format!("{selector}: {g:?}"));
+    let format_supported = |f: PixelFormat| d.pixel_format_capabilities(f) != metal2vulkan_runtime::FormatCapabilities::NONE;
+    Ok(match selector {
+        "maxThreadgroupMemoryLength" => p.max_threadgroup_memory_length,
+        "argumentBuffersSupport" => p.argument_buffers_support.as_raw() as u64,
+        "readWriteTextureSupport" => p.read_write_texture_support.as_raw() as u64,
+        // The runtime's pass takes MAX_COLOR_ATTACHMENTS; the device's Vulkan limits bound what a pipeline links.
+        "maxColorAttachments" => {
+            let l = &p.description.limits;
+            (MAX_COLOR_ATTACHMENTS as u64).min(l.max_color_attachments.min(l.max_fragment_output_attachments) as u64)
+        }
+        // The runtime binds a buffer at any offset within it (render.rs, setVertexBuffer); 4 is a scalar's alignment, which the shader's
+        // own loads need.
+        "minConstantBufferAlignmentBytes" => 4,
+        "deviceLinearReadOnlyTextureAlignmentBytes" => {
+            device.private().count(PrivateCount::DeviceLinearTextureAlignmentBytes).value().ok_or_else(none)?
+        }
+        "areRasterOrderGroupsSupported" | "supportsRasterOrderGroups" => gap(p.are_raster_order_groups_supported())?,
+        "isDepth24Stencil8PixelFormatSupported" => gap(p.is_depth24_stencil8_pixel_format_supported())?,
+        "areProgrammableSamplePositionsSupported" => gap(p.are_programmable_sample_positions_supported())?,
+        "supports32BitFloatFiltering" => p.supports_32bit_float_filtering as u64,
+        // A Memoryless texture is a transient render attachment (texture.rs), which every device makes.
+        "supportsMemorylessRenderTargets" => 1,
+        "supportsSamplerReductionMode" => gap(p.supports_sampler_reduction_mode())?,
+        // Apple's SIMD-group functions: the family's SIMD-scoped barrier and permute rows are exact on the device.
+        "supportsSIMDGroup" => {
+            let rows = d.family_rows(GpuFamily::Apple9);
+            let exact = |r: FeatureRow| rows.iter().any(|a| a.row == FamilyRow::Feature(r) && a.state == RowState::Exact);
+            (exact(FeatureRow::SimdBarrier) && exact(FeatureRow::SimdPermute)) as u64
+        }
+        "supportsYCBCRFormats12" => format_supported(PixelFormat::YCBCR124202P) as u64,
+        "supportsYCBCRPackedFormats12" => format_supported(PixelFormat::YCBCR124202PPACKED) as u64,
+        "minimumLinearTextureAlignmentForPixelFormat:" => p
+            .minimum_linear_texture_alignment_for_pixel_format(raw::<PixelFormat>(arg, "pixel format")?)
+            .map_err(e("minimum linear texture alignment"))?,
+        "supportsTextureSampleCount:" => gap(p.supports_texture_sample_count(arg))?,
+        "supportsVertexAmplificationCount:" => gap(p.supports_vertex_amplification_count(arg))?,
+        "supportsRasterizationRateMapWithLayerCount:" => gap(p.supports_rasterization_rate_map_with_layer_count(arg))?,
+        "supportsFamily:" => d.supports_family(arg as i64) as u64,
+        "supportsPrimitiveType:" => p.supports_primitive_type(arg) as u64,
+        "supportsTextureWriteRoundingMode:" => p.supports_texture_write_rounding_mode(arg) as u64,
+        _ => return Err(format!("{selector} is not a device query of the bridge")),
+    })
+}
+
+/// The runtime's answer on the device to `selector` (one `nmb_device_answer_selector` lists), with `arg` for a selector that takes one.
+/// False, with the reason, where the device has no answer of its own.
+///
+/// # Safety
+/// `selector` is a C string; `out` is writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_device_answer(device: *const NmbDevice, selector: *const c_char, arg: u64, out: *mut u64) -> bool {
+    guard(false, || {
+        if selector.is_null() || out.is_null() {
+            return Err("null selector or answer".into());
+        }
+        // SAFETY: the caller's contract.
+        let selector = unsafe { CStr::from_ptr(selector) }.to_str().map_err(e("selector"))?;
+        let answer = device_answer(get(device)?, selector, arg)?;
+        // SAFETY: as above.
+        unsafe { *out = answer };
+        Ok(true)
+    })
+}
+
+/// `requiredLinearTextureBytesPerRowForDescriptor:` (Apple SPI): a row of `width` texels of `format` rounded up to the format's
+/// linear alignment, from the runtime's format description; 0, with the reason, for a format no buffer can back.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_device_linear_bytes_per_row(device: *const NmbDevice, format: u64, width: u64) -> u64 {
+    guard(0, || {
+        let d = &get(device)?.0;
+        let alignment = d
+            .properties()
+            .minimum_linear_texture_alignment_for_pixel_format(raw::<PixelFormat>(format, "pixel format")?)
+            .map_err(e("linear texture"))?;
+        let info = d.pixel_format_info(format);
+        // Flags bit 0x400: a format of blocks, which the alignment query has refused already.
+        if info.flags & 0x400 != 0 || info.words[0] == 0 {
+            return Err(format!("pixel format {format} has no texel size"));
+        }
+        Ok((width * info.words[0]).div_ceil(alignment) * alignment)
+    })
+}
+
+/// `vendorName`: the Vulkan device's PCI vendor, named where the ID is a known GPU vendor's, else the ID itself.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_device_vendor_name(device: *const NmbDevice, out: *mut c_char, size: usize) -> usize {
+    guard(0, || {
+        let id = get(device)?.0.properties().vendor_id;
+        let name = match id {
+            0x5143 => "Qualcomm".to_string(),
+            0x106b => "Apple".to_string(),
+            0x10de => "NVIDIA".to_string(),
+            0x1002 => "AMD".to_string(),
+            0x8086 => "Intel".to_string(),
+            0x13b5 => "ARM".to_string(),
+            _ => format!("0x{id:04x}"),
+        };
+        Ok(copy_out(&name, out, size))
+    })
 }
 
 // ---- buffers ----
@@ -203,11 +496,23 @@ pub unsafe extern "C" fn nmb_buffer_new(device: *mut NmbDevice, length: u64, opt
 pub unsafe extern "C" fn nmb_buffer_new_no_copy(device: *mut NmbDevice, pointer: *mut c_void, length: u64, options_word: u64)
                                                 -> *mut NmbBuffer {
     guard(std::ptr::null_mut(), || {
-        let device = &get(device)?.0;
+        let device = get(device)?;
         // SAFETY: the caller's contract.
         let memory = unsafe { HostMemory::new(NonNull::new(pointer as *mut u8).ok_or("null memory")?) };
-        // SAFETY: as above.
-        let buffer = unsafe { device.new_buffer_with_bytes_no_copy(memory, length, options(options_word)?, None) };
+        let modes = options(options_word)?;
+        // The runtime's live-import lookup and subsequent join are separate:
+        // simultaneous first constructors can allocate distinct imports of the
+        // same pages. Cover every native ABI no-copy call, including mixtures
+        // of raw buffers and IOSurface textures. Each call still gets its own
+        // buffer object. This ABI passes neither a dma-buf source nor a runtime
+        // deallocator; no caller callback runs under this gate. Drop it before
+        // returning/formatting a failure; GPU work and resource release never
+        // take it. A device's unrelated APIs and other devices remain separate.
+        let buffer = {
+            let _gate = device.2.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            // SAFETY: as above.
+            unsafe { device.0.new_buffer_with_bytes_no_copy(memory, length, modes, None) }
+        };
         Ok(boxed(NmbBuffer(buffer.map_err(e("no-copy buffer"))?)))
     })
 }
@@ -230,6 +535,79 @@ pub extern "C" fn nmb_buffer_length(buffer: *const NmbBuffer) -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn nmb_buffer_gpu_address(buffer: *const NmbBuffer) -> u64 {
     guard(0, || Ok(get(buffer)?.0.gpu_address().0))
+}
+
+// ---- heaps ----
+
+pub struct NmbHeap(Heap);
+
+/// `newHeapWithDescriptor:`: type (0 automatic, 1 placement), size, resource options. Sparse heaps are not made here.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_new(device: *mut NmbDevice, heap_type: u64, size: u64, options_word: u64) -> *mut NmbHeap {
+    guard(std::ptr::null_mut(), || {
+        let device = &get(device)?.0;
+        let heap_type = HeapType::from_raw(heap_type).map_err(e("heap type"))?;
+        if heap_type == HeapType::Sparse {
+            return Err("sparse heaps are not implemented".into());
+        }
+        let descriptor = HeapDescriptor::new(heap_type, size, options(options_word)?);
+        Ok(boxed(NmbHeap(device.new_heap(&descriptor).map_err(e("heap"))?)))
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_release(heap: *mut NmbHeap) {
+    release(heap)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_size(heap: *const NmbHeap) -> u64 {
+    guard(0, || Ok(get(heap)?.0.size()))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_used_size(heap: *const NmbHeap) -> u64 {
+    guard(0, || Ok(get(heap)?.0.used_size()))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_allocated_size(heap: *const NmbHeap) -> u64 {
+    guard(0, || Ok(get(heap)?.0.current_allocated_size()))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_max_available_size(heap: *const NmbHeap, alignment: u64) -> u64 {
+    guard(0, || Ok(get(heap)?.0.max_available_size(alignment).map_err(e("heap available size"))?))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_set_purgeable_state(heap: *const NmbHeap, state: u64) -> u64 {
+    guard(0, || {
+        let state = PurgeableState::from_raw(state).map_err(e("purgeable state"))?;
+        Ok(get(heap)?.0.set_purgeable_state(state).map_err(e("heap purgeable state"))?.raw())
+    })
+}
+
+/// A buffer in the heap: automatic heaps place it, a placement heap takes `offset` (`u64::MAX` asks for automatic placement).
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_new_buffer(heap: *const NmbHeap, length: u64, options_word: u64, offset: u64) -> *mut NmbBuffer {
+    guard(std::ptr::null_mut(), || {
+        let heap = &get(heap)?.0;
+        let options = options(options_word)?;
+        let buffer = if offset == u64::MAX { heap.new_buffer(length, options) } else { heap.new_buffer_at_offset(length, options, offset) };
+        Ok(boxed(NmbBuffer(buffer.map_err(e("heap buffer"))?)))
+    })
+}
+
+/// A texture in the heap, placed as `nmb_heap_new_buffer` places a buffer.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_heap_new_texture(heap: *const NmbHeap, descriptor: *const NmbTextureDescriptor, offset: u64) -> *mut NmbTexture {
+    guard(std::ptr::null_mut(), || {
+        let heap = &get(heap)?.0;
+        let descriptor = texture_descriptor(descriptor)?;
+        let texture = if offset == u64::MAX { heap.new_texture(&descriptor) } else { heap.new_texture_at_offset(&descriptor, offset) };
+        Ok(boxed(NmbTexture(texture.map_err(e("heap texture"))?)))
+    })
 }
 
 // ---- textures ----
@@ -286,6 +664,57 @@ pub extern "C" fn nmb_texture_new_on_buffer(buffer: *mut NmbBuffer, descriptor: 
             buffer.new_texture(&descriptor, offset, bytes_per_row)
         };
         Ok(boxed(NmbTexture(texture.map_err(e("texture over buffer"))?)))
+    })
+}
+
+/// `newLinearTextureWithDescriptor:offset:bytesPerRow:bytesPerImage:` (Apple SPI).
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_texture_new_linear(buffer: *mut NmbBuffer, descriptor: *const NmbTextureDescriptor, offset: u64, bytes_per_row: u64,
+                                         bytes_per_image: u64) -> *mut NmbTexture {
+    guard(std::ptr::null_mut(), || {
+        let descriptor = texture_descriptor(descriptor)?;
+        let texture = get(buffer)?.0.new_linear_texture(&descriptor, offset, bytes_per_row, bytes_per_image);
+        Ok(boxed(NmbTexture(texture.map_err(e("linear texture"))?)))
+    })
+}
+
+/// A view of `texture`: of the whole texture as `format` where `whole`, else of `levels` and `slices` (start, count) as `format` and `kind`.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_texture_new_view(texture: *mut NmbTexture, format: u64, kind: u64, levels: *const u64, slices: *const u64, whole: bool)
+                                       -> *mut NmbTexture {
+    guard(std::ptr::null_mut(), || {
+        let t = &get(texture)?.0;
+        let format = raw::<PixelFormat>(format, "pixel format")?;
+        let view = if whole {
+            t.new_texture_view(format)
+        } else {
+            if levels.is_null() || slices.is_null() {
+                return Err("null levels or slices".into());
+            }
+            // SAFETY: the header's two words each.
+            let (l, s) = unsafe { (std::slice::from_raw_parts(levels, 2), std::slice::from_raw_parts(slices, 2)) };
+            let ranges = (l[0]..l[0].checked_add(l[1]).ok_or("levels overflow")?, s[0]..s[0].checked_add(s[1]).ok_or("slices overflow")?);
+            t.new_texture_view_with_levels_slices(format, raw::<TextureType>(kind, "texture type")?, ranges.0, ranges.1)
+        };
+        Ok(boxed(NmbTexture(view.map_err(e("texture view"))?)))
+    })
+}
+
+/// `setPurgeableState:` on a texture: the runtime's answer as Metal's raw state, 0 where it fails.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_texture_set_purgeable_state(texture: *const NmbTexture, state: u64) -> u64 {
+    guard(0, || {
+        let state = PurgeableState::from_raw(state).map_err(e("purgeable state"))?;
+        Ok(get(texture)?.0.set_purgeable_state(state).map_err(e("purgeable state"))?.raw())
+    })
+}
+
+/// `setPurgeableState:` on a buffer, as on a texture.
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_buffer_set_purgeable_state(buffer: *const NmbBuffer, state: u64) -> u64 {
+    guard(0, || {
+        let state = PurgeableState::from_raw(state).map_err(e("purgeable state"))?;
+        Ok(get(buffer)?.0.set_purgeable_state(state).map_err(e("purgeable state"))?.raw())
     })
 }
 
@@ -486,9 +915,58 @@ pub struct NmbDepthStencil(DepthStencilState);
 
 #[unsafe(no_mangle)]
 pub extern "C" fn nmb_compute_pipeline_new(device: *mut NmbDevice, function: *mut NmbFunction) -> *mut NmbComputePipeline {
+    // SAFETY: null options names no array, the existing handles follow this ABI.
+    unsafe { nmb_compute_pipeline_new_with_options(device, function, std::ptr::null()) }
+}
+
+/// # Safety
+/// `options` is null or a valid record with a counted array of live archive handles.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_compute_pipeline_new_with_options(device: *mut NmbDevice, function: *mut NmbFunction,
+                                                              options: *const NmbPipelineOptions) -> *mut NmbComputePipeline {
     guard(std::ptr::null_mut(), || {
-        let state = get(device)?.0.new_compute_pipeline_state_with_function(&get(function)?.0, &PipelineOptions::default());
+        let resolved = unsafe { pipeline_options(options)? };
+        let state = get(device)?.0.new_compute_pipeline_state_with_function(&get(function)?.0, &resolved);
         Ok(boxed(NmbComputePipeline(state.map_err(e("compute pipeline"))?)))
+    })
+}
+
+#[repr(C)]
+pub struct NmbComputePipelineDescriptor {
+    pub function: *mut NmbFunction,
+    pub max_threads: u64,
+    pub multiple_of_execution_width: u64,
+    pub indirect: u64,
+    pub max_call_stack_depth: u64,
+    pub adding_binary_functions: u64,
+    pub mutability: [u64; 31],
+}
+
+fn compute_descriptor(descriptor: *const NmbComputePipelineDescriptor) -> Result<ComputePipelineDescriptor, String> {
+    let d = get(descriptor)?;
+    let mut out = ComputePipelineDescriptor::new(StageSource::Function(get(d.function)?.0.function_descriptor()));
+    out.max_total_threads_per_threadgroup = if d.max_threads == 0 { None } else { Some(u32::try_from(d.max_threads).map_err(e("compute max threads"))?) };
+    out.threadgroup_size_is_multiple_of_execution_width = d.multiple_of_execution_width != 0;
+    out.support_indirect_command_buffers = d.indirect != 0;
+    out.max_call_stack_depth = u32::try_from(d.max_call_stack_depth).map_err(e("compute stack depth"))?;
+    out.support_adding_binary_functions = d.adding_binary_functions != 0;
+    for (index, &mutability) in d.mutability.iter().enumerate() {
+        if mutability != 0 {
+            out.buffers.insert(index as u32, raw::<metal2vulkan::metal::Mutability>(mutability, "buffer mutability")?);
+        }
+    }
+    Ok(out)
+}
+
+/// # Safety
+/// `options` is null or a valid record with a counted array of live archive handles.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_compute_pipeline_new_with_descriptor(device: *mut NmbDevice, descriptor: *const NmbComputePipelineDescriptor,
+                                                                 options: *const NmbPipelineOptions) -> *mut NmbComputePipeline {
+    guard(std::ptr::null_mut(), || {
+        let resolved = unsafe { pipeline_options(options)? };
+        let state = get(device)?.0.new_compute_pipeline_state(&compute_descriptor(descriptor)?, &resolved).map_err(e("compute pipeline"))?;
+        Ok(boxed(NmbComputePipeline(state)))
     })
 }
 
@@ -555,8 +1033,50 @@ fn optional_format(value: u64) -> Result<Option<PixelFormat>, String> {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn nmb_render_pipeline_new(device: *mut NmbDevice, descriptor: *const NmbRenderPipelineDescriptor) -> *mut NmbRenderPipeline {
+    // SAFETY: null options names no array; the device/descriptor handles follow the existing ABI.
+    unsafe { nmb_render_pipeline_new_with_options(device, descriptor, std::ptr::null()) }
+}
+
+#[repr(C)]
+pub struct NmbPipelineOptions {
+    pub flags: u64,
+    pub archives: *const *mut NmbBinaryArchive,
+    pub archive_count: usize,
+}
+
+/// # Safety
+/// The options record and its counted archive array are valid for this call.
+unsafe fn pipeline_options(options: *const NmbPipelineOptions) -> Result<PipelineOptions, String> {
+    let mut resolved = PipelineOptions::default();
+    if let Some(options) = unsafe { options.as_ref() } {
+        resolved.options = PipelineOption::from_raw(options.flags);
+        if options.archive_count > 0 {
+            if options.archives.is_null() || options.archive_count > isize::MAX as usize / std::mem::size_of::<*mut NmbBinaryArchive>() {
+                return Err("invalid binary archive array".into());
+            }
+            let archives = unsafe { std::slice::from_raw_parts(options.archives, options.archive_count) };
+            for &archive in archives {
+                resolved.binary_archives.push(get(archive)?.0.clone());
+            }
+        }
+    }
+    Ok(resolved)
+}
+
+/// # Safety
+/// `options` is null or a valid record; its array holds `archive_count` live archive handles.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_render_pipeline_new_with_options(device: *mut NmbDevice, descriptor: *const NmbRenderPipelineDescriptor,
+                                                              options: *const NmbPipelineOptions) -> *mut NmbRenderPipeline {
     guard(std::ptr::null_mut(), || {
         let device = &get(device)?.0;
+        let resolved = unsafe { pipeline_options(options)? };
+        let state = device.new_render_pipeline_state(&render_descriptor(descriptor)?, &resolved).map_err(e("render pipeline"))?;
+        Ok(boxed(NmbRenderPipeline(state)))
+    })
+}
+
+fn render_descriptor(descriptor: *const NmbRenderPipelineDescriptor) -> Result<RenderPipelineDescriptor, String> {
         let d = get(descriptor)?;
         let mut out = RenderPipelineDescriptor::new(StageSource::Function(get(d.vertex)?.0.function_descriptor()));
         if !d.fragment.is_null() {
@@ -599,14 +1119,73 @@ pub extern "C" fn nmb_render_pipeline_new(device: *mut NmbDevice, descriptor: *c
             }
             out.vertex_descriptor = Some(inputs);
         }
-        let state = device.new_render_pipeline_state(&out, &PipelineOptions::default()).map_err(e("render pipeline"))?;
-        Ok(boxed(NmbRenderPipeline(state)))
-    })
+        Ok(out)
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn nmb_render_pipeline_release(pipeline: *mut NmbRenderPipeline) {
     release(pipeline)
+}
+
+// ---- binary archives ----
+
+pub struct NmbBinaryArchive(BinaryArchive);
+
+/// # Safety
+/// `path` is null (an empty archive) or a C string naming the archive's file.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_binary_archive_new(device: *mut NmbDevice, path: *const c_char) -> *mut NmbBinaryArchive {
+    guard(std::ptr::null_mut(), || {
+        // SAFETY: the caller's contract.
+        let url = (!path.is_null()).then(|| PathBuf::from(unsafe { CStr::from_ptr(path) }.to_string_lossy().into_owned()));
+        let archive = get(device)?.0.new_binary_archive(&BinaryArchiveDescriptor::new(url)).map_err(e("binary archive"))?;
+        Ok(boxed(NmbBinaryArchive(archive)))
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_binary_archive_release(archive: *mut NmbBinaryArchive) {
+    release(archive)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_binary_archive_add_render(archive: *mut NmbBinaryArchive, descriptor: *const NmbRenderPipelineDescriptor) -> bool {
+    guard(false, || {
+        get(archive)?.0.add_render_pipeline_functions(&render_descriptor(descriptor)?).map_err(e("archive render pipeline"))?;
+        Ok(true)
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_binary_archive_add_compute(archive: *mut NmbBinaryArchive, function: *mut NmbFunction) -> bool {
+    guard(false, || {
+        let descriptor = ComputePipelineDescriptor::new(StageSource::Function(get(function)?.0.function_descriptor()));
+        get(archive)?.0.add_compute_pipeline_functions(&descriptor).map_err(e("archive compute pipeline"))?;
+        Ok(true)
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_binary_archive_add_compute_descriptor(archive: *mut NmbBinaryArchive, descriptor: *const NmbComputePipelineDescriptor) -> bool {
+    guard(false, || {
+        get(archive)?.0.add_compute_pipeline_functions(&compute_descriptor(descriptor)?).map_err(e("archive compute pipeline"))?;
+        Ok(true)
+    })
+}
+
+/// # Safety
+/// `path` is a C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nmb_binary_archive_serialize(archive: *mut NmbBinaryArchive, path: *const c_char) -> bool {
+    guard(false, || {
+        if path.is_null() {
+            return Err("null path".into());
+        }
+        // SAFETY: the caller's contract.
+        let path = PathBuf::from(unsafe { CStr::from_ptr(path) }.to_string_lossy().into_owned());
+        get(archive)?.0.serialize_to_url(&path).map_err(e("archive serialize"))?;
+        Ok(true)
+    })
 }
 
 #[repr(C)]
@@ -725,6 +1304,22 @@ pub extern "C" fn nmb_command_buffer_release(command_buffer: *mut NmbCommandBuff
     release(command_buffer)
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_command_buffer_uses_buffer(command_buffer: *const NmbCommandBuffer, buffer: *const NmbBuffer) -> i32 {
+    guard(-1, || {
+        let used = get(command_buffer)?.0.used_resources();
+        Ok(i32::from(used.references_resource(get(buffer)?.0.as_resource())))
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_command_buffer_uses_texture(command_buffer: *const NmbCommandBuffer, texture: *const NmbTexture) -> i32 {
+    guard(-1, || {
+        let used = get(command_buffer)?.0.used_resources();
+        Ok(i32::from(used.references_resource(get(texture)?.0.as_resource())))
+    })
+}
+
 struct Context(*mut c_void);
 // SAFETY: the context is the caller's, handed back on the runtime's thread as the header states.
 unsafe impl Send for Context {}
@@ -739,6 +1334,28 @@ pub extern "C" fn nmb_command_buffer_on_completed(command_buffer: *mut NmbComman
             let context = context;
             handler(context.0)
         })).map_err(e("completed handler"))?;
+        Ok(true)
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_command_buffer_on_scheduled(command_buffer: *mut NmbCommandBuffer, handler: Option<extern "C" fn(*mut c_void)>,
+                                                  context: *mut c_void) -> bool {
+    guard(false, || {
+        let handler = handler.ok_or("null handler")?;
+        let context = Context(context);
+        get(command_buffer)?.0.add_scheduled_handler(Box::new(move |_| {
+            let context = context;
+            handler(context.0)
+        })).map_err(e("scheduled handler"))?;
+        Ok(true)
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_command_buffer_wait_scheduled(command_buffer: *mut NmbCommandBuffer) -> bool {
+    guard(false, || {
+        get(command_buffer)?.0.wait_until_scheduled().map_err(e("wait scheduled"))?;
         Ok(true)
     })
 }
@@ -958,6 +1575,7 @@ pub struct NmbRenderPassDescriptor {
     pub height: u64,
     pub array_length: u64,
     pub samples: u64,
+    pub visibility: *const NmbBuffer,
 }
 
 fn texture_of(a: &NmbPassAttachment) -> Result<Option<Texture>, String> {
@@ -999,6 +1617,9 @@ pub extern "C" fn nmb_render_encoder_new(command_buffer: *mut NmbCommandBuffer, 
         pass.render_target_height = d.height;
         pass.render_target_array_length = d.array_length;
         pass.default_raster_sample_count = d.samples;
+        if !d.visibility.is_null() {
+            pass.visibility_result_buffer = Some(get(d.visibility)?.0.clone());
+        }
         let encoder = get(command_buffer)?.0.render_command_encoder(&pass).map_err(e("render encoder"))?;
         Ok(boxed(NmbEncoder::Render(encoder)))
     })
@@ -1225,6 +1846,32 @@ pub extern "C" fn nmb_render_set_raster(encoder: *mut NmbEncoder, cull_mode: u64
 pub extern "C" fn nmb_render_set_stencil_reference(encoder: *mut NmbEncoder, front: u32, back: u32) -> bool {
     guard(false, || {
         render(encoder)?.set_stencil_reference_values(front, back);
+        Ok(true)
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_render_set_depth_bias(encoder: *mut NmbEncoder, bias: f32, slope_scale: f32, clamp: f32) -> bool {
+    guard(false, || {
+        render(encoder)?.set_depth_bias(bias, slope_scale, clamp).map_err(e("depth bias"))?;
+        Ok(true)
+    })
+}
+
+/// SPI `setLineWidth:`: the runtime accepts Metal's default width of 1 and refuses any other (Apple's wide-line rule is unmeasured).
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_render_set_line_width(encoder: *mut NmbEncoder, width: f32) -> bool {
+    guard(false, || {
+        render(encoder)?.set_line_width(width).map_err(e("line width"))?;
+        Ok(true)
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn nmb_render_set_visibility_mode(encoder: *mut NmbEncoder, mode: u64, offset: u64) -> bool {
+    guard(false, || {
+        let mode = VisibilityResultMode::from_raw(mode).map_err(e("visibility result mode"))?;
+        render(encoder)?.set_visibility_result_mode(mode, offset).map_err(e("visibility result mode"))?;
         Ok(true)
     })
 }

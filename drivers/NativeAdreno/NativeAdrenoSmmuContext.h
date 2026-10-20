@@ -52,6 +52,9 @@ public:
     const ArmSmmu4KLiveArena *arena() const {return &arena_;}
     /* Handles for a NativeAdrenoVm that will map buffers through this bank. */
     ArmSmmu4KLiveArena *arenaHandle() {return &arena_;}
+    /* Scratch the kit's physical-alias checks sort in (ArmSmmu4KLiveArena::alias_scratch), owned by the caller for this context's
+     * lifetime; without it those checks compare pairwise. Only after prepare. */
+    void setAliasScratch(uint32_t *entries,size_t count) {arena_.alias_scratch=entries;arena_.alias_scratch_entries=entries?count:0;}
     ArmSmmu4KLiveState *stateHandle() {return &state_;}
     ArmSmmu4KContextConfig *configHandle() {return &config_;}
     ArmSmmu4KStreamState *streamsHandle() {return &streams_;}

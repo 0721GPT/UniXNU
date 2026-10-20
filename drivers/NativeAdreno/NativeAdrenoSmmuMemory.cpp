@@ -29,7 +29,7 @@ IOReturn NativeAdrenoPrepareSmmuMemory(NativeAdrenoMemory *memory,unsigned input
         memory->spans()[0].offset || memory->spans()[0].bytes!=memory->bytes() ||
         !memory->bytes() || (memory->bytes()&4095))return kIOReturnUnsupported;
     *arena={{input_bits,output_bits,memory->spans()[0].physical,budget},iova,bytes,upper,
-        static_cast<volatile uint64_t *>(memory->mapping()),memory->bytes()/4096};
+        static_cast<volatile uint64_t *>(memory->mapping()),memory->bytes()/4096,nullptr,0};
     ArmSmmu4KStatus status=ArmSmmu4KLivePrepare(arena,state);
     if(status!=ArmSmmu4KSuccess)return status==ArmSmmu4KCapacity?kIOReturnNoResources:kIOReturnBadArgument;
     ArmSmmu4KLiveResult audit;

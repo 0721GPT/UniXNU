@@ -3,6 +3,8 @@
 #include "ArmSmmu4KMmio.h"
 #include <IOKit/IOLib.h>
 
+extern "C" volatile uint32_t native_adreno_pool_mib;
+extern "C" volatile uint32_t native_adreno_pool_stats[8],native_adreno_pool_status;
 static const uint64_t kIovas[GpuBufferCount]={GpuSqeIova,GpuRingIova,GpuMemptrsIova,GpuPwrupIova,GpuScratchIova};
 static const size_t kBytes[GpuBufferCount]={GpuSqeBytes,GpuRingBytes,GpuPageBytes,GpuPageBytes,GpuPageBytes};
 IOReturn NativeAdrenoGpuContext::bringUp(const ArmSmmu4KIo *io,unsigned bank,unsigned asid,const unsigned slots[2],
@@ -25,6 +27,15 @@ IOReturn NativeAdrenoGpuContext::bringUp(const ArmSmmu4KIo *io,unsigned bank,uns
         if(report->output_bits>40)report->output_bits=40;
         if(!report->output_bits)status=kIOReturnUnsupported;
     }
+    /* The BO pool is taken first, while the VM still has long contiguous runs (the board sets the size from sheng-gpu-pool; 0 = scattered BOs only).
+     * A pool that cannot be had at one size is tried at the next smaller; none is not an error. */
+    if(!status && native_adreno_pool_mib) {
+        for(uint32_t mib=native_adreno_pool_mib;mib>=16;mib>>=1) {
+            const IOReturn pooled=NativeAdrenoMemory::reservePool(report->output_bits,(size_t)mib<<20);
+            native_adreno_pool_stats[0]=pooled==kIOReturnSuccess?mib:0;native_adreno_pool_status=(uint32_t)pooled;
+            if(pooled==kIOReturnSuccess)break;
+        }
+    }
     if(!status)status=tables_.allocate(TablePages*0x1000,report->output_bits,true,TablePages*0x1000);
     for(unsigned i=0;!status && i<GpuBufferCount;++i)
         status=buffers_[i].allocate(kBytes[i],report->output_bits,true,kBytes[i]);
@@ -32,6 +43,7 @@ IOReturn NativeAdrenoGpuContext::bringUp(const ArmSmmu4KIo *io,unsigned bank,uns
         step(Prepare);
         status=smmu_.prepare(&tables_,0,0,GpuApertureBytes,NativeAdrenoSmmuContext::MaxLeaves,
             bank,asid,1000,report->output_bits);
+        if(!status)smmu_.setAliasScratch(alias_scratch_,sizeof alias_scratch_/sizeof *alias_scratch_);
     }
     if(!status) {
         step(Program);
@@ -53,7 +65,9 @@ IOReturn NativeAdrenoGpuContext::bringUp(const ArmSmmu4KIo *io,unsigned bank,uns
     if(!status) {
         step(VmAttach);
         NativeAdrenoVmRegion lower={&tables_,smmu_.arenaHandle(),smmu_.stateHandle()};
-        status=vm_.attach(io,smmu_.configHandle(),smmu_.streamsHandle(),&lower,nullptr,16384,262144);
+        /* 65536 spans: 256 MiB of BOs even when every page is its own span. The Metal runtime pools its memory in 64 MiB blocks,
+         * which XNU rarely finds physically contiguous; one scattered block is 16384 spans (int-070 ran out at 16384). */
+        status=vm_.attach(io,smmu_.configHandle(),smmu_.streamsHandle(),&lower,nullptr,131072,262144);
     }
     if(!status) {
         step(Map);

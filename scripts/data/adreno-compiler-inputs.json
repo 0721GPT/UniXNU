@@ -49,7 +49,10 @@
     "patches/mesa/ir3-darwin-build-id.patch",
     "patches/mesa/ir3-portable-asm-roundtrip.patch",
     "patches/mesa/offline-adreno-compiler-probe.patch",
-    "patches/mesa/turnip-darwin-kmd.patch"
+    "patches/mesa/turnip-darwin-kmd.patch",
+    "patches/mesa/turnip-graphics-cache-feedback.patch",
+    "patches/mesa/turnip-empty-scissor.patch",
+    "patches/mesa/turnip-builtin-shader-pack.patch"
   ],
   "integer_fma_reference": {
     "repository": "https://github.com/ucb-bar/berkeley-softfloat-3",

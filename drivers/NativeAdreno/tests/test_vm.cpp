@@ -3,6 +3,7 @@
  * Proves ownership/lifetime/refusal logic only; no hardware is touched. */
 #include "XnuMemoryFixture.h"
 #include "NativeAdrenoVm.h"
+#include <chrono>
 #include <cstdio>
 #define CHECK(x) do {if(!(x)){std::fprintf(stderr,"line %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
 #define BYTES 0x40000
@@ -24,6 +25,8 @@ static ArmSmmu4KStream routes[2]={{2,0},{4,1}};
 static ArmSmmu4KStreamResult route_result;
 static ArmSmmu4KContextConfig context;
 static ArmSmmu4KContextImage image;
+extern "C" {extern uint64_t (*native_adreno_vm_now_us)(void);extern volatile uint64_t native_adreno_vm_phase_us[2][8];}
+static uint64_t nowUs() {return (uint64_t)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
 static int event(void){return ++f.calls==f.fail_call;}
 static int read32(void *cookie,size_t at,uint32_t *v)
 {CHECK(cookie==&f && at%4==0 && at<=BYTES-4);if(event())return 1;*v=memory[at/4];return 0;}
@@ -43,6 +46,7 @@ struct Fixture {
     ArmSmmu4KLiveState state{};
     ArmSmmu4KLiveVisibility visibility;
     NativeAdrenoVm vm;
+    std::vector<uint32_t> aliasScratch;
 };
 static void mmioReset(void)
 {
@@ -54,11 +58,12 @@ static void mmioReset(void)
     memory[0x800/4]=1u<<31|9;memory[0xc00/4]=3;
 }
 /* Real prepared arena, enabled actual context image and exact stream routes. */
-static IOReturn exposed(Fixture &s)
+static IOReturn exposed(Fixture &s,size_t capacity=32,size_t pages=16)
 {
     mmioReset();
-    IOReturn status=s.tables.allocate(32*4096,40,true,32*4096);if(status)return status;
-    IOReturn smmu=NativeAdrenoPrepareSmmuMemory(&s.tables,32,40,0x800000,65536,0,16,
+    const size_t tablePages=std::max(size_t(32),pages/512+8);
+    IOReturn status=s.tables.allocate(tablePages*4096,40,true,tablePages*4096);if(status)return status;
+    IOReturn smmu=NativeAdrenoPrepareSmmuMemory(&s.tables,32,40,0x800000,pages*4096,0,pages,
         &s.arena,&s.state,&s.visibility);
     if(smmu)return smmu;
     context=(ArmSmmu4KContextConfig){.lower=&s.arena.config,.lower_tables=&s.state.tables,
@@ -74,7 +79,7 @@ static IOReturn exposed(Fixture &s)
     if(ArmSmmu4KAttachStreams(&io,&streams,routes,2,2,&context,&route_result)!=ArmSmmu4KSuccess)
         return kIOReturnBadArgument;
     NativeAdrenoVmRegion lower={&s.tables,&s.arena,&s.state};
-    return s.vm.attach(&io,&context,&streams,&lower,nullptr,32,1000);
+    return s.vm.attach(&io,&context,&streams,&lower,nullptr,capacity,1000);
 }
 static IOReturn object(Fixture &s,size_t pages)
 {return s.object.allocate(pages*4096,40,false,pages*4096);}
@@ -133,6 +138,80 @@ int main()
         CHECK(s.tables.retireAfterQuiescence()==kIOReturnSuccess && s.tables.release()==kIOReturnSuccess);
         CHECK(fixture.live.empty() && fixture.metadata.empty());
     }
+    /* Scattered BOs, one span per page, mapped in one transaction each into the middle, the end and the start of the table
+     * (each map and unmap audits the whole table against the sorted spans), and a span-capacity refusal before ownership. */
+    {
+        Fixture s;
+        CHECK(exposed(s,8)==kIOReturnSuccess);   /* aperture 0x800000..0x810000, 8 spans */
+        fixture.mode=Scattered;
+        NativeAdrenoMemory first,middle,last,huge;
+        CHECK(!first.allocate(4096,40,false,4096) && !middle.allocate(4*4096,40,false,4*4096) && !last.allocate(4096,40,false,4096));
+        CHECK(middle.spanCount()==4);
+        uint64_t a=0,b=0,c=0,iova=0;size_t bytes=0;unsigned permissions=0;
+        CHECK(!s.vm.map(&first,0,0x800000,3,0,2,&a) && !s.vm.map(&last,0,0x808000,3,0,2,&c));
+        CHECK(!s.vm.map(&middle,0,0x802000,3,0,2,&b) && s.vm.spanCount()==6 && s.vm.lastResult().completed_spans==4);
+        CHECK(!s.vm.describe(b,&iova,&bytes,&permissions) && iova==0x802000 && bytes==4*4096);
+        CHECK(!s.vm.unmap(b) && s.vm.spanCount()==2 && s.vm.lastResult().completed_spans==4);
+        CHECK(!s.vm.map(&middle,0,0x80a000,3,0,2,&b) && s.vm.spanCount()==6);
+        CHECK(!s.vm.unmap(a) && s.vm.spanCount()==5);
+        CHECK(!s.vm.map(&first,0,0x800000,3,0,2,&a) && s.vm.spanCount()==6);
+        CHECK(!huge.allocate(3*4096,40,false,3*4096) && huge.spanCount()==3);
+        uint64_t refused=0;const unsigned calls=f.calls;
+        CHECK(s.vm.map(&huge,0,0x802000,3,0,2,&refused)==kIOReturnNoResources && !refused);
+        CHECK(!huge.deviceReferences() && f.calls==calls && s.vm.spanCount()==6 && !s.vm.poisoned());
+        CHECK(!s.vm.unmap(a) && !s.vm.unmap(b) && !s.vm.unmap(c) && s.vm.spanCount()==0);
+        fixture.mode=Contiguous;
+        CHECK(!first.release() && !middle.release() && !last.release() && !huge.release());
+        CHECK(s.vm.detach()==kIOReturnSuccess);
+        CHECK(s.tables.retireAfterQuiescence()==kIOReturnSuccess && s.tables.release()==kIOReturnSuccess);
+        CHECK(fixture.live.empty() && fixture.metadata.empty());
+    }
+    /* Physical overlap remains allowed only within the same attribute class.
+     * Check scratch and fallback, both smaller-side choices, and refusals before
+     * MMIO/ownership changes. These are physical-page identities in the peer. */
+    for(bool scratch:{false,true}) {
+        Fixture s;CHECK(exposed(s)==kIOReturnSuccess);
+        s.aliasScratch.resize(32);
+        if(scratch){s.arena.alias_scratch=s.aliasScratch.data();s.arena.alias_scratch_entries=s.aliasScratch.size();}
+        NativeAdrenoMemory first,second,many;
+        CHECK(!first.allocate(4096,40,false,4096));
+        fixture.next_physical=first.spans()[0].physical;
+        CHECK(!second.allocate(4096,40,false,4096));
+        fixture.mode=Scattered;fixture.next_physical=first.spans()[0].physical;
+        CHECK(!many.allocate(8192,40,false,8192)&&many.spanCount()==2);fixture.mode=Contiguous;
+        uint64_t a=0,b=0;CHECK(!s.vm.map(&first,0,0x800000,3,0,2,&a));
+        CHECK(!s.vm.map(&second,0,0x802000,1,0,2,&b));CHECK(!s.vm.unmap(b));
+        const unsigned calls=f.calls;
+        for(unsigned change=0;change<3;++change) {
+            CHECK(s.vm.map(&second,0,0x802000,change==2?9:3,change==0?1:0,change==1?3:2,&b)==kIOReturnBadArgument);
+            CHECK(!b&&!second.deviceReferences()&&f.calls==calls&&!s.vm.poisoned());
+        }
+        CHECK(s.vm.map(&many,0,0x802000,3,1,3,&b)==kIOReturnBadArgument);
+        CHECK(!b&&!many.deviceReferences()&&f.calls==calls&&!s.vm.poisoned());
+        CHECK(!s.vm.unmap(a)&&!first.release()&&!second.release()&&!many.release());
+        CHECK(!s.vm.detach()&&!s.tables.retireAfterQuiescence()&&!s.tables.release());
+        CHECK(fixture.live.empty()&&fixture.metadata.empty());
+    }
+    /* A large different-class scattered map: the old preflight did n*n physical
+     * comparisons despite the table updater already having alias scratch. */
+    {
+        constexpr size_t n=8192;
+        Fixture s;CHECK(exposed(s,2*n,2*n)==kIOReturnSuccess);
+        s.aliasScratch.resize(2*n);s.arena.alias_scratch=s.aliasScratch.data();s.arena.alias_scratch_entries=s.aliasScratch.size();
+        fixture.mode=Scattered;NativeAdrenoMemory first,second;
+        CHECK(!first.allocate(n*4096,40,false,n*4096)&&first.spanCount()==n);
+        CHECK(!second.allocate(n*4096,40,false,n*4096)&&second.spanCount()==n);
+        uint64_t a=0,b=0;CHECK(!s.vm.map(&first,0,0x800000,3,0,2,&a));
+        native_adreno_vm_now_us=nowUs;uint64_t before=native_adreno_vm_phase_us[0][5];
+        CHECK(!s.vm.map(&second,0,0x800000+n*4096,3,1,3,&b));
+        std::printf("VM alias preflight diagnostic: %zu x %zu different-class spans, %llu host us (not hardware timing)\n",n,n,
+            (unsigned long long)(native_adreno_vm_phase_us[0][5]-before));
+        native_adreno_vm_now_us=nullptr;fixture.mode=Contiguous;
+        CHECK(s.vm.spanCount()==2*n&&!s.vm.unmap(b)&&!s.vm.unmap(a)&&!first.release()&&!second.release());
+        CHECK(!s.vm.detach()&&!s.tables.retireAfterQuiescence()&&!s.tables.release());
+        CHECK(fixture.live.empty()&&fixture.metadata.empty());
+    }
+    std::printf("PASS: VM alias index/fallback preserve attribute-class refusals before MMIO/ownership; 8192-span different-class map/unmap\n");
     /* Post-hold CPU publication failure: poison, retain everything, refuse. */
     {
         Fixture s;
@@ -150,5 +229,15 @@ int main()
         CHECK(s.object.release()==kIOReturnBusy && s.tables.release()==kIOReturnBusy);
         CHECK(!fixture.live.empty());
     }
-    std::printf("PASS: 1 native map/hold/unmap transaction, 13 pre-ownership refusals and 1 post-hold poison/retention case over a software SMMU register peer\n");
+    std::printf("PASS: 1 native map/hold/unmap transaction, 13 pre-ownership refusals, 1 scattered-span ordering and capacity case and 1 post-hold poison/retention case over a software SMMU register peer\n");
+}
+/* Physical-page maintenance (imported BOs): record it; no host page is touched. */
+/* Host double: the page attribute change of user BOs has no host equivalent (no host page is touched). */
+IOReturn NativeAdrenoSetPagesCacheMode(const NativeAdrenoPhysicalSpan *spans,size_t count,bool){return spans && count?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoReassertWriteCombined(const NativeAdrenoPhysicalSpan *spans,size_t count,uint32_t *reset)
+{return spans && count && reset?kIOReturnSuccess:kIOReturnBadArgument;}
+IOReturn NativeAdrenoMaintainPhysicalPages(uint64_t physical,size_t bytes,NativeAdrenoCacheOperation op)
+{
+    if(!physical || !bytes || ((physical|bytes)&4095) || op>NativeAdrenoInvalidate)std::abort();
+    ++fixture.physical_calls;fixture.physical_bytes+=bytes;return kIOReturnSuccess;
 }

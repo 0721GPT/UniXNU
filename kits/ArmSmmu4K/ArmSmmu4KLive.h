@@ -11,6 +11,10 @@ typedef struct {
     unsigned upper_region;
     volatile uint64_t *mapping;       /* Real writable CPU mapping of owned pool. */
     size_t capacity_pages;
+    /* Optional caller-owned scratch for the physical-alias checks (one entry per range of the smaller compared side), used by one
+     * call at a time; absent or too small, those checks compare pairwise. Never read as state. */
+    uint32_t *alias_scratch;
+    size_t alias_scratch_entries;
 } ArmSmmu4KLiveArena;
 typedef struct {
     ArmSmmu4KResult tables;
@@ -33,6 +37,7 @@ typedef struct {
 typedef struct {
     size_t descriptor_reads,descriptor_writes,published_pages;
     unsigned complete,translation_removed,must_retain_resources;
+    unsigned whole_verification;   /* this update re-proved the whole region (every 64th of a region) */
     ArmSmmu4KProgramResult synchronization;
 } ArmSmmu4KLiveResult;
 /* Prepare an INACTIVE empty native4K arena. Preallocate only real intermediate
@@ -89,6 +94,18 @@ ArmSmmu4KStatus ArmSmmu4KLiveUpdateContext(const ArmSmmu4KIo *,unsigned bank,
     const ArmSmmu4KLiveRegion *upper,unsigned change_upper,
     const ArmSmmu4KLiveVisibility *,const ArmSmmu4KRange *change,unsigned map,
     unsigned poll_budget,ArmSmmu4KLiveResult *);
+/* UpdateContext for several ranges of one region in one transaction: changes are
+ * sorted by native IOVA and disjoint; map wants each entirely invalid, unmap
+ * each exactly mapped. Every check of UpdateContext covers all of them before
+ * the first store; their leaf pages are published once, the ASID synchronized
+ * once and both graphs rechecked once. A buffer of scattered physical pages is
+ * one change per page, so its mapping costs one transaction, not one per page.
+ * The changes may lie inside the target region's ranges (an unmap). */
+ArmSmmu4KStatus ArmSmmu4KLiveUpdateContextBatch(const ArmSmmu4KIo *,unsigned bank,
+    const ArmSmmu4KContextConfig *,const ArmSmmu4KLiveRegion *lower,
+    const ArmSmmu4KLiveRegion *upper,unsigned change_upper,
+    const ArmSmmu4KLiveVisibility *,const ArmSmmu4KRange *changes,size_t change_count,
+    unsigned map,unsigned poll_budget,ArmSmmu4KLiveResult *);
 #ifdef __cplusplus
 }
 #endif

@@ -22,6 +22,7 @@ typedef struct {
 } Fixture;
 static Fixture f;
 static ArmSmmu4KLiveArena arena;
+static uint32_t alias_scratch[64];   /* the main arena's alias checks sort; the peer's compare pairwise */
 static ArmSmmu4KLiveState state;
 static ArmSmmu4KContextConfig context;
 static ArmSmmu4KIo io;
@@ -97,7 +98,7 @@ static void setup(unsigned bits,unsigned upper,unsigned output,unsigned spacing,
     memset(&state,0,sizeof(state));memset(&f,0,sizeof(f));memset(tables,0xa5,sizeof(tables));
     pair_mode=0;
     arena=(ArmSmmu4KLiveArena){{bits,output,0x10000000,16},
-        (upper?UINT64_MAX-(UINT64_C(1)<<bits)+1:0)+low,4*4096,upper,tables,POOL_PAGES};
+        (upper?UINT64_MAX-(UINT64_C(1)<<bits)+1:0)+low,4*4096,upper,tables,POOL_PAGES,alias_scratch,64};
     CHECK(ArmSmmu4KLivePrepare(&arena,&state)==ArmSmmu4KSuccess);
     CHECK(state.prepared && !state.poisoned && !state.tables.leaf_pages && state.tables.table_pages<=POOL_PAGES);
     ArmSmmu4KLiveResult audit;
@@ -140,7 +141,8 @@ static void complete(unsigned removed,size_t pages)
     CHECK(result.complete && result.translation_removed==removed && !result.must_retain_resources);
     CHECK(!state.poisoned && state.tables.leaf_pages==pages && result.synchronization.tlb_synchronized);
     CHECK(f.tlbi_calls==1 && f.sync_calls==1 && f.synced && f.barriers>=4);
-    CHECK(result.descriptor_reads>=state.tables.table_pages*1024);
+    /* A whole-region update reads every descriptor; the others read each changed leaf's path before and after the store. */
+    CHECK(result.whole_verification?result.descriptor_reads>=state.tables.table_pages*1024:result.descriptor_reads>=2);
 }
 static unsigned profiles(void)
 {
@@ -263,7 +265,7 @@ static void setup_pair(unsigned bits,unsigned output,unsigned spacing)
     memset(&peer_state,0,sizeof(peer_state));
     unsigned peer_bits=80-bits;
     peer_arena=(ArmSmmu4KLiveArena){{peer_bits,output,0x11000000,16},
-        UINT64_MAX-(UINT64_C(1)<<peer_bits)+1+0x1ff000,4*4096,1,peer_tables,POOL_PAGES};
+        UINT64_MAX-(UINT64_C(1)<<peer_bits)+1+0x1ff000,4*4096,1,peer_tables,POOL_PAGES,0,0};   /* pairwise alias checks */
     CHECK(!ArmSmmu4KLivePrepare(&peer_arena,&peer_state));
     context.upper=&peer_arena.config;context.upper_tables=&peer_state.tables;
     /* Explicitly reset the HOST REGISTER fixture, never a live hardware bank. */
@@ -352,6 +354,91 @@ static unsigned pair_failures(void)
     CHECK(!state.poisoned && !peer_state.poisoned);
     return controls;
 }
+static ArmSmmu4KStatus batch(const ArmSmmu4KRange *before,size_t count,const ArmSmmu4KRange *changes,size_t n,unsigned map)
+{
+    ArmSmmu4KLiveRegion lo={&arena,&state,before,count};
+    return ArmSmmu4KLiveUpdateContextBatch(&io,0,&context,&lo,0,0,&visibility,changes,n,map,4,&result);
+}
+/* Four scattered physical pages (descending addresses, never adjacent) over the arena's 2 MiB boundary. */
+static void scattered(ArmSmmu4KRange pages[4])
+{for(unsigned i=0;i<4;++i)pages[i]=(ArmSmmu4KRange){arena.iova+4096*i,0x30000000+0x20000*(3-i),4096,3,0,2};}
+static unsigned batches(void)
+{
+    unsigned controls=0;
+    setup(48,0,48,0,0x1ff000);ArmSmmu4KRange pages[4];scattered(pages);
+    memcpy(snapshot,tables,sizeof(tables));
+    ArmSmmu4KRange swapped[2]={pages[1],pages[0]};
+    CHECK(batch(0,0,swapped,2,1)==ArmSmmu4KOverlap);++controls;
+    ArmSmmu4KRange alias[2]={pages[0],pages[1]};alias[1].physical=alias[0].physical;alias[1].writeback=1;alias[1].shareability=3;
+    CHECK(batch(0,0,alias,2,1)==ArmSmmu4KOverlap);++controls;
+    alias[1].writeback=0;alias[1].shareability=2;alias[1].permissions|=ArmSmmu4KPrivileged;
+    CHECK(batch(0,0,alias,2,1)==ArmSmmu4KOverlap);++controls;
+    CHECK(batch(0,0,pages,0,1)==ArmSmmu4KArgument);++controls;
+    CHECK(batch(0,0,0,1,1)==ArmSmmu4KBadRange);++controls;
+    CHECK(!f.calls && !state.poisoned && !memcmp(snapshot,tables,sizeof(tables)));
+    /* One transaction: four leaves written, two leaf pages published once each, one TLB synchronization. */
+    CHECK(batch(0,0,pages,4,1)==ArmSmmu4KSuccess);complete(0,4);
+    CHECK(result.descriptor_writes==4 && result.published_pages==2 && state.generation==1);
+    for(unsigned i=0;i<4;++i)CHECK(pte(pages[i].iova)==(pages[i].physical|source_permission_pte(3,0)|3));
+    ++controls;
+    /* Any already mapped page refuses the whole batch before MMIO or a store. */
+    reset_counters();memcpy(snapshot,tables,sizeof(tables));
+    CHECK(batch(pages,4,pages+2,2,1)==ArmSmmu4KStateMismatch && !f.calls && !memcmp(snapshot,tables,sizeof(tables)));++controls;
+    /* Unmap a sub-batch given as part of the region's own ranges. */
+    reset_counters();CHECK(batch(pages,4,pages+1,2,0)==ArmSmmu4KSuccess);complete(1,2);
+    CHECK(pte(pages[0].iova) && !pte(pages[1].iova) && !pte(pages[2].iova) && pte(pages[3].iova));++controls;
+    ArmSmmu4KRange rest[2]={pages[0],pages[3]},wrong[2]={pages[0],pages[3]};wrong[1].physical+=4096;
+    reset_counters();CHECK(batch(rest,2,wrong,2,0)==ArmSmmu4KStateMismatch && !f.calls);++controls;
+    reset_counters();CHECK(batch(rest,2,rest,2,0)==ArmSmmu4KSuccess);complete(1,0);++controls;
+    /* Every register access of a batch failing, before or after its write, poisons and retains. */
+    setup(48,0,48,0,0x1ff000);scattered(pages);
+    CHECK(batch(0,0,pages,4,1)==ArmSmmu4KSuccess);size_t calls=f.calls;
+    for(unsigned unmap=0;unmap<2;++unmap)for(unsigned after=0;after<2;++after)for(size_t failed=1;failed<=calls;++failed) {
+        setup(48,0,48,0,0x1ff000);scattered(pages);
+        if(unmap) {CHECK(batch(0,0,pages,4,1)==ArmSmmu4KSuccess);reset_counters();}
+        f.fail_call=failed;f.after_write=after;
+        CHECK(batch(unmap?pages:0,unmap?4:0,pages,4,!unmap)==ArmSmmu4KIoError);
+        CHECK(state.poisoned && result.must_retain_resources && !result.complete);++controls;
+    }
+    return controls;
+}
+/* The leaf slot of va in the fixture's pool, by the oracle's own walk. */
+static uint64_t *leaf_of(uint64_t va)
+{
+    size_t at=0;unsigned level=state.tables.start_level;
+    for(;;) {
+        unsigned shift=12+9*(3-level),width=level==state.tables.start_level?arena.config.input_bits-shift:9;
+        uint64_t *entry=&tables[at+((va>>shift)&((1u<<width)-1))];
+        if(level==3)return entry;
+        CHECK((*entry&3)==3);
+        at=(size_t)(((*entry&UINT64_C(0x0000fffffffff000))-arena.config.table_physical)/8);++level;
+    }
+}
+/* Between whole-region updates (every 64th of a region) an update proves the leaves it changes: a changed leaf holding something
+ * else refuses before any store; a corrupted descriptor elsewhere is found by the next whole-region update. */
+static unsigned incremental(void)
+{
+    unsigned count=0;
+    setup(48,1,48,0,0x1ff000);
+    ArmSmmu4KRange r=resource(1,3,1),r2=r;r2.iova+=4096;r2.physical+=0x10000;
+    CHECK(update(0,0,&r,1)==ArmSmmu4KSuccess && result.whole_verification);
+    *leaf_of(r2.iova)=(r2.physical|0x703);reset_counters();
+    CHECK(update(&r,1,&r2,1)==ArmSmmu4KStateMismatch && !result.whole_verification);
+    CHECK(state.poisoned && !result.descriptor_writes && !f.writes && !result.complete);++count;
+    setup(48,1,48,0,0x1ff000);
+    CHECK(update(0,0,&r,1)==ArmSmmu4KSuccess);
+    const ArmSmmu4KRange both[2]={r,r2};
+    while(state.generation<63) {
+        reset_counters();CHECK(update(&r,1,&r2,1)==ArmSmmu4KSuccess && !result.whole_verification);complete(0,2);
+        CHECK(pte(r2.iova)==(r2.physical|source_permission_pte(3,1)|3));
+        reset_counters();CHECK(update(both,2,&r2,0)==ArmSmmu4KSuccess && !result.whole_verification);complete(1,1);
+        CHECK(!pte(r2.iova));
+    }
+    reset_counters();CHECK(update(&r,1,&r2,1)==ArmSmmu4KSuccess && !result.whole_verification && state.generation==64);
+    *leaf_of(r.iova+8*4096)=UINT64_C(0x40000703);reset_counters();
+    CHECK(update(both,2,&r2,0)==ArmSmmu4KStateMismatch && result.whole_verification && state.poisoned && !f.writes);++count;
+    return count;
+}
 int main(void)
 {
     unsigned p=profiles(),fcount=failures(),m=mutations();refusals_and_partial();
@@ -359,4 +446,6 @@ int main(void)
     puts("Host fixtures only: no physical table provenance, cache-coherence, hardware TLB, GPU execution or fence qualification");
     unsigned pairs=pair_profiles(),pair_faults=pair_failures();
     printf("PASS: %u dual-region native4K profiles and %u dual-region failure/alias/isolation controls, both graphs audited and retained on uncertainty\n",pairs,pair_faults);
+    printf("PASS: %u batched scattered-page map/unmap transactions and refusals: one publication per leaf page, one TLB synchronization each\n",batches());
+    printf("PASS: %u incremental-verification controls: a changed leaf is proved before and after its store, the whole region every 64th update\n",incremental());
 }
