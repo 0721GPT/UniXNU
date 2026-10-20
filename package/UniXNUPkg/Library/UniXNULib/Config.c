@@ -1157,6 +1157,7 @@ AddEntry (
 
   Entry->Path   = MakePath (UNIXNU_CONFIG_DIR, Path);
   Entry->Args   = UniXNUAsciiToUnicode (TomlGetString (Table, "args", NULL));
+  Entry->Confirm = UniXNUAsciiToUnicode (TomlGetString (Table, "confirm", NULL));
   Entry->Initrd = MakePath (UNIXNU_CONFIG_DIR, TomlGetString (Table, "initrd", NULL));
   List = TomlGet (Table, "kext");
   if (List != NULL) {
@@ -1580,5 +1581,20 @@ UniXNUConfigLoad (
 
   if (Config->DefaultIndex >= Config->EntryCount) {
     Config->DefaultIndex = 0;
+  }
+
+  //
+  // The countdown must never boot an entry that asks for confirmation: fall back to the first entry that does not.
+  //
+  if ((Config->EntryCount > 0) && (Config->Entries[Config->DefaultIndex].Confirm != NULL)) {
+    UINTN  Safe;
+
+    for (Safe = 0; Safe < Config->EntryCount; Safe++) {
+      if (Config->Entries[Safe].Confirm == NULL) {
+        ConfigError (Config, "default entry needs confirmation, using '%a'", (Config->Entries[Safe].Id != NULL) ? Config->Entries[Safe].Id : "?");
+        Config->DefaultIndex = Safe;
+        break;
+      }
+    }
   }
 }

@@ -118,6 +118,13 @@ UniXNURun (
   for ( ; ;) {
     Index  = UniXNUMenuRun (&Ui, &Config, Countdown);
     Entry  = &Config.Entries[Index];
+    if ((Entry->Confirm != NULL) && !UniXNUMenuConfirm (&Ui, Entry)) {
+      UniXNULog ("menu: entry %u not confirmed", (UINT32)Index);
+      UnicodeSPrint (Ui.Notice, sizeof (Ui.Notice), L"'%s' cancelled", Entry->Title);
+      Countdown = FALSE;
+      continue;
+    }
+
     Status = UniXNUBootEntry (ImageHandle, &Config, Entry);
     if ((Entry->Type == UniXNUEntryAction) && (Entry->Action == UniXNUActionExit)) {
       return EFI_SUCCESS;

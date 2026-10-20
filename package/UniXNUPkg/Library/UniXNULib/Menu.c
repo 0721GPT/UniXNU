@@ -246,3 +246,48 @@ UniXNUMenuRun (
   gBS->CloseEvent (Timer);
   return Selected;
 }
+
+BOOLEAN
+UniXNUMenuConfirm (
+  IN UNIXNU_UI      *Ui,
+  IN UNIXNU_ENTRY   *Entry
+  )
+{
+  EFI_INPUT_KEY  Key;
+  UINTN          Index;
+  CHAR16         Line[128];
+
+  if ((gST->ConIn == NULL) || (CountInputDevices () == 0)) {
+    UniXNULog ("menu: confirmation needs an input device, cancelled");
+    return FALSE;
+  }
+
+  UnicodeSPrint (Line, sizeof (Line), L"%s", Entry->Confirm);
+  UniXNUUiDrawStatus (Ui, 0, Line);
+  UniXNUUiDrawStatus (Ui, 1, L"Power key = confirm     any other key = cancel");
+  UniXNUUiDrawStatus (Ui, 2, L"");
+
+  //
+  // The press that chose the entry, and anything typed since, must not answer the question.
+  //
+  gBS->Stall (500000);
+  while (!EFI_ERROR (gST->ConIn->ReadKeyStroke (gST->ConIn, &Key))) {
+  }
+
+  for ( ; ;) {
+    if (EFI_ERROR (gBS->WaitForEvent (1, &gST->ConIn->WaitForKey, &Index))) {
+      return FALSE;
+    }
+
+    if (EFI_ERROR (gST->ConIn->ReadKeyStroke (gST->ConIn, &Key))) {
+      continue;
+    }
+
+    if ((Key.UnicodeChar == CHAR_CARRIAGE_RETURN) || (Key.UnicodeChar == CHAR_LINEFEED)) {
+      UniXNULog ("menu: confirmed '%a'", (Entry->Id != NULL) ? Entry->Id : "?");
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+}
