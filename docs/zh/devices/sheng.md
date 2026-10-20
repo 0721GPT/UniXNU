@@ -324,5 +324,6 @@ fastboot boot out/sheng/boot/boot.img
 - [移植](/zh/porting/)
 - [Adreno 740 驱动](/zh/drivers/native-adreno)
 - [Novatek 触控驱动](/zh/drivers/native-novatek-touch)
+- [无人值守测试](/zh/devices/sheng-unattended-test)
 - [调试与日志](/zh/guide/debugging)
 - [故障排查](/zh/reference/troubleshooting)

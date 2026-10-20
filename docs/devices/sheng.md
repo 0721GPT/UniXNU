@@ -324,4 +324,5 @@ The touch driver is documented in [Novatek touch driver](/drivers/native-novatek
 - [Porting](/porting/)
 - [Adreno 740 driver](/drivers/native-adreno)
 - [Novatek touch driver](/drivers/native-novatek-touch)
+- [Unattended test cycle](/devices/sheng-unattended-test)
 - [Troubleshooting](/reference/troubleshooting)

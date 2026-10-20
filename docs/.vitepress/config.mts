@@ -128,6 +128,7 @@ export default withMermaid(defineConfig({
           items: [
             { text: 'Supported devices', link: '/devices/' },
             { text: 'Xiaomi Pad 6S Pro (sheng)', link: '/devices/sheng' },
+            { text: 'Unattended test cycle', link: '/devices/sheng-unattended-test' },
           ],
         },
       ],
@@ -289,6 +290,7 @@ export default withMermaid(defineConfig({
               items: [
                 { text: '支持的设备', link: '/zh/devices/' },
                 { text: '小米平板 6S Pro（sheng）', link: '/zh/devices/sheng' },
+                { text: '无人值守测试', link: '/zh/devices/sheng-unattended-test' },
               ],
             },
           ],
