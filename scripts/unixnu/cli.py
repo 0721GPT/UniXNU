@@ -43,7 +43,7 @@ def parser():
     c = common()
     d = sub.add_parser('defconfig', parents=[c], help='select configs/NAME in the device repository')
     d.add_argument('name', nargs='?', help='defconfig name; omit to list')
-    f = sub.add_parser('fetch', parents=[c], help='shallow-fetch git sources and write unixnu.lock')
+    f = sub.add_parser('fetch', parents=[c], help='update module submodules, shallow-fetch git sources and write unixnu.lock')
     f.add_argument('names', nargs='*', help='sources to fetch (default: all)')
     f.add_argument('--update', action='store_true', help='ignore the lock and move to the newest ref')
     sub.add_parser('tree', parents=[c], help='assemble the build tree')
@@ -75,7 +75,8 @@ REFERENCES = {'kernel': ('xnu', 'libplatform', 'libdispatch', 'AvailabilityVersi
 
 
 def prepare(ctx, steps=()):
-    """Resolve modules, fetch the git ones (references only for the steps that need them) and assemble the tree."""
+    """Update module submodules, resolve modules, fetch the git references and assemble the tree."""
+    feeds.update_submodules(ctx)
     modules = feeds.resolve(ctx)
     wanted = {name for step in steps for name in REFERENCES.get(step, ())}
     feeds.fetch(ctx, modules, only={m.name for m in modules.values() if m.origin == 'git' and (m.kind != 'refer' or m.name in wanted)})
@@ -99,6 +100,7 @@ def cmd_defconfig(ctx):
 
 
 def cmd_fetch(ctx):
+    feeds.update_submodules(ctx)
     modules = feeds.resolve(ctx)
     commits = feeds.fetch(ctx, modules, update=ctx.args.update, only=set(ctx.args.names) or None)
     if commits:

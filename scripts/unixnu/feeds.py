@@ -8,10 +8,11 @@ taken in this order, first one that exists wins:
   3. --local DIR                     (DIR/<kind>/NAME, same layout as this repository)
   4. a "local" entry in feeds.toml or the ignored local.toml of the device repository
   5. the device repository's own directories
-  6. this repository's own directories
+  6. this repository's own directories, including module submodules
   7. a git source from feeds.toml: shallow, blobless, sparse checkout of the module path
 
-Git sources never use submodules. Nothing fetched or linked is copied into either repository.
+Module submodules are checked out by `git submodule update --init --recursive`. Feed sources are
+separate checkouts. Nothing fetched or linked is copied into either repository.
 """
 import hashlib
 from pathlib import Path
@@ -155,6 +156,15 @@ def resolve(ctx):
     return result
 
 
+def update_submodules(ctx):
+    """Check out module submodules recorded by this repository and the device repository."""
+    for base in (ctx.root, ctx.device):
+        if not (base / '.gitmodules').is_file():
+            continue
+        log(f'submodules {base}')
+        git(base, 'submodule', 'update', '--init', '--recursive')
+
+
 def _clone_dir(ctx, entry):
     key = hashlib.sha1(f'{entry["git"]}\n{entry.get("ref", "")}'.encode()).hexdigest()[:8]
     return ctx.feeds_dir / f'{Path(entry["git"]).stem}-{key}'
@@ -199,7 +209,8 @@ def fetch(ctx, modules, update=False, only=None):
             run(['git', '-C', directory, 'fetch', '-q', '--depth', '1', 'origin', target])
         git(directory, 'checkout', '-q', '--detach', 'FETCH_HEAD')
         if entry.get('submodules'):
-            # Only for upstream trees that need them (edk2); UniXNU repositories never use submodules.
+            # Upstream trees such as edk2 need their own submodules. UniXNU module submodules are
+            # updated from the root and device repositories by update_submodules().
             run(['git', '-C', directory, 'submodule', 'update', '--init', '--depth', '1', '--', *entry['submodules']])
         _attach(members, directory, git(directory, 'rev-parse', 'HEAD').strip(), commits)
     return commits
