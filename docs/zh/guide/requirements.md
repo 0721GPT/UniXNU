@@ -18,7 +18,7 @@
 
 驱动会直接找到 Homebrew 的 `/opt/homebrew/opt/llvm/bin`，无需修改 `PATH`。其他工具需要在 `PATH` 中。
 
-`unixnu fetch` 需要网络，用于拉取 Apple 源码参考和 Mu_Basecore 树。
+`unixnu fetch` 需要网络，用于更新模块子模块并拉取 Apple 源码参考和 Mu_Basecore 树。
 
 ## 外部输入
 

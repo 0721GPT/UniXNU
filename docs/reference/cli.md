@@ -22,7 +22,7 @@ Lists `configs/*_defconfig` in the device repository. With a name, copies the fi
 unixnu fetch [NAME...] [--update]
 ```
 
-Fetches git sources. With names, fetches only those sources. `--update` ignores `unixnu.lock` and moves to the newest ref. Writes the commits to `unixnu.lock` in the device repository.
+Updates the module submodules of this repository and the device repository, then fetches git sources. With names, fetches only those sources. `--update` ignores `unixnu.lock` and moves to the newest ref. Writes the commits to `unixnu.lock` in the device repository.
 
 ### tree
 

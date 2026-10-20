@@ -54,11 +54,11 @@ OSData *reg = OSDynamicCast(OSData, provider->getProperty("reg"));
 | 目录 | 内容 |
 | --- | --- |
 | `drivers/<Name>` | 内置 XNU 驱动源码和参考 `Info.plist` |
-| `kits/<Name>` | 链接进驱动或内核的库 |
+| `kits/<Name>` | 链接进驱动或内核的内核库 |
 | `package/UniXNUPkg/Driver` | UEFI 驱动 |
 | `package/UniXNUPkg/Test` | UEFI 测试驱动和负载 |
 
-设备仓库可以覆盖其中任何目录。
+驱动和 kit 是独立仓库，以子模块形式引入。设备仓库可以覆盖其中任何目录。
 
 ## 下一步
 

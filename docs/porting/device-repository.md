@@ -15,10 +15,11 @@ UniXNU-<device>/
   patches/                    device patches
   scripts/                    build and bring-up scripts
   package/                    UniXNU kit contents
+  .gitmodules                 module submodules
   unixnu.lock                 written by unixnu fetch
 ```
 
-The directory layout matches `UniXNU`. A module in the device repository overrides the module with the same name in the base repository.
+The directory layout matches `UniXNU`. A module in the device repository overrides the module with the same name in the base repository. Device drivers and kits are independent repositories included as submodules.
 
 ## board.toml
 

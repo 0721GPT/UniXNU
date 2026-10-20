@@ -18,7 +18,7 @@ The build driver runs on macOS. The kernel step invokes `xcodebuild` with the `i
 
 The driver finds the keg-only Homebrew LLVM at `/opt/homebrew/opt/llvm/bin` without `PATH` changes. Other tools must be on `PATH`.
 
-Network access is required for `unixnu fetch`, which fetches Apple source references and a Mu_Basecore tree.
+Network access is required for `unixnu fetch`, which updates the module submodules and fetches Apple source references and a Mu_Basecore tree.
 
 ## External inputs
 

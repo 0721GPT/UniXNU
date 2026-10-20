@@ -237,10 +237,13 @@ props = [
 ## 构建
 
 ```sh
-git clone https://github.com/UniXNU/UniXNU
-git clone https://github.com/UniXNU/UniXNU-sheng
+git clone --recurse-submodules https://github.com/UniXNU/UniXNU
+git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng
 git clone https://github.com/UniXNU/uefi-sheng
 cd UniXNU
+
+# 已有克隆：
+git submodule update --init --recursive
 
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
 ./unixnu fetch
@@ -286,6 +289,7 @@ fastboot boot out/sheng/boot/boot.img
 | UniXNU 读取负载卷 | 工作 |
 | XNU 与用户态 | 原始 iPadOS 用户态从 IPSW 运行；可跳过 Setup 和 Hello，进入 SpringBoard、锁屏、主屏幕和 Settings |
 | 触控 | SpringBoard 和 backboardd 接受触控事件 |
+| UFS | 原生 UFS 根可用 |
 | 桌面渲染 | 通过原生 Metal 插件由 GPU 合成；首次使用慢 |
 | GPU | 部分：命令、原生 4 KiB SMMU 和 scanout 复制工作；shader 编译慢，且没有完整的预编译 UI pack |
 

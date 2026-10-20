@@ -237,10 +237,13 @@ props = [
 ## Build
 
 ```sh
-git clone https://github.com/UniXNU/UniXNU
-git clone https://github.com/UniXNU/UniXNU-sheng
+git clone --recurse-submodules https://github.com/UniXNU/UniXNU
+git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng
 git clone https://github.com/UniXNU/uefi-sheng
 cd UniXNU
+
+# For an existing clone:
+git submodule update --init --recursive
 
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
 ./unixnu fetch
@@ -286,6 +289,7 @@ The current support table is in the [UniXNU-sheng README](https://github.com/Uni
 | UniXNU reads the payload volume | works |
 | XNU and userland | the original iPadOS userland runs from the IPSW; Setup and Hello can be skipped, and SpringBoard, the lock screen, the home screen and Settings are reached |
 | Touch | accepted by SpringBoard and backboardd |
+| UFS | native UFS root works |
 | Desktop rendering | GPU-composited through the native Metal plugin; slow on first use |
 | GPU | partial: commands, native 4 KiB SMMU and scanout copy work; shader compilation is slow and no complete precompiled UI pack exists |
 

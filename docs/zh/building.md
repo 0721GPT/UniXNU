@@ -5,10 +5,13 @@
 ## 快速开始
 
 ```sh
-git clone https://github.com/UniXNU/UniXNU
-git clone https://github.com/UniXNU/UniXNU-sheng
+git clone --recurse-submodules https://github.com/UniXNU/UniXNU
+git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng
 git clone https://github.com/UniXNU/uefi-sheng
 cd UniXNU
+
+# 已有克隆：
+git submodule update --init --recursive
 
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
 ./unixnu fetch

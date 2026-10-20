@@ -37,9 +37,11 @@ The documentation is at [unixnu.com](https://unixnu.com). It covers the boot cha
 
 | Repository | Contents |
 | --- | --- |
-| [UniXNU](https://github.com/UniXNU/UniXNU) | Build driver, UEFI boot manager, DarwinBoot, generic drivers, kits and patches |
+| [UniXNU](https://github.com/UniXNU/UniXNU) | Build driver, UEFI boot manager, module submodules and patches |
 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | Device repository for the Xiaomi Pad 6S Pro |
 | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | UEFI firmware port for the Xiaomi Pad 6S Pro |
+
+Drivers and kits are independent public repositories under the UniXNU organization, included as submodules. Clone with `--recurse-submodules`, or run `git submodule update --init --recursive`.
 
 Device repositories use the same layout as this repository. Their modules override modules with the same name, and their `package/` becomes a kit in the build tree.
 

@@ -14,8 +14,11 @@ UniXNU/
   docs/                   this site
   assets/                 logos
   feeds.toml              pinned external sources
+  .gitmodules             module submodules
   examples/device/        sample device repository
 ```
+
+Drivers and kits are independent public repositories under the UniXNU organization. They are included as submodules. Clone with `--recurse-submodules`, or run `git submodule update --init --recursive`.
 
 ## Module kinds
 
@@ -37,7 +40,7 @@ A device repository can supply any kind. Its module overrides the base module wi
 3. `--local DIR`
 4. a `local` key in `feeds.toml` or `local.toml`
 5. the device repository
-6. the base repository
+6. the base repository, including its module submodules
 7. a git source in `feeds.toml`
 
 ## Build tree
@@ -59,8 +62,8 @@ The build scripts locate the tree from their own path. A script in `scripts/` ca
 
 ## Add a module
 
-1. Create the directory under the matching kind.
-2. Add the build or verification logic.
+1. Create a public repository under the UniXNU organization.
+2. Add it as a submodule under `drivers/` or `kits/`.
 3. Reference it from the board file or the kernel script.
 4. Document the module in the matching section.
 

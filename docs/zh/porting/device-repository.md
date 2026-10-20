@@ -15,10 +15,11 @@ UniXNU-<device>/
   patches/                    设备补丁
   scripts/                    构建和 bring-up 脚本
   package/                    UniXNU kit 内容
+  .gitmodules                 模块子模块
   unixnu.lock                 unixnu fetch 写入
 ```
 
-目录布局与 `UniXNU` 相同。设备仓库中的同名模块覆盖基础仓库模块。
+目录布局与 `UniXNU` 相同。设备仓库中的同名模块覆盖基础仓库模块。设备驱动和 kit 是独立仓库，以子模块形式引入。
 
 ## board.toml
 

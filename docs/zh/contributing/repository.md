@@ -14,8 +14,11 @@ UniXNU/
   docs/                   本文档站
   assets/                 标志
   feeds.toml              固定的外部源码
+  .gitmodules             模块子模块
   examples/device/        示例设备仓库
 ```
+
+驱动和 kit 是 UniXNU 组织下的独立公开仓库，以子模块形式引入。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
 
 ## 模块类型
 
@@ -37,7 +40,7 @@ UniXNU/
 3. `--local DIR`
 4. `feeds.toml` 的 `local` 键或 `local.toml`
 5. 设备仓库
-6. 基础仓库
+6. 基础仓库，包括其模块子模块
 7. `feeds.toml` 的 git 源码
 
 ## 构建树
@@ -59,8 +62,8 @@ tree/
 
 ## 新增模块
 
-1. 在对应类型下创建目录。
-2. 加入构建或校验逻辑。
+1. 在 UniXNU 组织下创建公开仓库。
+2. 把它作为子模块加入 `drivers/` 或 `kits/`。
 3. 从板级文件或内核脚本引用。
 4. 在对应文档章节记录。
 

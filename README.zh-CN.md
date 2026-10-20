@@ -37,9 +37,11 @@
 
 | 仓库 | 内容 |
 | --- | --- |
-| [UniXNU](https://github.com/UniXNU/UniXNU) | 构建驱动、UEFI 启动管理器、DarwinBoot、通用驱动、kit 和补丁 |
+| [UniXNU](https://github.com/UniXNU/UniXNU) | 构建驱动、UEFI 启动管理器、模块子模块和补丁 |
 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | 小米平板 6S Pro 的设备仓库 |
 | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | 小米平板 6S Pro 的 UEFI 固件移植 |
+
+驱动和 kit 是 UniXNU 组织下的独立公开仓库，以子模块形式引入。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
 
 设备仓库采用与本仓库相同的目录布局。同名模块会覆盖基础仓库的模块，设备仓库的 `package/` 在构建树中成为 kit。
 

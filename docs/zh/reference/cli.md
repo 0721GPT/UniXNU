@@ -22,7 +22,7 @@ unixnu defconfig [NAME]
 unixnu fetch [NAME...] [--update]
 ```
 
-拉取 git 源码。指定名称时只拉取这些源码。`--update` 忽略 `unixnu.lock` 并移到最新 ref。commit 写入设备仓库的 `unixnu.lock`。
+更新本仓库和设备仓库的模块子模块，然后拉取 git 源码。指定名称时只拉取这些源码。`--update` 忽略 `unixnu.lock` 并移到最新 ref。commit 写入设备仓库的 `unixnu.lock`。
 
 ### tree
 
