@@ -1341,6 +1341,7 @@ ApplyRoot (
   TOML_NODE    *Acpi;
   TOML_NODE    *Default;
   CONST CHAR8  *Console;
+  CONST CHAR8  *Layout;
   UINTN        Index;
 
   if (TomlGetInteger (Root, "version", 0) != UNIXNU_SCHEMA_VERSION) {
@@ -1357,6 +1358,19 @@ ApplyRoot (
   Config->Title   = UniXNUAsciiToUnicode (TomlGetString (Ui, "title", "UniXNU"));
   Config->Scale   = (UINTN)MAX (0, TomlGetInteger (Ui, "scale", 0));
   Config->ShowLogo = TomlGetBoolean (Ui, "logo", TRUE);
+  Layout          = TomlGetString (Ui, "layout", "auto");
+  if (AsciiStrCmp (Layout, "landscape") == 0) {
+    Config->Layout = UniXNULayoutLandscape;
+  } else if (AsciiStrCmp (Layout, "portrait") == 0) {
+    Config->Layout = UniXNULayoutPortrait;
+  } else {
+    Config->Layout = UniXNULayoutAuto;
+    if (AsciiStrCmp (Layout, "auto") != 0) {
+      ConfigError (Config, "[ui] layout '%a' is not auto, landscape or portrait", Layout);
+    }
+  }
+
+  Config->PortraitBelow = (UINTN)MAX (1, TomlGetInteger (Ui, "portrait_below", UNIXNU_PORTRAIT_BELOW_DEFAULT));
   Console         = TomlGetString (Ui, "console", "auto");
   if (AsciiStrCmp (Console, "graphics") == 0) {
     Config->Console = UniXNUConsoleGraphics;

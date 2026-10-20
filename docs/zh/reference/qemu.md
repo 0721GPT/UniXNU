@@ -43,6 +43,7 @@ python3 package/Scripts/qemu-run.py out/esp \
 | `--expect REGEX` | 必须匹配串口日志 |
 | `--reject REGEX` | 必须不匹配 |
 | `--no-gop` | 无显示设备，只用文本控制台 |
+| `--display-size WxH` | 使用该尺寸的 virtio GPU 显示器代替 ramfb，例如竖屏用 `1080x2400`。固件要求宽度至少 640 像素 |
 | `--disk FILE` | 额外只读 raw 磁盘 |
 | `--timeout SECONDS` | 运行超时 |
 | `--cpus N` | 虚拟 CPU 数量 |

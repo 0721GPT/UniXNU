@@ -43,6 +43,7 @@ python3 package/Scripts/qemu-run.py out/esp \
 | `--expect REGEX` | Pattern that must match the serial log |
 | `--reject REGEX` | Pattern that must not match |
 | `--no-gop` | No display device, text console only |
+| `--display-size WxH` | Virtio GPU display of this size instead of ramfb, for example `1080x2400` for a portrait panel. The firmware needs at least 640 pixels of width |
 | `--disk FILE` | Extra read-only raw disk |
 | `--timeout SECONDS` | Run timeout |
 | `--cpus N` | Virtual CPU count |

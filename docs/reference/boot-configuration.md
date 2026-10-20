@@ -18,6 +18,8 @@ default = "xnu"
 title = "UniXNU"
 scale = 0
 logo = true
+layout = "auto"
+portrait_below = 800
 console = "auto"
 ```
 
@@ -38,7 +40,11 @@ console = "auto"
 | `title` | `UniXNU` | Menu title |
 | `scale` | 0 | Glyph scale. 0 selects automatically |
 | `logo` | true | Draws the logo |
+| `layout` | `auto` | `auto`, `landscape` or `portrait` |
+| `portrait_below` | 800 | With `auto`, portrait when width / height times 1000 is below this value |
 | `console` | `auto` | `auto`, `graphics`, `text` or `none` |
+
+The portrait layout is a column for a tall panel such as a phone. The logo floats at the top, the entries are numbered cards at the bottom, and the status lines wrap under a rule. The logo carries the UniXNU wordmark, so the title text appears only when `logo` is false or `title` is not `UniXNU`. With `auto`, a 1080x2400 panel (ratio 450) is portrait, a 3:4 tablet (750) is portrait, and a 4:5 panel (800) or any wider one keeps the landscape layout. Without a `scale` value, the portrait layout picks a glyph scale of width / 270, so a 1080 pixel wide panel shows about 33 characters per line.
 
 ### [[driver]]
 

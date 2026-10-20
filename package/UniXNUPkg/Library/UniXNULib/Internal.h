@@ -230,6 +230,19 @@ typedef enum {
   UniXNUConsoleNone
 } UNIXNU_CONSOLE;
 
+//
+// [ui] layout: landscape (the original arrangement) or portrait (a column
+// laid out for a tall panel). Auto picks portrait when width / height is below
+// PortraitBelow.
+//
+typedef enum {
+  UniXNULayoutAuto,
+  UniXNULayoutLandscape,
+  UniXNULayoutPortrait
+} UNIXNU_LAYOUT;
+
+#define UNIXNU_PORTRAIT_BELOW_DEFAULT  800   ///< width/height in thousandths.
+
 typedef struct {
   //
   // [boot]
@@ -246,6 +259,8 @@ typedef struct {
   CHAR16         *Title;
   UINTN          Scale;            ///< 0 = automatic.
   BOOLEAN        ShowLogo;
+  UNIXNU_LAYOUT      Layout;
+  UINTN          PortraitBelow;    ///< Auto threshold, width/height in thousandths.
   //
   // Injection, after kits are merged in.
   //
@@ -483,6 +498,10 @@ typedef struct {
   UINT32                          Width;
   UINT32                          Height;
   UINTN                           Scale;
+  BOOLEAN                         Portrait;         ///< Column layout for a tall panel.
+  UINTN                           Margin;           ///< Portrait side margin.
+  UINTN                           CardHeight;       ///< Portrait entry card height.
+  UINTN                           StatusLines;      ///< Portrait status lines in use.
   UINTN                           MenuTop;
   UINTN                           RowHeight;
   UINTN                           MenuLeft;
@@ -494,6 +513,19 @@ typedef struct {
   CHAR16                          Info[96];         ///< Injection summary line.
   CHAR16                          Notice[96];       ///< Result of the last boot attempt.
 } UNIXNU_UI;
+
+/**
+  Decide whether the menu uses the portrait layout. Landscape never does and
+  portrait always does. Auto does when Width * 1000 < PortraitBelow * Height,
+  an exact integer comparison of the aspect ratio.
+**/
+BOOLEAN
+UniXNUUiChoosePortrait (
+  IN UNIXNU_LAYOUT  Layout,
+  IN UINTN          PortraitBelow,
+  IN UINT32         Width,
+  IN UINT32         Height
+  );
 
 VOID
 UniXNUUiInit (
