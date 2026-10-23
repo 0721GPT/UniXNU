@@ -13,7 +13,7 @@ UniXNU-fuxi is a fork of UniXNU-sheng with fuxi board data. It targets the same 
 
 ## hanzi123-bilp repositories
 
-The `hanzi123-bilp` repositories are a separate device and firmware port. The device repository has a stage A minimal kernel that links before any prelink exists, and a stage B full configuration with 19 archives. The storage audit runs headers-only until live metadata exists. The firmware repository maps the SM8550 register apertures. No hardware run is documented.
+The `hanzi123-bilp` repositories are a separate device and firmware port. The device repository has a stage A minimal kernel that links before any prelink exists, and a stage B full configuration with 19 archives. The storage audit runs headers-only until live metadata exists; stage B moves UFS to the post-prelink build and the graphics audit accepts only its recorded candidate hash. The firmware repository maps the SM8550 register apertures. No hardware run is documented.
 
 ## Maintenance
 

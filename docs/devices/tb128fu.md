@@ -16,7 +16,7 @@ tb128fu is the Lenovo Xiaoxin Pad 2022 (TB128FU) with the Snapdragon 680 (SM6225
 | XNU and the root | iPadOS 17.7.11 kernel on all 8 cores; verified OS/SystemOS root and Data volume on UFS |
 | iOS userland | Home screen 70–95 s after boot; QuartzCore draws on the CPU, and Metal frames are presented through the GPU hand-off |
 | Touch | Himax HX83102E over SPI; the kernel downloads its firmware |
-| GPU | Adreno 610 (no GMU) runs under NativeAdreno; the Metal plugin presents frames through the GPU hand-off, 236 frames with no CPU fallback in tb128fu-040 |
+| GPU | Adreno 610 (no GMU) runs under NativeAdreno; the Metal plugin presents frames through the GPU hand-off, with system-memory passes and surfaces rendered in place. A USB CDC log channel and a frame-rate overlay are available |
 | Not working | Audio, Wi-Fi, battery, buttons, sleep |
 
 ## Notes

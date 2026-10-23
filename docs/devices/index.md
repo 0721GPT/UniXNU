@@ -12,14 +12,14 @@ The ports listed here are independent. Their maintainers own the repositories; t
 
 | Device | SoC | State | Maintainer |
 | --- | --- | --- | --- |
-| [DroidVM guest (crosvm on Gunyah)](/devices/droidvm) | crosvm-gunyah | iPadOS 17 home screen; CPU presentation; Metal widgets and icons; virtio-net works | Droid-VM |
+| [DroidVM guest (crosvm on Gunyah)](/devices/droidvm) | crosvm-gunyah | iPadOS 17 home screen; Metal widgets and icons; keychain and Bluetooth; virtio-net works | Droid-VM |
 | [QEMU virt](/devices/qemu) | QEMU virt | iPadOS 17 home screen and Settings; Metal on the Mac GPU with `--metal` | xVanTuring |
 | [Lenovo Xiaoxin Pad 2022 (tb128fu)](/devices/tb128fu) | SM6225 | iPadOS 17 home screen with touch; Metal frames presented by the GPU; Adreno 610 runs | xVanTuring |
 | [OnePlus 10 Pro 5G (negroni)](/devices/negroni) | SM8450 | iOS 16.7.16 SpringBoard with touch; CPU-rendered; Wi-Fi pending | pawlickerr |
 | [Xiaomi 17 Pro (pandora)](/devices/pandora) | SM8850 | iOS 16.7.16 lock screen with touch and buttons; own loader, no UEFI chain | ShueiTsuki |
 | [Xiaomi 13 (fuxi)](/devices/fuxi) | SM8550 | Kernel links and prelinks; stage B archive chain near complete; no hardware run | matejkoo217, hanzi123-bilp |
 | [OnePlus 7 Pro (guacamole)](/devices/guacamole) | SM8150 | iOS 16.7.16 userland reached; GPU pending | wochgn |
-| [OnePlus Ace 5 (giulia)](/devices/giulia) | SM8650 | Hello/Setup and GUI progress reached; touch and installation pending | jasper2863, tycykp |
+| [OnePlus Ace 5 (giulia)](/devices/giulia) | SM8650 | Hello/Setup with full display and touch; installation, GPU and Wi-Fi pending | jasper2863, tycykp |
 | [Xiaomi Mi 10 (umi)](/devices/umi) | SM8250 | iPadOS 17.7.11 Hello/Setup with touch; CPU display, UFS and persistent Data | reAAAq |
 | [Xiaomi Pad 7 / POCO Pad X1 (uke)](/devices/uke) | SM7675 | Root mounted and launchd starts; display surface pending | Allenwdk |
 | [Xiaomi Pad 8 Pro (piano)](/devices/piano) | SM8750 | Kernel builds and prelinks in CI; not run on the tablet | code002-2 |
@@ -28,14 +28,15 @@ The ports listed here are independent. Their maintainers own the repositories; t
 | [OnePlus Pad 2 Pro (erhai)](/devices/erhai) | SM8750 | XNU entry bring-up; root and userland not configured | wally001012-cyber |
 | [OPPO Find X7 Ultra (PHY120)](/devices/phy120) | SM8650 | Boot manager menu works; kernel builds in CI | peiyuesheng666 |
 | [Redmi K40 Pro (haydn)](/devices/haydn) | SM8350 | Firmware, payload and boot image built; haydn4 imported from guacamole | xiaomi-haydn-dev |
-| [Xiaomi Pad 5 (nabu)](/devices/nabu) | SM8150 | XNU executes; PMGR and userspace next | Lux12138 |
+| [Xiaomi Pad 5 (nabu)](/devices/nabu) | SM8150 | XNU reaches vfs_mountroot; root device next | Lux12138 |
 | [OnePlus 6T (fajita)](/devices/fajita) | SDM845 | XNU reaches root mount; no storage driver | johnpanos |
-| [Microsoft Surface Duo 2 (zeta)](/devices/zeta) | SM8350 | UEFI, menu and payload work; kernel builds, not booted | none24smu |
-| [OnePlus Ace 5 Pro (hummer)](/devices/hummer) | SM8750 | UEFI layer works; XNU CI trial | 2426120557 |
-| [Xiaomi 15 (dada)](/devices/dada) | SM8750 | UEFI firmware works; UniXNU and XNU not run | 7Night-kqx |
-| [Redmi Note 14 Pro+ 5G (amethyst)](/devices/amethyst) | SM7635 | Board file targets iPhone10,3; no hardware run documented | andr0d1v |
+| [Microsoft Surface Duo 2 (zeta)](/devices/zeta) | SM8350 | Kernel and root bring-up reach launchd exec; arm64e launchd stops | none24smu |
+| [OnePlus Ace 5 Pro (hummer)](/devices/hummer) | SM8750 | UEFI works; XNU SMP and boot checkpoints on the panel | 2426120557 |
+| [Xiaomi 10 Ultra (cas)](/devices/cas) | SM8250 | UEFI and UniXNU menu verified; DarwinBoot and XNU not tested | ht94911 |
+| [Xiaomi 15 (dada)](/devices/dada) | SM8750 | UEFI works; UFS UIC and MCQ probes; UniXNU and XNU not run | 7Night-kqx |
+| [Redmi Note 14 Pro+ 5G (amethyst)](/devices/amethyst) | SM7635 | Board and kernel config with legacy display; no hardware run documented | andr0d1v |
 | [Redmi K70 (vermeer)](/devices/vermeer) | SM8550 | Source build baseline and sheng-derived device repository | mansar1337, yyx2025 |
-| [Nubia RedMagic 8 Pro / 8 Pro+ (nx729j)](/devices/nx729j) | SM8550 | Board files ported from sheng; runtime not documented | 2713385115 |
+| [Nubia RedMagic 8 Pro / 8 Pro+ (nx729j)](/devices/nx729j) | SM8550 | NativeUfs and SMMU group in the device repository; runtime not documented | 2713385115 |
 | [Xiaomi Pad 6 (pipa)](/devices/pipa) | SM8250 | Board and userdata values measured; not run on the tablet | xVanTuring |
 | [Galaxy Tab A7 10.4 (gta4l)](/devices/gta4l) | SM6115 | Board, ADT and firmware build; second repository builds a kernel in CI | NoNameBuilder, ilovemykedi |
 | [Redmi Note 10 Pro (sweet)](/devices/sweet) | SM7150 | Platform and loader bring-up; no bootable image | dipa-studio |
