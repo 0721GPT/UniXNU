@@ -42,6 +42,7 @@ The ports listed here are independent. Their maintainers own the repositories; t
 | [Redmi K20 Pro / Mi 9T Pro (raphael)](/devices/raphael) | SM8150 | New repository; kernel build not passing | penYo22 |
 | [Galaxy Z Fold3 (q2q)](/devices/q2q) | SM8350 | Source kernel build harness only | agcarbajo |
 | [Redmi K30 5G (picasso)](/devices/picasso) | SM7250 | Early skeleton; firmware not built | YinCQL |
+| [Redmi Note 9 (merlinx)](/devices/merlinx) | MT6768 | UEFI boots and custom menu works; storage init blocks UniXNU and XNU | Dracen-W |
 | [Redmi 9A (dandelion)](/devices/dandelion) | MT6765 | Early bring-up; UEFI port in progress | licg89 |
 | [Xiaomi Mi 6 (sagit)](/devices/sagit) | MSM8998 | Device repository; status not documented | dmnakzkahziamnk-a11y |
 
