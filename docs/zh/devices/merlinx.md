@@ -14,13 +14,13 @@ merlinx 是搭载联发科 MT6768/MT6769Z SoC 的 Redmi Note 9。下面的移植
 | 硬件 | 已测量屏幕、PMIC 按键、p33 boot 分区和 bootloader 行为 |
 | UEFI 固件 | `merlinxPkg` 可从源码构建，并从 p33 启动 |
 | BootShim | 自覆盖问题已修复；320 字节源码 shim 会先把 copy/clean 代码块搬到安全地址，再加载固件卷 |
-| 启动菜单 | 自定义 GOP 菜单可在屏幕上显示；音量下滚动；音量上在当前源码中映射为 Enter，等待最终真机确认 |
+| 启动菜单 | 自定义 GOP 菜单可在屏幕上显示；音量下滚动；音量上和电源键都能选中菜单项；当前源码映射已确认可用 |
 | 启动镜像 | 64 MiB p33 镜像，包含修复后的 BootShim、3 MiB 固件卷、裁剪后的 DTB 和 Magisk ramdisk；用 `fastboot flash boot` 刷入 |
 | 存储 | SdCardDxe 和 eMMC 初始化超时；Internal Storage 报 `EFI_NOT_FOUND`；USB 启动也失败 |
 | UniXNU 和 XNU | 尚未到达；没有 ADT、负载或内核运行记录 |
 | 显示收尾 | 可见扫描输出从屏幕中部开始；菜单整体偏下，上半屏可能残留 OEM logo |
 
-当前 PMIC 按键掩码同时覆盖电源键和 home/音量上键，所以电源键也会选中菜单项。这是已知的临时行为，不是最终按键映射。
+当前 PMIC 按键掩码同时覆盖电源键和 home/音量上键，所以音量上和电源键都会选中菜单项。两个键都能正常使用；这是当前映射，不是最终的独立按键布局。
 
 PMIC 协议在运行时查找，没有加入 `Depex`；因此 PMIC wrapper 驱动不可用时，音量下和其他按键仍然工作。不支持开机时一直按住音量上：第一次 PMIC 读取会作为基线并返回 false。
 
@@ -43,6 +43,8 @@ cd UniXNU-merlinx
 fastboot flash boot <merlinx-boot.img>
 fastboot reboot
 ```
+
+`p33` 是 Android `boot` 分区的 GPT 分区号，本机为 64 MiB；`fastboot flash boot` 写入这个分区。
 
 这个 bootloader 不支持 `fastboot boot`，会报 `usb_read failed with status e00002ed`。请使用 `fastboot flash boot`，并保留原厂 boot 镜像用于恢复。
 

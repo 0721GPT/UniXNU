@@ -14,13 +14,13 @@ merlinx is the Xiaomi Redmi Note 9 with the MediaTek MT6768/MT6769Z SoC. The por
 | Hardware | panel, PMIC keys, p33 boot partition and bootloader behavior measured |
 | UEFI firmware | `merlinxPkg` builds from source and boots from p33 |
 | BootShim | self-overwrite fixed; the 320-byte source shim relocates the copy/clean block before loading the firmware volume |
-| Boot menu | custom GOP menu renders on the panel; volume-down scrolls; volume-up is mapped to Enter in the current source and awaits the final hardware check |
+| Boot menu | custom GOP menu renders on the panel; volume-down scrolls; volume-up and power both select a menu entry; the current source mapping is confirmed working |
 | Boot image | 64 MiB p33 image with the fixed BootShim, 3 MiB firmware volume, trimmed DTB and Magisk ramdisk; flashes with `fastboot flash boot` |
 | Storage | SdCardDxe and eMMC init time out; Internal Storage reports `EFI_NOT_FOUND`; USB boot also fails |
 | UniXNU and XNU | not reached; no ADT, payload or kernel run |
 | Display polish | scanout starts mid-panel; the menu is shifted down and the OEM logo can remain in the upper half |
 
-Power currently also selects a menu entry because the PMIC key mask covers both the power and home/volume-up bits. This is a known temporary behavior, not the final mapping.
+Volume-up and power both select a menu entry because the PMIC key mask covers both the power and home/volume-up bits. Both keys work; this is the current mapping, not the final dedicated key layout.
 
 The PMIC protocol lookup is runtime, not a `Depex` entry, so volume-down and the rest of the keypad still work if the PMIC wrapper driver is unavailable. Holding volume-up during boot is not supported: the first PMIC read is used as the baseline and returns false.
 
@@ -43,6 +43,8 @@ The firmware volume is `Build/merlinxPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd`. Th
 fastboot flash boot <merlinx-boot.img>
 fastboot reboot
 ```
+
+`p33` is the GPT partition number of the Android `boot` partition, 64 MiB on this device; `fastboot flash boot` writes there.
 
 `fastboot boot` does not work on this bootloader; it fails with `usb_read failed with status e00002ed`. Use `fastboot flash boot` and keep a stock boot image for recovery.
 
