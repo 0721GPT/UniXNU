@@ -16,8 +16,8 @@ pandora 是搭载 SM8850 的小米 17 Pro。下面的移植是独立的社区项
 | 显示 | 1220x2656 面板，使用引导程序的帧缓冲；亮度通过 DSI DCS 调节 |
 | 输入 | Synaptics 触控走 GPI DMA；电源键和音量键 |
 | 用户态 | iOS 16.7.16（20H392）主屏幕，壁纸和小组件正常；CPU 渲染，模糊效果和资源库显示不正确 |
-| 原版 kext | AMFI 及其依赖用 NativePrelink 预链接；QEMU 和真机运行进行中 |
-| GPU | Adreno 840 内核驱动已在真机运行：GMU 冷启动和 HFI、GX 供电、GPU SMMU 上下文、带 SQE 和 zap shader 的 CP；间接缓冲可执行，BR 和 BV 上的 fence 均能完成；采用 NativeAdreno ABI 的 user client 已注册并通过内核自测；尚未渲染 |
+| 原版 kext | AMFI 及其依赖用 NativePrelink 预链接，已在真机运行 |
+| GPU | Adreno 840 内核驱动已在真机运行：GMU 冷启动和 HFI、GX 供电、GPU SMMU 上下文、带 SQE 和 zap shader 的 CP；间接缓冲可执行，BR 和 BV 上的 fence 均能完成；采用 NativeAdreno ABI 的 user client 已注册，并在真机通过内核自测和用户态测试程序；尚未渲染 |
 | 音频、相机 | 不可用 |
 
 ## 构建

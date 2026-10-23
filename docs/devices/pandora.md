@@ -16,8 +16,8 @@ pandora is the Xiaomi 17 Pro with the SM8850 SoC. The port below is an independe
 | Display | 1220x2656 panel through the bootloader framebuffer; brightness through DSI DCS |
 | Input | Synaptics touch over GPI DMA; power and volume buttons |
 | Userland | iOS 16.7.16 (20H392) home screen, wallpaper and widgets; CPU rendering, so blur and the App Library draw wrong |
-| Original kexts | AMFI and its dependencies prelinked with NativePrelink; QEMU and hardware runs in progress |
-| GPU | Adreno 840 kernel driver on hardware: GMU cold start and HFI, GX power, GPU SMMU context, CP with SQE and the zap shader; indirect buffers run and fences complete on both BR and BV; a user client with the NativeAdreno ABI is registered and passes a kernel self-test; no rendering yet |
+| Original kexts | AMFI and its dependencies prelinked with NativePrelink and running on hardware |
+| GPU | Adreno 840 kernel driver on hardware: GMU cold start and HFI, GX power, GPU SMMU context, CP with SQE and the zap shader; indirect buffers run and fences complete on both BR and BV; a user client with the NativeAdreno ABI is registered and passes a kernel self-test and a user-space test program on hardware; no rendering yet |
 | Audio, camera | not available |
 
 ## Build
