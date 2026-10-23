@@ -36,6 +36,7 @@ The ports listed here are independent. Their maintainers own the repositories; t
 | [Xiaomi 10 Ultra (cas)](/devices/cas) | SM8250 | UEFI and UniXNU menu verified; DarwinBoot and XNU not tested | ht94911 |
 | [Xiaomi 15 (dada)](/devices/dada) | SM8750 | UEFI works; UFS UIC and MCQ probes; UniXNU and XNU not run | 7Night-kqx |
 | [Redmi Note 14 Pro+ 5G (amethyst)](/devices/amethyst) | SM7635 | Board and kernel config with legacy display; no hardware run documented | andr0d1v |
+| [Redmi K90 Pro Max / Poco F8 Ultra (myron)](/devices/myron) | SM8850 | Core and driver forks; device repository and hardware result pending | zg7681 |
 | [Redmi K70 (vermeer)](/devices/vermeer) | SM8550 | Source build baseline and sheng-derived device repository | mansar1337, yyx2025 |
 | [Nubia RedMagic 8 Pro / 8 Pro+ (nx729j)](/devices/nx729j) | SM8550 | NativeUfs and SMMU group in the device repository; runtime not documented | 2713385115 |
 | [Xiaomi Pad 6 (pipa)](/devices/pipa) | SM8250 | Board and userdata values measured; not run on the tablet | xVanTuring |
