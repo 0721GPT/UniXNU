@@ -17,7 +17,7 @@
 | [联想小新 Pad 2022（tb128fu）](/zh/devices/tb128fu) | SM6225 | 已到 iPadOS 17 主屏幕，触控可用；Metal 帧由 GPU 呈现；Adreno 610 已运行 | xVanTuring |
 | [一加 10 Pro 5G（negroni）](/zh/devices/negroni) | SM8450 | 已到 iOS 16.7.16 SpringBoard，触控可用；CPU 渲染；Wi-Fi 待完成 | pawlickerr |
 | [Nothing Phone (2)（pong）](/zh/devices/pong) | SM8475 | 已到 iOS 16.6.1 主屏幕，显示和触控可用；UFS 和 GPU 部分可用 | Chengdong-Yu |
-| [小米 17 Pro（pandora）](/zh/devices/pandora) | SM8850 | 已到 iOS 16.7.16 锁屏，触控和按键可用；自有加载器，不经 UEFI 链 | ShueiTsuki |
+| [小米 17 Pro（pandora）](/zh/devices/pandora) | SM8850 | 已到 iOS 16.7.16 主屏幕，触控和按键可用；GPU 内核驱动可执行命令缓冲，尚未渲染；自有加载器，不经 UEFI 链 | ShueiTsuki |
 | [小米 13（fuxi）](/zh/devices/fuxi) | SM8550 | 内核可链接和预链接，阶段 B archive 链接近完成，未在真机运行 | matejkoo217、hanzi123-bilp |
 | [一加 7 Pro（guacamole）](/zh/devices/guacamole) | SM8150 | 已到达 iOS 16.7.16 用户态，GPU 待完成 | wochgn |
 | [一加 Ace 5（giulia）](/zh/devices/giulia) | SM8650 | 已到 Hello/Setup，显示完整、触控可用；安装、GPU 和 Wi-Fi 待完成 | jasper2863、tycykp |
