@@ -2,7 +2,7 @@
 
 ## 主机
 
-构建驱动在 macOS 上运行。内核步骤调用带 `iphoneos` SDK 的 `xcodebuild`，`--skip-setup` 调用 `hdiutil`。
+构建驱动在 macOS 上运行。内核步骤调用带 `iphoneos` SDK 的 `xcodebuild`，`--skip-setup` 调用 `hdiutil`。内核步骤也可以在 Linux 上用 [Linux](#linux) 一节所述的工具链运行。
 
 | 工具 | 用途 | 安装方式 |
 | --- | --- | --- |
@@ -22,6 +22,20 @@
 `unixnu fetch` 需要网络，用于更新模块子模块并拉取 Apple 源码参考和 Mu_Basecore 树。
 
 没有 Mac 时，`macOS build` workflow 在 GitHub 的 macOS runner 上运行 Mac 专属步骤。见[构建](/zh/building#macos-runner)。
+
+### Linux
+
+在 Linux 上，内核步骤用上游 clang 和开源的 Mach-O 工具链代替 Xcode。`scripts/linux/setup-toolchain.py` 以 root 运行一次，把工具链安装到 `/opt/unixnu-linux`（或参数、`UNIXNU_TOOLCHAIN` 指定的前缀）：
+
+| 工具 | 来源 |
+| --- | --- |
+| 带 xnu `kalloc.h` 所需 `__builtin_xnu_type_*` 内建函数的 clang | llvm-project 加 `scripts/linux/llvm-xnu-builtin-type.patch` |
+| ld64、libtool、nm、lipo | cctools-port `1030.6.3-ld64-956.6` |
+| mig、iig | bootstrap_cmds-138、iig-port |
+| `xcrun`、`plutil`、`codesign` 与 Command Line Tools 目录结构 | `scripts/linux` 中的替身 |
+| lzfse | lzfse，用于 kernelcache |
+
+脚本使用 apt（Debian 与 Ubuntu），并把 `xcrun`、`plutil`、`codesign` 替身写入 `/usr/bin`，xnu 的 makefile 从这里调用它们。编译 clang 占用了大部分运行时间。userdata 步骤、`--skip-setup` 和 `seed-data-grow` 仍需要 macOS。
 
 ## 外部输入
 

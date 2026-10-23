@@ -2,7 +2,7 @@
 
 ## Host
 
-The build driver runs on macOS. The kernel step invokes `xcodebuild` with the `iphoneos` SDK, and the `--skip-setup` option invokes `hdiutil`.
+The build driver runs on macOS. The kernel step invokes `xcodebuild` with the `iphoneos` SDK, and the `--skip-setup` option invokes `hdiutil`. The kernel step also runs on Linux with the toolchain described in [Linux](#linux).
 
 | Tool | Used by | Install |
 | --- | --- | --- |
@@ -22,6 +22,20 @@ The driver finds the keg-only Homebrew LLVM at `/opt/homebrew/opt/llvm/bin` with
 Network access is required for `unixnu fetch`, which updates the module submodules and fetches Apple source references and a Mu_Basecore tree.
 
 Without a Mac, the `macOS build` workflow runs the Mac-only steps on a GitHub macOS runner. See [Build](/building#macos-runner).
+
+### Linux
+
+On Linux the kernel step builds with upstream clang and an open source Mach-O toolchain instead of Xcode. `scripts/linux/setup-toolchain.py` installs it once, as root, under `/opt/unixnu-linux` (or the prefix given as its argument or in `UNIXNU_TOOLCHAIN`):
+
+| Tool | Source |
+| --- | --- |
+| clang with the `__builtin_xnu_type_*` builtins that xnu's `kalloc.h` needs | llvm-project with `scripts/linux/llvm-xnu-builtin-type.patch` |
+| ld64, libtool, nm, lipo | cctools-port `1030.6.3-ld64-956.6` |
+| mig, iig | bootstrap_cmds-138, iig-port |
+| `xcrun`, `plutil`, `codesign`, Command Line Tools layout | shims in `scripts/linux` |
+| lzfse | lzfse, for the kernelcache |
+
+The script uses apt (Debian and Ubuntu) and writes the `xcrun`, `plutil` and `codesign` shims to `/usr/bin`, where xnu's makefiles call them. Building clang takes most of its run time. The userdata step, `--skip-setup` and `seed-data-grow` still need macOS.
 
 ## External inputs
 
