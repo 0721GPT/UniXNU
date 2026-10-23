@@ -18,7 +18,7 @@ The DroidVM target runs UniXNU as a guest under crosvm on the Gunyah hypervisor 
 | Input | touch screen and Home over virtio-input |
 | Network | en0 over virtio-net on virtio-mmio, bridged to the phone's Wi-Fi; DHCP IPv4 and IPv6 (SM8650) |
 | Keychain | items store through AppleKeyStore wrap and unwrap; bluetoothd runs |
-| GPU | NativeAdreno over the host phone's KGSL through crosvm `--droidvm-gpu`; the widget renderer, icons, Safari and the wallpaper overlay draw through the Metal plugin; full GPU apps not qualified |
+| GPU | NativeAdreno over the host phone's KGSL through crosvm `--droidvm-gpu`; the widget renderer, icons, Safari and the wallpaper overlay draw through the Metal plugin. Each guest client submits on its own KGSL context, so a client fault does not take down the render server; full GPU apps not qualified |
 
 `BigfootACA/unixnu-droidvm-ci` provides CI builds for the QEMU/KVM and DroidVM targets.
 
