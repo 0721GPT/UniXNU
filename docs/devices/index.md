@@ -20,6 +20,7 @@ The ports listed here are independent. Their maintainers own the repositories; t
 | [Xiaomi 13 (fuxi)](/devices/fuxi) | SM8550 | Kernel links and prelinks; stage B archive chain near complete; no hardware run | matejkoo217, hanzi123-bilp |
 | [OnePlus 7 Pro (guacamole)](/devices/guacamole) | SM8150 | iOS 16.7.16 userland reached; GPU pending | wochgn |
 | [OnePlus Ace 5 (giulia)](/devices/giulia) | SM8650 | Hello/Setup and GUI progress reached; touch and installation pending | jasper2863, tycykp |
+| [Xiaomi Mi 10 (umi)](/devices/umi) | SM8250 | iPadOS 17.7.11 Hello/Setup with touch; CPU display, UFS and persistent Data | reAAAq |
 | [Xiaomi Pad 7 / POCO Pad X1 (uke)](/devices/uke) | SM7675 | Root mounted and launchd starts; display surface pending | Allenwdk |
 | [Xiaomi Pad 8 Pro (piano)](/devices/piano) | SM8750 | Kernel builds and prelinks in CI; not run on the tablet | code002-2 |
 | [Xiaomi 13 Pro (nuwa)](/devices/nuwa) | SM8550 | Source kernel builds; platform archives and prelink pending | wh1stl3 |
