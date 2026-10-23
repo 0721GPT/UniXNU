@@ -3,7 +3,8 @@
 umi is the Xiaomi Mi 10 with the SM8250 SoC. This is an independent community
 port maintained by [reAAAq](https://github.com/reAAAq). The UniXNU organization
 does not maintain it. The tested 12 GiB / 256 GB phone reaches iPadOS 17.7.11
-Hello / Setup Assistant; physical touch is not working.
+Hello / Setup Assistant, with physical ST FTS touch under XNU confirmed working
+by the device owner in attempt 80.
 
 | Repository | Contents |
 | --- | --- |
@@ -12,7 +13,7 @@ Hello / Setup Assistant; physical touch is not working.
 
 ## State
 
-The following state is reported by the maintainer through hardware attempt 65
+The following state is reported by the maintainer through hardware attempt 80
 on 2026-10-23. A [validation summary](https://github.com/reAAAq/UniXNU-umi/blob/main/docs/validation.json)
 records selected measurements and image hashes; original device dumps remain local.
 
@@ -23,7 +24,7 @@ records selected measurements and image hashes; original device dumps remain loc
 | Native UFS and root volumes | OS and SystemOS mounted; launchd and system services run |
 | Writable Data | Persistent across reboots on the tested partition layout |
 | Display and userland | Apple logo and Hello / Setup Assistant via CPU framebuffer presentation |
-| Touch | ST FTS reset, identity and command responses work; no physical coordinate or HID reports |
+| Touch | Working under XNU; the device owner confirmed usable physical ST FTS input in attempt 80 |
 | Setup completion / home screen | Not verified |
 | GPU acceleration | Not implemented |
 | Wi-Fi, Bluetooth, cellular, audio, camera and sensors | Not implemented or not qualified |
@@ -72,10 +73,15 @@ phone DTB and verified firmware imports, matching Apple components, and a packed
 Data seed. These inputs are not distributed. This is a development source
 snapshot, not a one-command installer or a downloadable boot-image release.
 
-The current touch implementation uses ST FTM5 over I²C. The sheng Novatek/SPI
-firmware and matrix-processing algorithm cannot be copied directly. Touch remains
-a blocker to interacting with Setup Assistant; controller initialization alone is
-not counted as working input.
+The touch implementation uses ST FTM5 over native GPI DMA I²C. Attempt 80
+[enables the native always-on PM8150B GPIO5 rail](https://github.com/reAAAq/UniXNU-umi/commit/138d6cb)
+before the FTS startup sequence, with identity/ownership guards and readback.
+Physical touch was confirmed usable after this change. The sheng Novatek/SPI
+firmware and matrix-processing algorithm are not used for this controller.
+
+The attempt-80 coordinate/HID counters have not yet been collected; the current
+touch status is based on the device owner's interaction report. Multi-touch,
+suspend/resume, UEFI menu touch and completing setup remain unverified.
 
 ## Maintenance
 

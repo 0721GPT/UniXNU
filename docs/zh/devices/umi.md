@@ -2,7 +2,7 @@
 
 umi 是搭载 SM8250 的小米 10。本移植由 [reAAAq](https://github.com/reAAAq)
 独立维护，UniXNU 组织不负责维护。已测试的 12 GiB / 256 GB 手机进入了
-iPadOS 17.7.11 Hello／设置向导，触摸尚不可用。
+iPadOS 17.7.11 Hello／设置向导，第 80 版已由机主确认 XNU 下 ST FTS 触摸可用。
 
 | 仓库 | 内容 |
 | --- | --- |
@@ -11,7 +11,7 @@ iPadOS 17.7.11 Hello／设置向导，触摸尚不可用。
 
 ## 状态
 
-以下是维护者截至 2026-10-23 第 65 轮真机测试报告的状态。
+以下是维护者截至 2026-10-23 第 80 轮真机测试报告的状态。
 [验证摘要](https://github.com/reAAAq/UniXNU-umi/blob/main/docs/validation.json)
 记录了部分测量结果和镜像哈希，原始设备转储保留在本地。
 
@@ -22,7 +22,7 @@ iPadOS 17.7.11 Hello／设置向导，触摸尚不可用。
 | Native UFS 和根卷 | OS、SystemOS 已挂载，launchd 及系统服务运行 |
 | 可写 Data | 在测试分区布局下跨重启持久化 |
 | 显示和用户态 | CPU framebuffer 显示苹果 Logo 及 Hello／设置向导 |
-| 触摸 | ST FTS 复位、身份和命令回显正常，尚无真实坐标或 HID 触点报告 |
+| 触摸 | XNU 下可用；第 80 版机主已确认真实 ST FTS 触摸有效 |
 | 完成设置／进入桌面 | 未验证 |
 | GPU 加速 | 未实现 |
 | Wi-Fi、蓝牙、蜂窝、音频、相机和传感器 | 未实现或未完成验证 |
@@ -68,8 +68,13 @@ git clone https://github.com/UniXNU/UniXNU-sheng
 Apple 组件及 packed Data 种子。这些输入不随仓库分发。当前发布开发源码，
 不提供一键安装程序或可下载的启动镜像。
 
-触摸使用 I²C 上的 ST FTM5，不能直接套用 sheng 的 Novatek／SPI 固件和矩阵处理算法。
-触摸仍阻碍设置向导交互，控制器初始化成功不算触摸可用。
+触摸使用原生 GPI DMA I²C 上的 ST FTM5。第 80 版在 FTS 启动前
+[启用原生配置中的 PM8150B GPIO5 常开电源](https://github.com/reAAAq/UniXNU-umi/commit/138d6cb)，
+包含身份、所有权检查及读回校验，随后机主确认触摸有效。
+该控制器不使用 sheng 的 Novatek／SPI 固件和矩阵处理算法。
+
+第 80 版的坐标／HID 计数尚未采集，当前触摸状态来自机主的真机交互确认。
+多点触控、休眠唤醒、UEFI 菜单触摸及完成设置仍未验证。
 
 ## 维护
 
