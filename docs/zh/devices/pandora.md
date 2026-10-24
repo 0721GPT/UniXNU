@@ -5,6 +5,7 @@ pandora 是搭载 SM8850 的小米 17 Pro。下面的移植是独立的社区项
 | 仓库 | 维护者 | 状态 |
 | --- | --- | --- |
 | [ios-pandora](https://github.com/ShueiTsuki/ios-pandora) | [ShueiTsuki](https://github.com/ShueiTsuki) | 已在真机到达 iOS 16.7.16 主屏幕，触控和按键可用；GPU 内核驱动可执行命令缓冲 |
+| [data-a-live](https://github.com/ShueiTsuki/data-a-live) | [ShueiTsuki](https://github.com/ShueiTsuki) | 使用自建 XNU 内核的原生 iOS 16 项目 |
 
 ## 状态
 

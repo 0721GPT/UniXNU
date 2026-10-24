@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | [UniXNU-enuma](https://github.com/wh1stl3/UniXNU-enuma) | [wh1stl3](https://github.com/wh1stl3) |
 | [UniXNU-enuma](https://github.com/Tlrenhb/UniXNU-enuma) | [Tlrenhb](https://github.com/Tlrenhb) |
+| [uefi-enuma](https://github.com/Tlrenhb/uefi-enuma) | [Tlrenhb](https://github.com/Tlrenhb) | enuma 的 Mu-Silicium 平台包覆盖 |
 
 ## 状态
 

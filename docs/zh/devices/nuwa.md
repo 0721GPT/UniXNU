@@ -6,6 +6,7 @@ nuwa 是搭载 SM8550、12 GB 内存的小米 13 Pro。下面的移植是独立�
 | --- | --- | --- |
 | [UniXNU-nuwa](https://github.com/wh1stl3/UniXNU-nuwa) | [wh1stl3](https://github.com/wh1stl3) | 源内核可编译链接，平台静态库、预链接和真机未完成 |
 | [uefi-nuwa](https://github.com/wh1stl3/uefi-nuwa) | [wh1stl3](https://github.com/wh1stl3) | 固件源码，真机 bring-up 未验证 |
+| [nuwa-dev](https://github.com/Alex-Enix/nuwa-dev) | [Alex-Enix](https://github.com/Alex-Enix) | nuwa 替代设备仓库 |
 
 ## 状态
 

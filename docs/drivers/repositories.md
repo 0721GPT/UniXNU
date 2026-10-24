@@ -47,6 +47,9 @@ These repositories are maintained by their owners. They are linked from the devi
 | unixnu-nativeufs | Galaxy Tab S7 FE Wi-Fi | [RigoLigoRLC/unixnu-nativeufs](https://github.com/RigoLigoRLC/unixnu-nativeufs) | [unixnu-nativeufs](/drivers/community-unixnu-nativeufs) |
 | unixnu-nativemobiledisplay | Galaxy Tab S7 FE Wi-Fi | [RigoLigoRLC/unixnu-nativemobiledisplay](https://github.com/RigoLigoRLC/unixnu-nativemobiledisplay) | [unixnu-nativemobiledisplay](/drivers/community-unixnu-nativemobiledisplay) |
 | unixnu-nativeramblock | Galaxy Tab S7 FE Wi-Fi | [RigoLigoRLC/unixnu-nativeramblock](https://github.com/RigoLigoRLC/unixnu-nativeramblock) | [unixnu-nativeramblock](/drivers/community-unixnu-nativeramblock) |
+| NativeEmmc | Redmi Note 9 | [Dracen-W/NativeEmmc](https://github.com/Dracen-W/NativeEmmc) | [NativeEmmc](/drivers/community-native-emmc) |
+| NativeDwc3 | Xiaomi Pad 5 | [Lux12138/NativeDwc3](https://github.com/Lux12138/NativeDwc3) | [NativeDwc3](/drivers/community-native-dwc3) |
+| unixnu-nativefocaltechtouch | Galaxy Tab S7 FE Wi-Fi | [RigoLigoRLC/unixnu-nativefocaltechtouch](https://github.com/RigoLigoRLC/unixnu-nativefocaltechtouch) | [unixnu-nativefocaltechtouch](/drivers/community-nativefocaltechtouch) |
 
 ## Device forks
 

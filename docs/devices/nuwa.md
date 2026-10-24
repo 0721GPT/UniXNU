@@ -6,6 +6,7 @@ nuwa is the Xiaomi 13 Pro with the SM8550 SoC and 12 GB of RAM. The port below i
 | --- | --- | --- |
 | [UniXNU-nuwa](https://github.com/wh1stl3/UniXNU-nuwa) | [wh1stl3](https://github.com/wh1stl3) | Source kernel builds and links; platform archives, prelink and hardware not done |
 | [uefi-nuwa](https://github.com/wh1stl3/uefi-nuwa) | [wh1stl3](https://github.com/wh1stl3) | Firmware source; hardware bring-up unverified |
+| [nuwa-dev](https://github.com/Alex-Enix/nuwa-dev) | [Alex-Enix](https://github.com/Alex-Enix) | Alternate nuwa device repository |
 
 ## State
 

@@ -35,8 +35,8 @@ contiguous F12 frame reads and a conservative state machine, plus PSCI
 CPU_ON/SGI proven for CPU1-3 with `cpus=4`. That evidence belongs to the
 retired tree and does not transfer with the kernel baseline; the measured
 board constants are what this port started from. The complete iteration
-history — every touch diagnostic stage, the withdrawn GPU command-db map and
-the evidence classes of each result — is preserved in the device
+history, every touch diagnostic stage, the withdrawn GPU command-db map and
+the evidence classes of each result, is preserved in the device
 repository's
 [HISTORY.md](https://github.com/luuu20309/UniXNU-polaris/blob/main/docs/HISTORY.md).
 

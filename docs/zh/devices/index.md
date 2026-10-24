@@ -15,9 +15,11 @@
 | [DroidVM 客户机（Gunyah 上的 crosvm）](/zh/devices/droidvm) | crosvm-gunyah | iPadOS 17 主屏幕，Metal widget 和图标，Keychain 和蓝牙，virtio-net 工作 | Droid-VM |
 | [QEMU virt](/zh/devices/qemu) | QEMU virt | iPadOS 17 主屏幕和 Settings；使用 `--metal` 时在 Mac GPU 上运行 Metal | xVanTuring |
 | [联想小新 Pad 2022（tb128fu）](/zh/devices/tb128fu) | SM6225 | 已到 iPadOS 17 主屏幕，触控可用；Metal 帧由 GPU 呈现；Adreno 610 已运行 | xVanTuring |
+| [Galaxy Tab S7 FE Wi-Fi（SM-T733）](/zh/devices/sm-t733) | SM7325 | 真机 iPadOS 桌面、UFS 和 Data；GPU 和 Wi-Fi 待完成 | RigoLigoRLC |
 | [一加 10 Pro 5G（negroni）](/zh/devices/negroni) | SM8450 | 已到 iOS 16.7.16 SpringBoard，触控可用；CPU 渲染；Wi-Fi 待完成 | pawlickerr |
 | [Nothing Phone (2)（pong）](/zh/devices/pong) | SM8475 | 已到 iOS 16.6.1 主屏幕，显示和触控可用；UFS 和 GPU 部分可用 | Chengdong-Yu |
 | [小米 17 Pro（pandora）](/zh/devices/pandora) | SM8850 | 已到 iOS 16.7.16 主屏幕，触控和按键可用；GPU 内核驱动可执行命令缓冲，尚未渲染；自有加载器，不经 UEFI 链 | ShueiTsuki |
+| [小米 8 SE（sirius）](/zh/devices/sirius) | SDM710 | 通过 U-Boot UEFI 到达 XNU 入口和平台专家；IOKit 进行中 | 57UU |
 | [小米 13（fuxi）](/zh/devices/fuxi) | SM8550 | 内核可链接和预链接，阶段 B archive 链接近完成，未在真机运行 | matejkoo217、hanzi123-bilp |
 | [一加 7 Pro（guacamole）](/zh/devices/guacamole) | SM8150 | 已到达 iOS 16.7.16 用户态，GPU 待完成 | wochgn |
 | [一加 Ace 5（giulia）](/zh/devices/giulia) | SM8650 | 已到 Hello/Setup，显示完整、触控可用；安装、GPU 和 Wi-Fi 待完成 | jasper2863、tycykp |
@@ -36,6 +38,7 @@
 | [Redmi K40 Pro（haydn）](/zh/devices/haydn) | SM8350 | 固件、负载和启动镜像已构建，haydn4 从 guacamole 导入 | xiaomi-haydn-dev |
 | [小米平板 5（nabu）](/zh/devices/nabu) | SM8150 | XNU 已到 vfs_mountroot，下一步根设备 | Lux12138 |
 | [一加 6T（fajita）](/zh/devices/fajita) | SDM845 | XNU 已到根挂载，无存储驱动 | johnpanos |
+| [小米 8（dipper）](/zh/devices/dipper) | SDM845 | UEFI、菜单和负载；XNU 到 BSD init，无根卷 | hanyaa380 |
 | [Microsoft Surface Duo 2（zeta）](/zh/devices/zeta) | SM8350 | 内核和根卷 bring-up 到 launchd exec；arm64e launchd 停止 | none24smu |
 | [一加 Ace 5 Pro（hummer）](/zh/devices/hummer) | SM8750 | UEFI 工作，XNU SMP 和启动检查点已显示在面板 | 2426120557 |
 | [小米 10 Ultra（cas）](/zh/devices/cas) | SM8250 | UEFI 和 UniXNU 菜单已验证，DarwinBoot 和 XNU 未测试 | ht94911 |
@@ -53,9 +56,15 @@
 | [Galaxy Z Fold3（q2q）](/zh/devices/q2q) | SM8350 | 仅源码内核构建工具 | agcarbajo |
 | [Redmi K30 5G（picasso）](/zh/devices/picasso) | SM7250 | 早期骨架，固件未构建 | YinCQL |
 | [Redmi Note 9（merlinx）](/zh/devices/merlinx) | MT6768 | UEFI 可启动，自定义菜单工作；存储初始化阻塞 UniXNU 和 XNU | Dracen-W |
+| [小米平板 4 LTE（clover）](/zh/devices/clover) | SDM660 | 菜单和入口色条；XNU 早期启动，未完整启动 | qine233 |
 | [Benesse TAB-A04-BR3（a04br3）](/zh/devices/a04br3) | MT8167 | 板级、固件、eMMC 和 GPT 已准备；无真机运行 | mouseos |
 | [Redmi 9A（dandelion）](/zh/devices/dandelion) | MT6765 | 早期 bring-up，UEFI 移植进行中 | licg89 |
 | [小米 6（sagit）](/zh/devices/sagit) | MSM8998 | 设备仓库，状态未记录 | dmnakzkahziamnk-a11y |
+| [Redmi Note 12 Turbo / POCO F5（marble）](/zh/devices/marble) | SM7475 | 骨架设备仓库，仍有 TODO 值 | Enmmmmn |
+| [小米 10S（thyme）](/zh/devices/thyme) | SM8250-AC | 板级、内核配置和 ADT 脚本；无真机结果 | tobyfox1640 |
+| [Redmi K80 Ultra（dali）](/zh/devices/dali) | MT6991 | 单核 XNU 早期启动；根卷和用户态不在当前阶段 | localhosts-A |
+| [中兴努比亚 Z60 Ultra（nx721j）](/zh/devices/nx721j) | SM8750 | 内核 bring-up 基线；无固件或负载 | SangLuoCN |
+| [Unisoc UMS512 / T610YP](/zh/devices/t610yp) | UMS512 | 板级、内核配置和 ADT；无真机结果 | hxzbaka |
 | [Google Pixel 9 Pro XL（komodo）](/zh/devices/komodo) | Tensor G4 | 板级、defconfig 和 ADT；UEFI 独立；无真机运行 | Trijal08 |
 | [小米 9（cepheus）](/zh/devices/cepheus) | SDM855 | 设备仓库和启动链已准备；无真机结果 | sxl47 |
 | [小米 MIX Flip（ruyi）](/zh/devices/ruyi) | SM8650 | 板级和 defconfig；无 README 或真机结果 | ArnoDorian123 |
