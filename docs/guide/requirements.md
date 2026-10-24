@@ -35,7 +35,36 @@ On Linux the kernel step builds with upstream clang and an open source Mach-O to
 | `xcrun`, `plutil`, `codesign`, Command Line Tools layout | shims in `scripts/linux` |
 | lzfse | lzfse, for the kernelcache |
 
-The script uses apt (Debian and Ubuntu) and writes the `xcrun`, `plutil` and `codesign` shims to `/usr/bin`, where xnu's makefiles call them. Building clang takes most of its run time. The userdata step, `--skip-setup` and `seed-data-grow` still need macOS.
+The installer runs on glibc Linux hosts. It detects the distribution through `/etc/os-release` and installs dependencies with its package manager:
+
+| Package manager | Distribution family |
+| --- | --- |
+| apt | Debian, Ubuntu and derivatives |
+| dnf | Fedora and RHEL derivatives |
+| pacman | Arch Linux and derivatives |
+| zypper | openSUSE and SUSE |
+
+Use the distribution's enabled repositories for Clang, LLVM development files, libclang, libbsd, UUID, OpenSSL and zlib development packages. The installer also installs mtools and dtc for payload and device-tree commands. Package availability depends on the configured repositories. Keep the system and package databases current through the distribution's normal update procedure.
+
+```sh
+# Preview the dependency commands.
+scripts/linux/setup-toolchain.py --print-packages
+# Install dependencies and build the toolchain.
+sudo scripts/linux/setup-toolchain.py
+# Check installed tools, headers and library linking.
+scripts/linux/setup-toolchain.py --check
+```
+
+`--package-manager apt|dnf|pacman|zypper` selects an installer explicitly. For another distribution or an environment with dependencies prepared separately, use:
+
+```sh
+scripts/linux/setup-toolchain.py --package-manager pacman --print-packages
+sudo scripts/linux/setup-toolchain.py --package-manager none --llvm-config /path/to/llvm-config
+```
+
+`--llvm-config FILE` or `LLVM_CONFIG` selects the host LLVM installation. Its `clang`, `clang++`, libclang and resource headers are resolved together. XNU's patched Clang is built from the pinned LLVM source. `-j N` sets the build parallelism. The optional positional argument selects the install prefix, which defaults to `/opt/unixnu-linux` or `UNIXNU_TOOLCHAIN`.
+
+The script writes `xcrun`, `plutil` and `codesign` shims to `/usr/bin`, where XNU's makefiles call them. Mach-O archives, libdispatch and BlocksRuntime live under the toolchain prefix. Building Clang takes most of the setup time. The userdata step, `--skip-setup` and `seed-data-grow` require macOS.
 
 ## External inputs
 

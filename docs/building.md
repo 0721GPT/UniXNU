@@ -93,9 +93,12 @@ The workflow runs kernel, userdata and payload. Package, firmware and boot image
 
 ## Linux host
 
+The installer supports apt, dnf, pacman and zypper on glibc Linux. Use `--package-manager none` with prepared dependencies and `--llvm-config FILE` for a specific host LLVM. See [Linux requirements](/guide/requirements#linux).
+
 The kernel step runs on Linux after a one-time toolchain install (see [Requirements](/guide/requirements#linux)):
 
 ```sh
+scripts/linux/setup-toolchain.py --print-packages
 sudo scripts/linux/setup-toolchain.py
 ./unixnu defconfig <name> -D ../UniXNU-<device>
 ./unixnu fetch

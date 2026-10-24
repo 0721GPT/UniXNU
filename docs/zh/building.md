@@ -95,9 +95,12 @@ workflow 运行 kernel、userdata 和 payload。package、firmware 和 boot imag
 
 ## Linux 主机
 
+安装脚本在 glibc Linux 上支持 apt、dnf、pacman 和 zypper。依赖已准备好时使用 `--package-manager none`，指定主机 LLVM 时使用 `--llvm-config FILE`。详见 [Linux 要求](/zh/guide/requirements#linux)。
+
 一次性安装工具链后，内核步骤可以在 Linux 上运行（见[构建环境](/zh/guide/requirements#linux)）：
 
 ```sh
+scripts/linux/setup-toolchain.py --print-packages
 sudo scripts/linux/setup-toolchain.py
 ./unixnu defconfig <name> -D ../UniXNU-<device>
 ./unixnu fetch
