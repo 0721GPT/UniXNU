@@ -2,6 +2,13 @@
 
 驱动通过 IOKit personality 绑定到 provider。personality 是匹配键字典。
 
+## 操作步骤 {#procedure}
+
+1. 在源码中找到驱动的 [provider 类](#provider-类)和 personality，记录 `IOClass`、`IOProviderClass` 及匹配键。
+2. 将 personality 与生成的[设备树节点](#设备树节点)比较，按[示例](#匹配示例)核对名称、compatible 和属性类型。
+3. 修改所属 personality 或 DTS/profile 属性，结合[属性读取代码](#读取属性)确认寄存器宽度与引用编码符合预期。
+4. 修改 personality 后重建内核；修改 ADT 后重建 payload 和启动镜像。检查 [probe 顺序](#probe-顺序)及驱动启动日志，确认绑定到预期 provider。
+
 ## personality 键
 
 | 键 | 含义 |

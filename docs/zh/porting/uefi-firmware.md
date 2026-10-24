@@ -4,6 +4,14 @@ UEFI 固件移植来自 Mu-Silicium，提供 UniXNU 和 DarwinBoot 使用的服�
 
 重复构建时，在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径。修改启动参数后，按[参数应用流程](/zh/xnu/boot-arguments#apply-arguments)重新构建负载和启动镜像。画面停在加载器交接阶段时，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
 
+## 操作步骤 {#procedure}
+
+1. 准备设备的 Mu-Silicium 仓库、[厂商输入](#厂商输入)和子模块，核对 `board.toml` 与其[设备配置](#设备配置)、DSC 和 FD 路径。
+2. 完成[必需的集成](#required-integration)：将模块加入 DSC/FDF 并设置库映射。payload 需要 RAM-disk、DiskIo 和 FAT 驱动。
+3. 将固件路径保存到本地构建配置，执行[固件构建](#构建)，确认输出 FD 的路径和大小。
+4. 构建 payload，再按[启动镜像集成](#启动镜像集成)打包。启动前检查 `boot/boot.json` 和打包的 payload。
+5. 在设备上按[验证](#验证)确认配置中的菜单项和 DarwinBoot 交接。菜单项缺失时按[负载发现](#payload-discovery)逐项检查。
+
 ## 必需的集成 {#required-integration}
 
 选择设备后，从 UniXNU 仓库构建固件：

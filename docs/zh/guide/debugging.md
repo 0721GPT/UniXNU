@@ -2,6 +2,14 @@
 
 bring-up 需要四类证据：串口输出、屏幕诊断页、panic 屏幕和构建报告。把它们一起收集。
 
+## 操作步骤 {#procedure}
+
+1. 记录失败命令或最后完成的[启动检查点](/zh/porting/bring-up)，以及设备、固件和镜像版本。
+2. 选择可用的[日志来源](#日志来源)。使用 USB 终端前确认设备实现了其[通信协议](#设备兼容性)；也可使用目标支持的 UART、屏幕诊断或 QEMU 日志。
+3. 绿色交接条按[入口探针步骤](#green-bar)检查；panic 抓取 [panic 屏幕](#panic-屏幕)，用户进程故障收集[用户态证据](#用户态故障证据)。
+4. 每次应用一项诊断修改，重新构建受影响的产物。启动参数修改需要 `./unixnu payload` 和 `./unixnu bootimg`。重复失败操作，记录最后确认的检查点。
+5. 保存[证据包](#证据包)，更新对应[适配记录](/zh/porting/records)。结果应明确失败阶段、输入版本和具体错误。
+
 ## USB 调试终端
 
 来自 giulia 移植的电脑端工具已整合为 `scripts/debug_terminal.py` 和 Windows CMD 启动器 `scripts/debug-terminal.cmd`，支持 CDC 日志采集、有界诊断命令、按主题导出日志及 GSC1 帧缓冲解码。需要 Python 3.10 或更新版本。交互编辑与 PTY 键盘输入需要 Windows CMD；脚本采集可在 Windows、Linux 和 macOS 上运行。

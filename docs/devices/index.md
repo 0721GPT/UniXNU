@@ -1,6 +1,15 @@
-# Supported devices
+# Devices
 
 A device entry is a pair of repositories and the values that make the generic stack run on that board. The table records the ports with a public repository. Boards with a similar SoC need their own port and their own entry.
+
+## Select and use a device
+
+1. Open the target device below and confirm its product, SoC and maintained repositories.
+2. Read its inputs, current results and unfinished areas. Use the firmware, OS profile and partition values specified by that port.
+3. Follow [Build and boot](/building) to build it, [Port a device](/porting/) to adapt new hardware, or [Migration](/porting/migration) to update the repository format.
+4. Verify the checkpoints in its record and save the source, firmware and image revisions actually used.
+
+## Organization-maintained devices
 
 | Device | SoC | Support | Device repository | Firmware |
 | --- | --- | --- | --- | --- |

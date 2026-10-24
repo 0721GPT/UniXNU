@@ -42,12 +42,9 @@ Linux 安装脚本支持 apt、dnf、pacman、zypper，以及单独准备依赖�
 文档位于 [unixnu.com](https://unixnu.com)，源码、导航、翻译、资源、配置和部署工作流由本仓库维护。文档覆盖启动链、构建驱动、设备移植、驱动开发、XNU 4 KiB 页补丁、启动参数和设备说明。
 
 - [移植设备](https://unixnu.com/zh/porting/)
-- [构建](https://unixnu.com/zh/building)
-- [启动镜像](https://unixnu.com/zh/guide/boot)
-- [调试与日志](https://unixnu.com/zh/guide/debugging)
-- [驱动](https://unixnu.com/zh/drivers/overview)
-- [XNU 与 4 KiB 页](https://unixnu.com/zh/xnu/four-k-page-tables)
+- [构建与启动](https://unixnu.com/zh/building)
 - [设备](https://unixnu.com/zh/devices/)
+- [技术参考](https://unixnu.com/zh/reference/)
 
 ## 仓库
 

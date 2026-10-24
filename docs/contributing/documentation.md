@@ -2,6 +2,14 @@
 
 The documentation is a VitePress site in `docs/`. It is published to `https://unixnu.com`.
 
+## Procedure {#procedure}
+
+1. Identify the owning page and its English/Chinese counterpart. For device results, update the device's [structured record](#device-records).
+2. Edit the current procedure or reference. An operation needs prerequisites, working directory, ordered commands, expected results and the next step.
+3. Link the page from the relevant workflow. Follow [Add a page](#add-a-page) for navigation and locale entries.
+4. Run `npm --prefix docs run build` from the main checkout. Resolve build errors, then follow body links from [Port a device](/porting/) and [Technical reference](/reference/) to the changed page in both languages.
+5. Preview the page using [local development](#local-development), check its command blocks and next-step links, then publish the documentation commit.
+
 ## Requirements
 
 | Tool | Version |
@@ -73,6 +81,7 @@ Both editions carry the same pages. A change to one page updates both editions i
 - Use tables for references and lists for steps.
 - Put device-specific values in the device page.
 - Put a concrete command in every procedure.
+- Number task steps in execution order and include inputs, working directory, commands, expected results and the next step. Reference pages link to the relevant procedure.
 
 ## Link check
 

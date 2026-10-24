@@ -1,8 +1,15 @@
 # Requirements
 
+## Procedure {#procedure}
+
+1. Choose the [host toolchain](#host) for the steps you will run. Complete the macOS or Linux instructions and confirm the required tools are available.
+2. Collect the [external inputs](#external-inputs) for the selected OS profile: IPSW/kernelcache, trust cache, Data seed and driver ABI inputs where required. Record their paths and versions.
+3. Check the [device inputs](#device): device repository, firmware repository and target DTB. Save paths in [local configuration](/reference/configuration#local-build-inputs).
+4. Continue with [Build and boot](/building). Run `./unixnu status --json` after selecting the defconfig; the device, OS profile and source paths must match the inputs above.
+
 ## Host
 
-The build driver runs on macOS. The kernel step invokes `xcodebuild` with the `iphoneos` SDK, and the `--skip-setup` option invokes `hdiutil`. The kernel step also runs on Linux with the toolchain described in [Linux](#linux).
+The build driver supports macOS and Linux. On macOS, the kernel step uses Xcode and the `iphoneos` SDK. On Linux, use the [Linux toolchain](#linux). Userdata assembly, `--skip-setup` and Data seed resizing use macOS image tools.
 
 | Tool | Used by | Install |
 | --- | --- | --- |

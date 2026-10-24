@@ -6,14 +6,32 @@ Build the firmware with `./unixnu build firmware --uefi ../uefi-<device>` and in
 
 For repeated builds, save paths in [unixnu.local.toml](/reference/configuration#local-build-inputs). After changing boot arguments, rebuild the payload and boot image using the [argument workflow](/xnu/boot-arguments#apply-arguments). Follow the [green-bar diagnosis](/guide/debugging#green-bar) for a stall at loader handoff.
 
-## Prerequisites
+## 1. Check inputs {#prerequisites}
 
 - An unlocked bootloader with `fastboot`.
 - A device with a UEFI port that matches the board configuration.
 - A built boot image with a payload, or an empty ramdisk for the boot manager smoke test.
 - A serial console when the board exposes a UART.
 
-## Start the image
+## 2. Prepare root storage {#first-boot}
+
+Ports using the userdata root layout need that image installed before their first root boot. The image supplies the OS and SystemOS volumes and the root volume UUID that the kernel matches.
+
+Run the flash command when installing or replacing the root image. With the matching root image already installed, continue at step 3.
+
+Flashing `userdata` overwrites that partition. Confirm the target device, its partition geometry and the report's image path, and save any data needed from that partition before running the command.
+
+```sh
+fastboot devices
+fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
+fastboot reboot bootloader
+```
+
+The userdata image is large. Build it with `unixnu build userdata` and flash it from the device repository report.
+
+The Data seed supplies the writable Data volume. The `--skip-setup` option marks Setup as done in a copy of the seed, so the Hello pages do not run. The procedure and the preference changes are in [Skip Setup](/guide/skip-setup).
+
+## 3. Start the image {#start-the-image}
 
 ```sh
 fastboot devices
@@ -32,7 +50,7 @@ The boot image contains:
 
 The stock Android bootloader loads the image, verifies the ARM64 header in BootShim, and jumps to the shim. BootShim starts the firmware volume.
 
-## Boot manager
+## 4. Check the boot menu {#boot-manager}
 
 UniXNU prints its version and configuration summary to the serial port and draws the menu. The default configuration uses a timeout, a default entry and a countdown.
 
@@ -51,7 +69,7 @@ The menu entries come from `\EFI\UniXNU\unixnu.toml`. An entry can start an EFI 
 
 If UniXNU finds no configuration, it scans every volume for `\EFI\BOOT\BOOTAA64.EFI` and adds those entries in front of the built-in actions.
 
-## Darwin boot
+## 5. Check loader handoff {#darwin-boot}
 
 For an entry of type `xnu`, DarwinBoot reads these files from the entry directory:
 
@@ -66,23 +84,7 @@ DarwinBoot copies the kernel segments into a contiguous physical window, builds 
 
 The default window is 256 MiB. The ADT property `/chosen/darwinboot-memory-size` can request a larger window.
 
-## First boot
-
-The first boot needs a userdata image. The image supplies the OS and SystemOS volumes and the root volume UUID that the kernel matches.
-
-Flashing `userdata` overwrites that partition. Confirm the target device, its partition geometry and the report's image path, and save any data needed from that partition before running the command.
-
-```sh
-fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
-fastboot reboot bootloader
-fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
-```
-
-The userdata image is large. Build it with `unixnu build userdata` and flash it from the device repository report.
-
-The Data seed supplies the writable Data volume. The `--skip-setup` option marks Setup as done in a copy of the seed, so the Hello pages do not run. The procedure and the preference changes are in [Skip Setup](/guide/skip-setup).
-
-## Logs
+## 6. Save logs {#logs}
 
 The UEFI firmware logs to `EFI_SERIAL_IO_PROTOCOL` when the board exposes a UART. UniXNU prefixes its lines with `UNIXNU:`.
 

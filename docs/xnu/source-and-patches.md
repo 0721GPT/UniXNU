@@ -8,6 +8,14 @@ and TrustCache headers from `xnu-8796.101.5`.
 corecrypto, IOStorageFamily, and edk2. The format 2 OS profile's explicit XNU
 revision takes priority over a recorded source lock.
 
+## Procedure {#procedure}
+
+1. Select the device and save `./unixnu status --json`. Record the OS profile, XNU source revision, configuration and ordered patches.
+2. Identify the change's [owner](#ownership). Read the relevant [patch reference](/xnu/patch-reference), source and ABI inputs before editing.
+3. Prepare the kernel once with `./unixnu kernel`. Use [Add a patch](#add-a-patch) to export the change against that prepared baseline and place it in the owning series.
+4. Run `./unixnu status --json` again, check the patch position, and rebuild `./unixnu kernel`. Confirm patch application, archive builds, link and prelink succeed.
+5. Rebuild `./unixnu payload` and `./unixnu bootimg` for boot validation. Record the affected checkpoint using [bring-up](/porting/bring-up). Use [Updating the source](#updating-the-source) when changing the pinned XNU version.
+
 ## Patch application
 
 Format 2 resolves `[kernel] patch_series` in declared order. A series lists one
@@ -123,13 +131,14 @@ out/<device>/<os_profile>/<config>/tree/
 
 ## Updating the source
 
-1. Set a new `ref` and `commit` in `feeds.toml`.
-2. Update `darwin`, `version`, `driverkit_tag` and `trustcache_tag`.
-3. Rebase the patches onto the new tag.
-4. Update the archive builders in `[kernel] archives` for the new compile records.
-5. Rebuild the prelink and re-qualify the kernelcache pin.
+1. Update `xnu_version` and the full `xnu_revision` under `[os]` in the selected OS `profile.toml`. Format 1 updates `ref` and `commit` in its XNU feed.
+2. Review `darwin`, `driverkit_tag`, `trustcache_tag`, IPSW identity and the prelink kernelcache pin in the same profile.
+3. Rebase the ordered patches onto the selected source and update component and auxiliary archive builders for its compile records.
+4. Run `./unixnu fetch` and `./unixnu status --json`. Confirm the resolved XNU revision matches the selected profile.
+5. Run `./unixnu kernel`, inspect link, prelink and component ABI results, then rebuild payload and boot image and record verification.
 
-The prelink output depends on the original kernelcache ABI. A new source version can require a new kernelcache pin and new roots.
+Prelink depends on the original kernelcache ABI. Qualify the matching kernelcache,
+root components and ABI inputs when changing the source version.
 
 ## Next steps
 

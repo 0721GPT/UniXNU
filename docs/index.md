@@ -16,7 +16,7 @@ hero:
       text: Port a device
       link: /porting/
     - theme: brand
-      text: Supported devices
+      text: Devices
       link: /devices/
     - theme: alt
       text: GitHub

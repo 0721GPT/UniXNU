@@ -1,4 +1,4 @@
-# 构建
+# 构建与启动
 
 `unixnu` 解析 ARM64、SoC、OS 和设备配置，选择组件依赖并组装目标树。格式 2 输出位于 `out/<device>/<os_profile>/<config>/`，格式 1 使用 `out/<board>/`。
 

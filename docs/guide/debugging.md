@@ -2,6 +2,14 @@
 
 A bring-up produces four kinds of evidence: serial output, the on-screen diagnostic page, the panic screen and build reports. Collect them together.
 
+## Procedure {#procedure}
+
+1. Record the command that failed or the last completed [boot checkpoint](/porting/bring-up), plus the device, firmware and image revisions.
+2. Choose an available [log source](#log-sources). Use the USB terminal only with a board that implements its [device protocol](#device-compatibility); use UART, framebuffer diagnostics or QEMU logs as provided by the target.
+3. For a green handoff bar, follow [the entry-probe procedure](#green-bar). For a panic, capture the [panic screen](#panic-screen); for a user process fault, collect [user fault evidence](#user-fault-evidence).
+4. Apply one diagnostic change. Rebuild the affected artifact; boot-argument changes require `./unixnu payload` and `./unixnu bootimg`. Repeat the failing operation and record the last confirmed checkpoint.
+5. Save an [evidence bundle](#evidence-bundle) and update the affected [porting record](/porting/records). A useful result identifies the failing stage, input versions and exact error.
+
 ## USB debug terminal
 
 The host tools from the giulia port are available as `scripts/debug_terminal.py` and the Windows CMD launcher `scripts/debug-terminal.cmd`. They capture CDC logs, queue bounded diagnostic commands, export topic logs and decode GSC1 framebuffer packets. Python 3.10 or newer is required. Interactive editing and PTY keyboard input require Windows CMD; scripted capture works on Windows, Linux and macOS.

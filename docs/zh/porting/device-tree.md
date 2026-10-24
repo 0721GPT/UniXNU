@@ -16,6 +16,14 @@ flowchart TD
 固件和 bootloader 接口使用 FDT。XNU 接收与 `kernel.macho` 放在一起的 ADT sidecar，
 DarwinBoot 从启动项目录读取它。
 
+## 操作步骤 {#procedure}
+
+1. 准备板级 DTS、所选 SoC DTSI 和驱动读取的属性，按[配置](#配置)设置源文件与 include 路径。
+2. 按[硬件绑定](#硬件绑定)描述父节点 cell 宽度、地址范围、中断、引用和启用节点，核对 [XNU 必需节点](#必需节点)。
+3. 将 Apple 平台属性放在所选 [OS profile](#os-属性)，按需添加板级覆盖。根卷 UUID 和 payload 交接选项应匹配实际输入。
+4. 执行[独立转换](#独立转换)，编译 DTB 并用所选输入生成 ADT。核对编译诊断、生成的节点名称与驱动匹配要求。
+5. 使用保存的输入运行 `./unixnu payload` 和 `./unixnu bootimg`，检查解析输出目录中的 `device-tree/hardware.dtb` 和 payload 报告。[固件 DTB](#启动镜像设备树)单独作为启动镜像输入。
+
 ## 配置
 
 ```toml

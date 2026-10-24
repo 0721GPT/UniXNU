@@ -4,6 +4,14 @@ Every official device repository maintains `porting.toml`. Maintainers and
 agents use this record throughout development. The documentation site renders
 it at the device page from the revision pinned in `devices.toml`.
 
+## Procedure {#procedure}
+
+1. Create the record from `examples/device/porting.toml`, or edit the existing device record. Match its identity to `board.toml`.
+2. Fill each [required area](#required-areas) using the [record fields](#record-format). Include selected components, board-package code, inputs and ordered operations.
+3. Assign a [completion level](#completion-levels) supported by the source, host or device evidence. Record missing inputs and the next concrete action.
+4. Run the checker in [Change workflow](#change-workflow). Resolve the reported identity, coverage and evidence errors.
+5. Publish the device commit and follow [Publishing and reuse](#publishing-and-reuse) to update `devices.toml` and preview the site. Confirm the rendered record uses that revision.
+
 ## Required areas
 
 Each area records inputs, configuration, procedure, development findings,

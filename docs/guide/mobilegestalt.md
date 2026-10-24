@@ -2,6 +2,13 @@
 
 MobileGestalt answers device queries from the Apple device tree (ADT). The payload writes the ADT at build time, so identity changes leave the signed kernel and the userland image untouched.
 
+## Procedure {#procedure}
+
+1. Identify the userland family using [iPadOS and iOS](#ipados-and-ios). Choose matching model, target and product values.
+2. Edit the typed ADT properties using [Apply](#apply). Review [properties](#properties) and [gesture requirements](#full-screen-gestures) together.
+3. Run `./unixnu payload` and `./unixnu bootimg`, then boot the new image.
+4. Check the reported identity and UI behavior. If results still reflect previous values, follow [cached answers](#cached-answers) and record the affected cache and image.
+
 ## Properties
 
 | Property | Node | Example | Effect |

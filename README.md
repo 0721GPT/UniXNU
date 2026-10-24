@@ -42,12 +42,9 @@ Linux setup supports apt, dnf, pacman and zypper, plus environments with depende
 The documentation is at [unixnu.com](https://unixnu.com). Its sources, navigation, translations, assets, configuration, and deployment workflow are maintained in this repository. It covers the boot chain, the build driver, device porting, driver development, the 4 KiB XNU page patches, boot arguments and per-device notes.
 
 - [Port a device](https://unixnu.com/porting/)
-- [Build](https://unixnu.com/building)
-- [Boot the image](https://unixnu.com/guide/boot)
-- [Debugging and logs](https://unixnu.com/guide/debugging)
-- [Drivers](https://unixnu.com/drivers/overview)
-- [XNU and 4 KiB pages](https://unixnu.com/xnu/four-k-page-tables)
+- [Build and boot](https://unixnu.com/building)
 - [Devices](https://unixnu.com/devices/)
+- [Technical reference](https://unixnu.com/reference/)
 
 ## Repositories
 

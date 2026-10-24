@@ -30,6 +30,8 @@ to this repository. Update English and Chinese pages together.
 Link every documentation page from a relevant guide or topic index reachable
 through body links from `docs/porting/index.md` and its Chinese edition.
 Keep prerequisites and next steps in the page body.
+Task pages list inputs, working directory, ordered operations and expected results.
+Link field and implementation references to the corresponding task procedure.
 
 ## Component discovery
 

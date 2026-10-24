@@ -1,8 +1,15 @@
 # 构建环境
 
+## 操作步骤 {#procedure}
+
+1. 按要执行的构建步骤选择[主机工具链](#主机)，完成 macOS 或 Linux 安装说明，确认所需工具可用。
+2. 为所选 OS profile 收集[外部输入](#外部输入)：IPSW/kernelcache、trust cache、Data seed 和需要的驱动 ABI 输入，记录路径与版本。
+3. 核对[设备输入](#设备)：设备仓库、固件仓库和目标 DTB，将路径保存到[本地配置](/zh/reference/configuration#local-build-inputs)。
+4. 继续[构建与启动](/zh/building)。选定 defconfig 后运行 `./unixnu status --json`，确认设备、OS profile 和源码路径与上述输入一致。
+
 ## 主机
 
-构建驱动在 macOS 上运行。内核步骤调用带 `iphoneos` SDK 的 `xcodebuild`，`--skip-setup` 调用 `hdiutil`。内核步骤也可以在 Linux 上用 [Linux](#linux) 一节所述的工具链运行。
+构建驱动支持 macOS 和 Linux。macOS 内核步骤使用 Xcode 和 `iphoneos` SDK，Linux 使用 [Linux 工具链](#linux)。userdata 组装、`--skip-setup` 和 Data seed 调整使用 macOS 镜像工具。
 
 | 工具 | 用途 | 安装方式 |
 | --- | --- | --- |

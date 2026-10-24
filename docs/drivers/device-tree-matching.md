@@ -2,6 +2,13 @@
 
 A driver binds to a provider through an IOKit personality. The personality is a dictionary of match keys.
 
+## Procedure {#procedure}
+
+1. Find the driver's [provider class](#provider-classes) and personality in the source. Record `IOClass`, `IOProviderClass` and matching keys.
+2. Compare the personality with the generated [device-tree node](#device-tree-nodes). Check name, compatible values and property types using [examples](#matching-examples).
+3. Update the owning personality or DTS/profile property. Check the [property reader](#reading-properties) so register widths and reference encoding match its expectations.
+4. Rebuild the kernel for personality changes, and rebuild payload plus boot image for ADT changes. Inspect [probe order](#probe-order) and driver start logs to confirm the intended provider binds.
+
 ## Personality keys
 
 | Key | Meaning |

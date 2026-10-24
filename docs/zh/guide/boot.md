@@ -6,14 +6,32 @@
 
 重复构建时，在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径。修改启动参数后，按[参数应用流程](/zh/xnu/boot-arguments#apply-arguments)重新构建负载和启动镜像。画面停在加载器交接阶段时，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
 
-## 前提
+## 1. 核对输入 {#前提}
 
 - bootloader 已解锁并支持 `fastboot`。
 - 设备的 UEFI 移植与板级配置匹配。
 - 已构建带负载的启动镜像，或用空 ramdisk 做启动管理器冒烟测试。
 - 板级 UART 可用时准备串口。
 
-## 启动
+## 2. 准备根卷 {#首次启动}
+
+使用 userdata 根卷布局的设备，首次启动根卷前需要安装该镜像。镜像提供 OS 与 SystemOS 卷，以及内核匹配的根卷 UUID。
+
+安装或替换根镜像时执行下方刷写命令。设备已有匹配的根镜像时，继续步骤 3。
+
+刷写 `userdata` 会覆盖该分区。执行前确认目标设备、分区布局和报告中的镜像路径，并保存需要保留的分区数据。
+
+```sh
+fastboot devices
+fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
+fastboot reboot bootloader
+```
+
+userdata 镜像较大。用 `unixnu build userdata` 构建，并按设备仓库报告中的命令刷写。
+
+Data 种子提供可写 Data 卷。`--skip-setup` 在种子副本中把 Setup 标记为完成，跳过 Hello 页面。步骤和偏好改动见[跳过 Setup](/zh/guide/skip-setup)。
+
+## 3. 启动镜像 {#启动}
 
 ```sh
 fastboot devices
@@ -32,7 +50,7 @@ fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 
 Android bootloader 加载镜像，校验 BootShim 的 ARM64 header，然后跳转到 shim。BootShim 启动固件卷。
 
-## 启动管理器
+## 4. 确认启动菜单 {#启动管理器}
 
 UniXNU 把版本和配置摘要写到串口并绘制菜单。默认配置包含超时、默认项和倒计时。
 
@@ -51,7 +69,7 @@ UniXNU 把版本和配置摘要写到串口并绘制菜单。默认配置包含�
 
 UniXNU 找不到配置时，会扫描每个卷的 `\EFI\BOOT\BOOTAA64.EFI`，把这些菜单项加到内置动作之前。
 
-## Darwin 启动
+## 5. 确认加载器交接 {#darwin-启动}
 
 类型为 `xnu` 的菜单项由 DarwinBoot 读取以下文件：
 
@@ -66,23 +84,7 @@ DarwinBoot 把内核段复制到连续物理窗口，构造 `boot_args`，把 AD
 
 默认窗口为 256 MiB。ADT 属性 `/chosen/darwinboot-memory-size` 可以请求更大的窗口。
 
-## 首次启动
-
-首次启动需要 userdata 镜像。镜像提供 OS 与 SystemOS 卷，以及内核匹配的根卷 UUID。
-
-刷写 `userdata` 会覆盖该分区。执行前确认目标设备、分区布局和报告中的镜像路径，并保存需要保留的分区数据。
-
-```sh
-fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
-fastboot reboot bootloader
-fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
-```
-
-userdata 镜像较大。用 `unixnu build userdata` 构建，并按设备仓库报告中的命令刷写。
-
-Data 种子提供可写 Data 卷。`--skip-setup` 在种子副本中把 Setup 标记为完成，跳过 Hello 页面。步骤和偏好改动见[跳过 Setup](/zh/guide/skip-setup)。
-
-## 日志
+## 6. 保存日志 {#日志}
 
 板级 UART 可用时，UEFI 固件写到 `EFI_SERIAL_IO_PROTOCOL`，UniXNU 的行以 `UNIXNU:` 开头。
 

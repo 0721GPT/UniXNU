@@ -16,7 +16,7 @@ hero:
       text: 移植设备
       link: /zh/porting/
     - theme: brand
-      text: 支持的设备
+      text: 设备
       link: /zh/devices/
     - theme: alt
       text: GitHub

@@ -8,6 +8,14 @@ ShengUfs combines SM8550 controller access, firmware adoption, SMMU handling,
 GPT/window parsing and sheng persistence policy. Its hardware constants and
 board policy require review for each target.
 
+## Procedure {#procedure}
+
+1. Fill the [hardware inventory](#hardware-inventory) from target sources. Resolve controller, PHY, clocks, resets, SMMU and DMA ownership before programming them.
+2. Implement or adapt the [initialization sequence](#initialization-and-ownership). Check the [recorded findings](#findings-to-reuse) against the target controller and firmware state.
+3. Add the matching component, archive recipe, kernel flags and root settings using [Configuration](#configuration). Build the selected kernel with the matching storage ABI inputs.
+4. Verify the [milestones](#completion-criteria) in order: register access, DMA, command completion, known-block reads, root mount, then persistence. Record the result of each completed milestone.
+5. Update the storage area of `porting.toml`, run its checker, and continue with [display and brightness](/porting/display).
+
 ## Hardware inventory
 
 | Input | Record before implementation |

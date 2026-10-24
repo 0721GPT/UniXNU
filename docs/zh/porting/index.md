@@ -136,3 +136,5 @@ python3 scripts/porting-record.py check --device "../UniXNU-$DEVICE"
 | 构建与启动配置 | [命令行](/zh/reference/cli)、[设备配置](/zh/reference/configuration)、[启动配置](/zh/reference/boot-configuration)、[输出布局](/zh/reference/output-layout) |
 | 主机验证 | [QEMU 流程](/zh/reference/qemu) |
 | 项目维护 | [仓库布局](/zh/contributing/repository)、[文档维护](/zh/contributing/documentation)、[术语表](/zh/reference/glossary) |
+
+字段、驱动接口、内核补丁和项目维护见[技术参考](/zh/reference/)。

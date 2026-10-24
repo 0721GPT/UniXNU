@@ -16,6 +16,14 @@ flowchart TD
 Firmware and bootloader interfaces use FDT. XNU receives the ADT sidecar next
 to `kernel.macho`. DarwinBoot reads it from the payload entry directory.
 
+## Procedure {#procedure}
+
+1. Gather the board DTS, selected SoC DTSI and the properties consumed by the drivers. Set the source and include paths in [Configuration](#configuration).
+2. Describe hardware with the [bindings](#hardware-bindings): parent cell widths, ranges, interrupts, references and enabled nodes. Check the [required XNU nodes](#required-nodes).
+3. Place Apple platform properties in the selected [OS profile](#os-properties), with board overrides where required. Match the root UUID and payload handoff options to the actual inputs.
+4. Run [standalone conversion](#standalone-conversion) to compile a DTB and generate an ADT with the selected inputs. Review compiler diagnostics and generated node names against the driver matching requirements.
+5. Run `./unixnu payload` and `./unixnu bootimg` using the saved build inputs. Inspect `device-tree/hardware.dtb` and the payload report under the resolved output directory. The [firmware DTB](#boot-image-device-tree) is a separate boot-image input.
+
 ## Configuration
 
 ```toml

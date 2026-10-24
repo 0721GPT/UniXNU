@@ -1,4 +1,4 @@
-# Build
+# Build and boot
 
 `unixnu` resolves ARM64, SoC, OS, and device profiles, selects component dependencies, assembles a target tree, and runs each build step. Format 2 uses `out/<device>/<os_profile>/<config>/`. Format 1 uses `out/<board>/`.
 

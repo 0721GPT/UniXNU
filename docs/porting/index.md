@@ -159,3 +159,5 @@ Use these references for the step you are working on:
 | Build and boot configuration | [Command line](/reference/cli), [device configuration](/reference/configuration), [boot configuration](/reference/boot-configuration), [output layout](/reference/output-layout) |
 | Host verification | [QEMU workflow](/reference/qemu) |
 | Project maintenance | [Repository layout](/contributing/repository), [documentation workflow](/contributing/documentation), [glossary](/reference/glossary) |
+
+Use [Technical reference](/reference/) for fields, driver interfaces, kernel patches and project maintenance.
