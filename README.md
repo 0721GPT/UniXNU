@@ -19,6 +19,8 @@
 
 # UniXNU
 
+> **Migration notice:** Update your device repository for shared SoC support and canonical component names. Follow the [migration guide](https://unixnu.com/porting/migration).
+
 An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI.
 
 UniXNU provides shared build tools, ARM64 support, OS profiles and reusable components for ports across SoCs and devices. SoC repositories supply common platform support, and device repositories supply board configuration and hardware integration. The Xiaomi Pad 6S Pro (sheng) is an SM8550 device port built on this shared platform.

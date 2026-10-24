@@ -1,5 +1,10 @@
 ---
 layout: home
+migration:
+  title: 迁移通知
+  text: 请更新设备仓库，接入共享 SoC 支持并统一组件名称。
+  label: 迁移指南
+  link: /zh/porting/migration
 hero:
   text: 在非 Apple ARM64 硬件上运行 iOS 与 macOS
   tagline: UEFI 启动管理器、设备树平台、打过补丁的 XNU 内核和完整启动镜像。

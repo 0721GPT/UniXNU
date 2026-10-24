@@ -1,5 +1,10 @@
 ---
 layout: home
+migration:
+  title: Migration notice
+  text: Update your device repository for shared SoC support and canonical component names.
+  label: Migration guide
+  link: /porting/migration
 hero:
   text: Run iOS and macOS on non-Apple ARM64 hardware
   tagline: A UEFI boot manager, a device tree platform, a patched XNU kernel and a complete boot image.
