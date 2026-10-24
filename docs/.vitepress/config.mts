@@ -32,7 +32,7 @@ export default withMermaid(defineConfig({
             {
               text: '指南',
               items: [
-                { text: '总览', link: '/zh/guide/overview' },
+                { text: '从这里开始', link: '/zh/guide/overview' },
                 { text: '构建环境', link: '/zh/guide/requirements' },
                 { text: '构建', link: '/zh/building' },
                 { text: '构建内核', link: '/zh/guide/build-kernel' },
@@ -48,7 +48,7 @@ export default withMermaid(defineConfig({
             {
               text: '指南',
               items: [
-                { text: '总览', link: '/zh/guide/overview' },
+                { text: '从这里开始', link: '/zh/guide/overview' },
                 { text: '构建环境', link: '/zh/guide/requirements' },
                 { text: '构建', link: '/zh/building' },
                 { text: '构建内核', link: '/zh/guide/build-kernel' },
@@ -273,7 +273,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Overview', link: '/guide/overview' },
+            { text: 'Start here', link: '/guide/overview' },
             { text: 'Requirements', link: '/guide/requirements' },
             { text: 'Build', link: '/building' },
             { text: 'Build the kernel', link: '/guide/build-kernel' },
@@ -289,7 +289,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Overview', link: '/guide/overview' },
+            { text: 'Start here', link: '/guide/overview' },
             { text: 'Requirements', link: '/guide/requirements' },
             { text: 'Build', link: '/building' },
             { text: 'Build the kernel', link: '/guide/build-kernel' },

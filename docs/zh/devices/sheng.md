@@ -8,4 +8,6 @@
 [记录指南](/zh/porting/records)、[仓库规范](/zh/porting/device-repository)和
 [UFS 指南](/zh/porting/ufs)阅读下方对应部分。
 
+重复实机验证可使用[无人值守测试流程](/zh/devices/sheng-unattended-test)采集日志并返回 fastboot。
+
 <!--@include: ../../.vitepress/records/sheng.zh.md-->

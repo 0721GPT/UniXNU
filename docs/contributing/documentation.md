@@ -46,8 +46,10 @@ docs/
 1. Create the Markdown file under the matching section.
 2. Add the page to the sidebar in `docs/.vitepress/config.mts`.
 3. Add the Chinese page under `docs/zh/` and to the Chinese sidebar.
-4. Run `npm run build` and fix broken links.
-5. Add the language switcher entry when a new section starts.
+4. Link the page from a relevant guide or topic index reachable from [Start here](/guide/overview). Put task prerequisites and the next step in the page body.
+5. Follow the body links from Start here in each language to confirm the page is reachable.
+6. Run `npm run build` and fix broken links.
+7. Add the language switcher entry when a new section starts.
 
 ## Language editions
 

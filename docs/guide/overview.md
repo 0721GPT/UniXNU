@@ -1,6 +1,36 @@
-# Overview
+# Start here
 
 UniXNU starts iOS or macOS on an ARM64 device from a UEFI environment. The stack has six layers. Each layer has a repository, a build output and a handoff contract.
+
+## Build and boot an existing device
+
+1. Find your port in [supported devices](/devices/). Read its configuration, required inputs and current results.
+2. Prepare the [host tools and external inputs](/guide/requirements). Linux users start with [toolchain setup](/guide/requirements#linux).
+3. Save paths in [local build configuration](/reference/configuration#local-build-inputs), then follow [building](/building) and [kernel preparation](/guide/build-kernel).
+4. Build the device's [UEFI firmware](/porting/uefi-firmware#required-integration) with the required loader and payload filesystem drivers.
+5. Create the [payload](/concepts/payload) and [userdata image](/guide/userdata), then [pack and boot the image](/guide/boot).
+6. Check [logs and boot stages](/guide/debugging). Use [troubleshooting](/reference/troubleshooting) for a failed build or boot.
+
+Changing boot arguments requires rebuilding the payload and boot image. Follow [apply boot arguments](/xnu/boot-arguments#apply-arguments). A top green bar marks loader handoff; follow [green-bar diagnosis](/guide/debugging#green-bar) for the next checks.
+
+## Choose a task
+
+| Task | Reading path |
+| --- | --- |
+| Add a device | [Porting workflow](/porting/) → [device repository](/porting/device-repository) → [bring-up order](/porting/bring-up) → [porting record](/porting/records) |
+| Migrate a device repository | [Migration guide](/porting/migration) → [configuration reference](/reference/configuration) |
+| Select or develop a driver | [Component catalog](/reference/components) → [driver layers](/drivers/overview) → [driver repositories and component pages](/drivers/repositories) |
+| Modify XNU | [Source and patches](/xnu/source-and-patches) → [patch reference](/xnu/patch-reference) → [4 KiB page tables](/xnu/four-k-page-tables) |
+| Configure a build or boot entry | [Command line](/reference/cli), [device configuration](/reference/configuration), [boot configuration](/reference/boot-configuration), [output layout](/reference/output-layout) |
+| Test with QEMU | [QEMU workflow](/reference/qemu) |
+| Contribute code or documentation | [Repository layout](/contributing/repository) → [documentation workflow](/contributing/documentation) |
+
+## Understand the boot process
+
+Read the [boot chain](/concepts/boot-chain), [kernel prelink](/concepts/prelink),
+[payload](/concepts/payload), [userdata layout](/concepts/userdata), and
+[integrity and boot policy](/concepts/security). The [glossary](/reference/glossary)
+defines the terms used throughout the guides.
 
 ## Layer model
 

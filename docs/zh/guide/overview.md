@@ -1,6 +1,35 @@
-# 总览
+# 从这里开始
 
 UniXNU 在 ARM64 设备上从 UEFI 环境启动 iOS 或 macOS。整个栈分为六层，每一层都有对应的仓库、构建产物和交接约定。
+
+## 构建并启动已有设备
+
+1. 在[支持的设备](/zh/devices/)中找到设备移植，阅读其配置、所需输入和当前结果。
+2. 准备[主机工具和外部输入](/zh/guide/requirements)。Linux 用户先完成[工具链安装](/zh/guide/requirements#linux)。
+3. 在[本地构建配置](/zh/reference/configuration#local-build-inputs)中保存路径，按[构建流程](/zh/building)和[内核准备](/zh/guide/build-kernel)操作。
+4. 构建设备的 [UEFI 固件](/zh/porting/uefi-firmware#required-integration)，包含必需的加载器和负载文件系统驱动。
+5. 创建[负载](/zh/concepts/payload)和 [userdata 镜像](/zh/guide/userdata)，再[打包并启动镜像](/zh/guide/boot)。
+6. 检查[日志和启动阶段](/zh/guide/debugging)。构建或启动失败时按[故障排查](/zh/reference/troubleshooting)定位。
+
+修改启动参数后需要重新构建负载和启动镜像，步骤见[应用启动参数](/zh/xnu/boot-arguments#apply-arguments)。顶部绿色条标记加载器交接阶段，后续检查见[绿条诊断](/zh/guide/debugging#green-bar)。
+
+## 按任务阅读
+
+| 任务 | 阅读路径 |
+| --- | --- |
+| 新增设备 | [移植流程](/zh/porting/) → [设备仓库](/zh/porting/device-repository) → [bring-up 顺序](/zh/porting/bring-up) → [适配记录](/zh/porting/records) |
+| 迁移设备仓库 | [迁移指南](/zh/porting/migration) → [配置参考](/zh/reference/configuration) |
+| 选择或开发驱动 | [组件目录](/zh/reference/components) → [驱动分层](/zh/drivers/overview) → [驱动仓库和组件页面](/zh/drivers/repositories) |
+| 修改 XNU | [源码与补丁](/zh/xnu/source-and-patches) → [补丁参考](/zh/xnu/patch-reference) → [4 KiB 页表](/zh/xnu/four-k-page-tables) |
+| 配置构建或启动项 | [命令行](/zh/reference/cli)、[设备配置](/zh/reference/configuration)、[启动配置](/zh/reference/boot-configuration)、[输出布局](/zh/reference/output-layout) |
+| 使用 QEMU 测试 | [QEMU 流程](/zh/reference/qemu) |
+| 贡献代码或文档 | [仓库布局](/zh/contributing/repository) → [文档维护流程](/zh/contributing/documentation) |
+
+## 理解启动过程
+
+按需阅读[启动链](/zh/concepts/boot-chain)、[内核预链接](/zh/concepts/prelink)、
+[启动负载](/zh/concepts/payload)、[userdata 布局](/zh/concepts/userdata)和
+[完整性与启动策略](/zh/concepts/security)。[术语表](/zh/reference/glossary)解释指南中的术语。
 
 ## 分层模型
 
