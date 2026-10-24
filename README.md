@@ -21,7 +21,7 @@
 
 > **Migration notice:** Update your device repository for shared SoC support and canonical component names. Follow the [migration guide](https://unixnu.com/porting/migration).
 
-An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI.
+An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI. Like OpenCore, UniXNU is a general UEFI environment and driver loading system: it loads the drivers a device needs and boots the OS through a common UEFI layer.
 
 UniXNU provides shared build tools, ARM64 support, OS profiles and reusable components for ports across SoCs and devices. SoC repositories supply common platform support, and device repositories supply board configuration and hardware integration.
 
