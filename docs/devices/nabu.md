@@ -7,6 +7,7 @@ nabu is the Xiaomi Pad 5 with the SM8150 SoC. The port below is an independent c
 | [unixnu-nabu](https://github.com/Lux12138/unixnu-nabu) | [Lux12138](https://github.com/Lux12138) | XNU reaches vfs_mountroot; root device next |
 | [unixnu-nabu](https://github.com/zzc775/unixnu-nabu) | [zzc775](https://github.com/zzc775) | Alternate nabu repository for a retail 6 GB unit |
 | [unixnu-nabu-build](https://github.com/3214791900-del/unixnu-nabu-build), [uefi-nabu-build](https://github.com/3214791900-del/uefi-nabu-build) | [3214791900-del](https://github.com/3214791900-del) | Kernel and UEFI build trees |
+| [NativeDwc3](https://github.com/Lux12138/NativeDwc3) | [Lux12138](https://github.com/Lux12138) | Native DWC3 USB3 DRD controller driver |
 
 ## State
 

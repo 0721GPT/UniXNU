@@ -30,8 +30,8 @@ dipa-studio/ios-sweet 的 XNU 8796 / iOS 16 树）曾临时启动到 iOS 16 锁�
 并经用户确认实现单指、双指触摸：Synaptics S3330 挂在 GPIO33/34 位拆
 I²C 上，GPIO99 复位释放、有界连续 F12 帧读取加保守状态机；`cpus=4` 下
 CPU1-3 的 PSCI CPU_ON/SGI 亦已验证。这些证据属于退役的树，不随内核基线
-转移；该链测得的板级常数是本移植的起点。完整迭代史——每一阶段触摸诊断、
-被撤回的 GPU command-db 映射和每项结果的证据分级——保存在设备仓库的
+转移；该链测得的板级常数是本移植的起点。完整迭代史，包括每一阶段触摸诊断、
+被撤回的 GPU command-db 映射和每项结果的证据分级，保存在设备仓库的
 [HISTORY.md](https://github.com/luuu20309/UniXNU-polaris/blob/main/docs/HISTORY.md)。
 
 ## 构建

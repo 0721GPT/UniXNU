@@ -5,6 +5,8 @@ OnePlus 8T (kebab) is a SM8250 device. The port below is an independent communit
 | Repository | Maintainer | State |
 | --- | --- | --- |
 | [UniXNU-kebab](https://github.com/GFander/UniXNU-kebab) | [GFander](https://github.com/GFander) |
+| [UniXNU-kebab](https://github.com/stevedang67889/UniXNU-kebab) | [stevedang67889](https://github.com/stevedang67889) | Alternate kebab repository with UEFI bring-up notes |
+| [KebabRamDisk](https://github.com/stevedang67889/KebabRamDisk) | [stevedang67889](https://github.com/stevedang67889) | UEFI payload RAM disk driver for kebab |
 
 ## State
 

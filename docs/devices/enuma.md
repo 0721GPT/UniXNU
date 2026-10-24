@@ -6,6 +6,7 @@ Xiaomi Pad 5 Pro 5G (enuma) is a SM8250-AC device. The port below is an independ
 | --- | --- | --- |
 | [UniXNU-enuma](https://github.com/wh1stl3/UniXNU-enuma) | [wh1stl3](https://github.com/wh1stl3) |
 | [UniXNU-enuma](https://github.com/Tlrenhb/UniXNU-enuma) | [Tlrenhb](https://github.com/Tlrenhb) |
+| [uefi-enuma](https://github.com/Tlrenhb/uefi-enuma) | [Tlrenhb](https://github.com/Tlrenhb) | Mu-Silicium platform package overlay for enuma |
 
 ## State
 
