@@ -1,8 +1,12 @@
 # Port a device
 
-Follow these steps from a UniXNU checkout. Each step produces an input for the
-next. An existing port starts with the [migration guide](/porting/migration).
-To build an existing supported port, use [Building](/building).
+UniXNU runs iOS or macOS on ARM64 devices through UEFI. Follow the eight steps
+below to collect inputs, select shared support, adapt drivers and build images.
+Each step states its expected result.
+
+- **Add a device:** start at step 1.
+- **Build an existing device:** check its inputs and current support in [Devices](/devices/), then follow [Building](/building).
+- **Migrate an existing repository:** update its configuration with the [migration guide](/porting/migration), then continue with the required driver adaptation and build steps.
 
 ## 1. Collect the device inputs
 
@@ -142,3 +146,16 @@ it to the central site. Follow [records](/porting/records) and
 [documentation contribution](/contributing/documentation). Link the new device
 page from [Devices](/devices/) in both languages. Keep the detailed guide in the
 main repository and link it from the device README.
+
+## Related documentation
+
+Use these references for the step you are working on:
+
+| Topic | Documentation |
+| --- | --- |
+| Boot process and image inputs | [Boot chain](/concepts/boot-chain), [prelink](/concepts/prelink), [payload](/concepts/payload), [userdata layout](/concepts/userdata), [integrity and boot policy](/concepts/security) |
+| Component implementation and development | [Driver layers](/drivers/overview), [driver repositories and component pages](/drivers/repositories) |
+| Kernel changes | [Source and patches](/xnu/source-and-patches), [patch reference](/xnu/patch-reference), [4 KiB page tables](/xnu/four-k-page-tables) |
+| Build and boot configuration | [Command line](/reference/cli), [device configuration](/reference/configuration), [boot configuration](/reference/boot-configuration), [output layout](/reference/output-layout) |
+| Host verification | [QEMU workflow](/reference/qemu) |
+| Project maintenance | [Repository layout](/contributing/repository), [documentation workflow](/contributing/documentation), [glossary](/reference/glossary) |

@@ -1,7 +1,10 @@
 # 移植设备
 
-从 UniXNU 仓库按以下顺序操作，每一步都为下一步准备输入。现有设备仓库先读
-[迁移指南](/zh/porting/migration)；构建已有移植请读[构建指南](/zh/building)。
+UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步骤准备输入、选择共享支持、适配驱动并构建镜像，每一步都写明完成结果。
+
+- **新增设备：** 从步骤 1 开始。
+- **构建已有设备：** 在[设备列表](/zh/devices/)确认输入和当前支持范围，再按[构建指南](/zh/building)操作。
+- **迁移已有仓库：** 按[迁移指南](/zh/porting/migration)更新配置，再继续需要完成的驱动适配和构建步骤。
 
 ## 1. 收集设备输入
 
@@ -120,3 +123,16 @@ python3 scripts/porting-record.py check --device "../UniXNU-$DEVICE"
 发布设备仓库后，在接入中央站点时将提交固定到 `devices.toml`。
 按[记录指南](/zh/porting/records)和[文档贡献](/zh/contributing/documentation)操作，
 在两种语言的[设备列表](/zh/devices/)中加入页面链接。详细指南放在主仓库，设备 README 链接到对应指南。
+
+## 相关文档
+
+按当前步骤查阅以下说明：
+
+| 内容 | 文档 |
+| --- | --- |
+| 启动过程与镜像输入 | [启动链](/zh/concepts/boot-chain)、[预链接](/zh/concepts/prelink)、[payload](/zh/concepts/payload)、[userdata 布局](/zh/concepts/userdata)、[完整性与启动策略](/zh/concepts/security) |
+| 组件实现与开发 | [驱动分层](/zh/drivers/overview)、[驱动仓库和组件页面](/zh/drivers/repositories) |
+| 内核修改 | [源码与补丁](/zh/xnu/source-and-patches)、[补丁参考](/zh/xnu/patch-reference)、[4 KiB 页表](/zh/xnu/four-k-page-tables) |
+| 构建与启动配置 | [命令行](/zh/reference/cli)、[设备配置](/zh/reference/configuration)、[启动配置](/zh/reference/boot-configuration)、[输出布局](/zh/reference/output-layout) |
+| 主机验证 | [QEMU 流程](/zh/reference/qemu) |
+| 项目维护 | [仓库布局](/zh/contributing/repository)、[文档维护](/zh/contributing/documentation)、[术语表](/zh/reference/glossary) |

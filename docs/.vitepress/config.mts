@@ -18,8 +18,8 @@ export default withMermaid(defineConfig({
       link: '/zh/',
       themeConfig: {
         nav: [
-          { text: '指南', link: '/zh/guide/overview', activeMatch: '^/zh/(guide/|building)' },
-          { text: '移植', link: '/zh/porting/', activeMatch: '^/zh/porting/' },
+          { text: '移植设备', link: '/zh/porting/', activeMatch: '^/zh/porting/' },
+          { text: '构建', link: '/zh/building', activeMatch: '^/zh/(guide/|building)' },
           { text: '驱动', link: '/zh/drivers/overview', activeMatch: '^/zh/drivers/' },
           { text: 'XNU', link: '/zh/xnu/source-and-patches', activeMatch: '^/zh/xnu/' },
           { text: '设备', link: '/zh/devices/', activeMatch: '^/zh/devices/' },
@@ -32,7 +32,7 @@ export default withMermaid(defineConfig({
             {
               text: '指南',
               items: [
-                { text: '从这里开始', link: '/zh/guide/overview' },
+                { text: '移植设备', link: '/zh/porting/' },
                 { text: '构建环境', link: '/zh/guide/requirements' },
                 { text: '构建', link: '/zh/building' },
                 { text: '构建内核', link: '/zh/guide/build-kernel' },
@@ -48,7 +48,7 @@ export default withMermaid(defineConfig({
             {
               text: '指南',
               items: [
-                { text: '从这里开始', link: '/zh/guide/overview' },
+                { text: '移植设备', link: '/zh/porting/' },
                 { text: '构建环境', link: '/zh/guide/requirements' },
                 { text: '构建', link: '/zh/building' },
                 { text: '构建内核', link: '/zh/guide/build-kernel' },
@@ -76,7 +76,7 @@ export default withMermaid(defineConfig({
             {
               text: '移植',
               items: [
-                { text: '移植总览', link: '/zh/porting/' },
+                { text: '移植设备', link: '/zh/porting/' },
                 { text: '设备仓库', link: '/zh/porting/device-repository' },
                 { text: '适配记录', link: '/zh/porting/records' },
                 { text: 'UFS 移植', link: '/zh/porting/ufs' },
@@ -266,8 +266,8 @@ export default withMermaid(defineConfig({
     },
     siteTitle: 'UniXNU',
     nav: [
-      { text: 'Guide', link: '/guide/overview', activeMatch: '^/(guide/|building)' },
-      { text: 'Porting', link: '/porting/', activeMatch: '^/porting/' },
+      { text: 'Port a device', link: '/porting/', activeMatch: '^/porting/' },
+      { text: 'Build', link: '/building', activeMatch: '^/(guide/|building)' },
       { text: 'Drivers', link: '/drivers/overview', activeMatch: '^/drivers/' },
       { text: 'XNU', link: '/xnu/source-and-patches', activeMatch: '^/xnu/' },
       { text: 'Devices', link: '/devices/', activeMatch: '^/devices/' },
@@ -280,7 +280,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Start here', link: '/guide/overview' },
+            { text: 'Port a device', link: '/porting/' },
             { text: 'Requirements', link: '/guide/requirements' },
             { text: 'Build', link: '/building' },
             { text: 'Build the kernel', link: '/guide/build-kernel' },
@@ -296,7 +296,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Guide',
           items: [
-            { text: 'Start here', link: '/guide/overview' },
+            { text: 'Port a device', link: '/porting/' },
             { text: 'Requirements', link: '/guide/requirements' },
             { text: 'Build', link: '/building' },
             { text: 'Build the kernel', link: '/guide/build-kernel' },
@@ -324,7 +324,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Porting',
           items: [
-            { text: 'Porting overview', link: '/porting/' },
+            { text: 'Port a device', link: '/porting/' },
             { text: 'Device repository', link: '/porting/device-repository' },
             { text: 'Porting records', link: '/porting/records' },
             { text: 'UFS porting', link: '/porting/ufs' },

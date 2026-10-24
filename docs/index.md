@@ -13,14 +13,11 @@ hero:
     alt: UniXNU logo
   actions:
     - theme: brand
-      text: Start here
-      link: /guide/overview
+      text: Port a device
+      link: /porting/
     - theme: brand
       text: Supported devices
       link: /devices/
-    - theme: alt
-      text: Port a device
-      link: /porting/
     - theme: alt
       text: GitHub
       link: https://github.com/UniXNU/UniXNU

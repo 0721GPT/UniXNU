@@ -46,7 +46,7 @@ docs/
 1. 在对应章节创建 Markdown 文件。
 2. 在 `docs/.vitepress/config.mts` 的 sidebar 中加入页面。
 3. 在 `docs/zh/` 下创建中文页面，并加入中文 sidebar。
-4. 从[从这里开始](/zh/guide/overview)可达的相关指南或主题索引中加入正文链接。在页面正文中链接任务前置步骤和下一步。
+4. 从[移植设备](/zh/porting/)可达的相关指南或主题索引中加入正文链接。在页面正文中链接任务前置步骤和下一步。
 5. 在两个语言版本中从起始页沿正文链接检查新页面是否可达。
 6. 运行 `npm run build`，修复坏链。
 7. 新章节需要加入语言切换配置。
@@ -84,7 +84,7 @@ VitePress 在内部链接断开时构建失败。
 ## 下一步
 
 - [仓库布局](/zh/contributing/repository)
-- [总览](/zh/guide/overview)
+- [移植设备](/zh/porting/)
 
 ## 设备记录
 

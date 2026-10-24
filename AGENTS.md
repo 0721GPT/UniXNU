@@ -28,7 +28,7 @@ The published documentation is at https://unixnu.com. Site sources,
 navigation, translations, assets, build configuration, and deployment belong
 to this repository. Update English and Chinese pages together.
 Link every documentation page from a relevant guide or topic index reachable
-through body links from `docs/guide/overview.md` and its Chinese edition.
+through body links from `docs/porting/index.md` and its Chinese edition.
 Keep prerequisites and next steps in the page body.
 
 ## Component discovery

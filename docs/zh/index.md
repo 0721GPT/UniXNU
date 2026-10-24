@@ -13,14 +13,11 @@ hero:
     alt: UniXNU 标志
   actions:
     - theme: brand
-      text: 从这里开始
-      link: /zh/guide/overview
+      text: 移植设备
+      link: /zh/porting/
     - theme: brand
       text: 支持的设备
       link: /zh/devices/
-    - theme: alt
-      text: 移植设备
-      link: /zh/porting/
     - theme: alt
       text: GitHub
       link: https://github.com/UniXNU/UniXNU
