@@ -57,7 +57,7 @@
 	url = https://github.com/UniXNU/ArmSmmu4K.git
 [submodule "kits/NativePrelink"]
 	path = kits/NativePrelink
-	url = https://github.com/UniXNU/NativePrelink.git
+	url = https://github.com/Sohytrs/NativePrelink.git
 [submodule "kits/VerifiedRoot"]
 	path = kits/VerifiedRoot
 	url = https://github.com/UniXNU/VerifiedRoot.git
