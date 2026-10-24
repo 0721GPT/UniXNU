@@ -31,6 +31,8 @@ UniXNU 为不同 SoC 和设备的移植提供共享构建工具、ARM64 支持�
 
 运行 `./unixnu bootimg` 前，先用 `./unixnu build firmware --uefi ../uefi-<device>` 构建设备固件，并将 UniXNU、UniXNUDxe、DarwinBoot 和共享负载驱动 `UniXNURamDiskDxe` 纳入固件。步骤见[必需的固件集成](https://unixnu.com/zh/porting/uefi-firmware#required-integration)。
 
+在 [`unixnu.local.toml`](https://unixnu.com/zh/reference/configuration#local-build-inputs) 保存路径和启动参数，即可使用 `./unixnu kernel`、`./unixnu firmware`、`./unixnu payload` 和 `./unixnu bootimg`。修改启动参数后重新构建负载和启动镜像。检查步骤见[启动参数](https://unixnu.com/zh/xnu/boot-arguments#apply-arguments)和[绿条诊断](https://unixnu.com/zh/guide/debugging#green-bar)。
+
 ## 文档
 
 文档位于 [unixnu.com](https://unixnu.com)，源码、导航、翻译、资源、配置和部署工作流由本仓库维护。文档覆盖启动链、构建驱动、设备移植、驱动开发、XNU 4 KiB 页补丁、启动参数和设备说明。

@@ -6,6 +6,20 @@
 打包启动镜像前，运行 `./unixnu build firmware --uefi ../uefi-<device>` 构建设备固件。DSC 和 FDF 必须包含 UniXNU、UniXNUDxe、DarwinBoot 和负载卷驱动。Mu-Silicium 的 FDT initrd 路径使用共享的 `UniXNURamDiskDxe`，并需要 DiskIoDxe 和 FAT 支持。步骤见[固件集成](/zh/porting/uefi-firmware#required-integration)。
 :::
 
+## 保存构建参数
+
+将 `unixnu.example.toml` 复制为 `unixnu.local.toml`，按[本地构建配置](/zh/reference/configuration#local-build-inputs)填写路径和平台种子，然后运行：
+
+```sh
+./unixnu defconfig <device>_defconfig
+./unixnu kernel
+./unixnu firmware
+./unixnu payload
+./unixnu bootimg
+```
+
+修改启动参数后，运行 `./unixnu payload` 和 `./unixnu bootimg`，再启动新镜像。[启动参数指南](/zh/xnu/boot-arguments#apply-arguments)说明如何检查已打包的配置。
+
 ## 快速开始
 
 ```sh

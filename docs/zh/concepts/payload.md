@@ -4,6 +4,8 @@
 
 使用 Mu-Silicium initrd 负载时，固件需嵌入 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 驱动，在 UniXNU 读取配置前发布负载卷。详见[负载发现](/zh/porting/uefi-firmware#payload-discovery)。
 
+启动参数保存在负载的 `EFI/UniXNU/unixnu.toml` 中。修改后运行 `./unixnu payload` 和 `./unixnu bootimg`，再启动新镜像。参数优先级和检查命令见[应用启动参数](/zh/xnu/boot-arguments#apply-arguments)。
+
 ## 卷布局
 
 ```

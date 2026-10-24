@@ -1,5 +1,11 @@
 # 故障排查
 
+## 早期启动检查
+
+- 顶部绿色条标记 DarwinBoot 跳转内核前的交接阶段，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
+- 修改启动参数后重新构建负载及启动镜像，再启动该镜像，步骤见[应用启动参数](/zh/xnu/boot-arguments#apply-arguments)。
+- 在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存固件和镜像路径，即可使用 `./unixnu firmware`、`./unixnu kernel` 和 `./unixnu bootimg`。
+
 ## 构建
 
 | 现象 | 检查 | 处理 |

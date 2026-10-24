@@ -4,6 +4,8 @@
 
 使用 `./unixnu build firmware --uefi ../uefi-<device>` 构建固件。Mu-Silicium initrd 负载需要在固件中加入 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 支持，并在 `./unixnu bootimg` 前构建负载。[固件集成指南](/zh/porting/uefi-firmware#required-integration)列出了必需的 DSC/FDF 条目和菜单检查步骤。
 
+重复构建时，在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径。修改启动参数后，按[参数应用流程](/zh/xnu/boot-arguments#apply-arguments)重新构建负载和启动镜像。画面停在加载器交接阶段时，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
+
 ## 前提
 
 - bootloader 已解锁并支持 `fastboot`。

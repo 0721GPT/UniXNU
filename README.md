@@ -31,6 +31,8 @@ UniXNU provides shared build tools, ARM64 support, OS profiles and reusable comp
 
 Build the device firmware with `./unixnu build firmware --uefi ../uefi-<device>` before `./unixnu bootimg`. Include UniXNU, UniXNUDxe, DarwinBoot and the shared `UniXNURamDiskDxe` payload driver in the firmware. Follow the [required firmware integration](https://unixnu.com/porting/uefi-firmware#required-integration).
 
+Save paths and boot arguments in [`unixnu.local.toml`](https://unixnu.com/reference/configuration#local-build-inputs) to run `./unixnu kernel`, `./unixnu firmware`, `./unixnu payload`, and `./unixnu bootimg`. After changing boot arguments, rebuild the payload and boot image. See [boot arguments](https://unixnu.com/xnu/boot-arguments#apply-arguments) and [green-bar diagnosis](https://unixnu.com/guide/debugging#green-bar).
+
 ## Documentation
 
 The documentation is at [unixnu.com](https://unixnu.com). Its sources, navigation, translations, assets, configuration, and deployment workflow are maintained in this repository. It covers the boot chain, the build driver, device porting, driver development, the 4 KiB XNU page patches, boot arguments and per-device notes.

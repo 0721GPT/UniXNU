@@ -3,6 +3,39 @@
 格式 2 在 `board.toml` 顶层设置 `schema_version = 2`。省略该字段时使用格式 1。
 配置归属和示例见[设备仓库规范](/zh/porting/device-repository)。
 
+## 本地构建参数 {#local-build-inputs}
+
+在 UniXNU 仓库中将 `unixnu.example.toml` 复制为 `unixnu.local.toml`，填写设备路径。Git 忽略此文件。使用 `--config /path/to/build.toml` 选择其他文件。
+
+```toml
+[build]
+device = "../UniXNU-<device>"
+uefi = "../uefi-<device>"
+dtb = "/path/to/firmware.dtb"
+kernelcache = "/path/to/kernelcache"
+trust_cache = "/path/to/trustcache.bundle"
+data_ramdisk = "/path/to/data-seed.dbr"
+unique_chip_id = "<hex>"
+jobs = 8
+target = "DEBUG"
+kernel_args = ["-v", "serial=3", "debug=0x14e"]
+```
+
+将占位符替换为设备所需输入。相对路径从配置文件所在目录解析。优先级为命令行、环境变量、本地文件、设备默认值。`kernel_args` 按名称覆盖板级参数，`--kernel-arg` 按名称覆盖本地参数。
+
+路径字段包括 `device`、`out`、`uefi`、`edk2`、`kernelcache`、`kernel`、`trust_cache`、`owner_trust_cache`、`data_ramdisk`、`gpu_addon`、`dtb`、`fd`、`ramdisk` 和 `output`。其他字段为 `ipsw`（路径或 URL）、`unique_chip_id`（十六进制字符串）、`jobs`（正整数）、`target`（`DEBUG` 或 `RELEASE`）、`kernel_args`（字符串数组）。`ramdisk = "none"` 选择空启动镜像 ramdisk。
+
+```sh
+./unixnu defconfig <device>_defconfig
+./unixnu kernel
+./unixnu firmware
+./unixnu payload
+./unixnu bootimg
+./unixnu status --json
+```
+
+`status` 的 `build_config` 字段显示选中的文件。`unixnu.local.toml` 保存构建输入，设备仓库的 `local.toml` 保存组件源码覆盖路径。
+
 ## 配置字段
 
 | 表 | 键 | 含义 |

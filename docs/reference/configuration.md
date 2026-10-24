@@ -4,6 +4,39 @@ Format 2 uses `schema_version = 2` at the top of `board.toml`. Files without
 this field use format 1. See the [device repository specification](/porting/device-repository)
 for profile ownership and examples.
 
+## Local build inputs {#local-build-inputs}
+
+Copy `unixnu.example.toml` to `unixnu.local.toml` in the UniXNU checkout and fill in your device paths. The file is ignored by Git. Use `--config /path/to/build.toml` to select another file.
+
+```toml
+[build]
+device = "../UniXNU-<device>"
+uefi = "../uefi-<device>"
+dtb = "/path/to/firmware.dtb"
+kernelcache = "/path/to/kernelcache"
+trust_cache = "/path/to/trustcache.bundle"
+data_ramdisk = "/path/to/data-seed.dbr"
+unique_chip_id = "<hex>"
+jobs = 8
+target = "DEBUG"
+kernel_args = ["-v", "serial=3", "debug=0x14e"]
+```
+
+Replace the placeholders with your port's inputs. Relative paths start at the configuration file's directory. Command-line flags take priority, followed by environment variables, then this file, then device defaults. `kernel_args` overrides board arguments by name; `--kernel-arg` overrides local arguments by name.
+
+Supported path keys are `device`, `out`, `uefi`, `edk2`, `kernelcache`, `kernel`, `trust_cache`, `owner_trust_cache`, `data_ramdisk`, `gpu_addon`, `dtb`, `fd`, `ramdisk`, and `output`. Other keys are `ipsw` (path or URL), `unique_chip_id` (hex string), `jobs` (positive integer), `target` (`DEBUG` or `RELEASE`), and `kernel_args` (string array). `ramdisk = "none"` selects an empty boot-image ramdisk.
+
+```sh
+./unixnu defconfig <device>_defconfig
+./unixnu kernel
+./unixnu firmware
+./unixnu payload
+./unixnu bootimg
+./unixnu status --json
+```
+
+`status` reports the selected file as `build_config`. Build inputs use `unixnu.local.toml`; module source overrides use the device repository's `local.toml`.
+
 ## Profile fields
 
 | Table | Key | Meaning |

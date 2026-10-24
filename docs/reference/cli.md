@@ -4,7 +4,9 @@
 ./unixnu <command> [options]
 ```
 
-Options follow the command. The driver reads a device repository from `-D`, `UNIXNU_DEVICE` or `out/state.json`.
+Options follow the command. The driver reads a device repository from `-D`, `UNIXNU_DEVICE`, the local build file, or `out/state.json`.
+
+`kernel`, `package`, `firmware`, `payload`, `prelink`, and `userdata` are shortcuts for `build <step>`. Save paths and boot arguments in [unixnu.local.toml](/reference/configuration#local-build-inputs), then run `./unixnu kernel`, `./unixnu firmware`, `./unixnu payload`, and `./unixnu bootimg`. `--config FILE` selects another local build file. `status --json` includes its path in `build_config`.
 
 ## Commands
 

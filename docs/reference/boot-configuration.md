@@ -2,6 +2,8 @@
 
 The UniXNU boot manager reads `\EFI\UniXNU\unixnu.toml` from the volume it was started from, then from every other volume. A kit directory contains `Kit.toml` with the same match and injection sections.
 
+Boot arguments are stored in the payload's `EFI/UniXNU/unixnu.toml`. After changing them, run `./unixnu payload` and `./unixnu bootimg`, then boot the new image. See [apply boot arguments](/xnu/boot-arguments#apply-arguments) for precedence and inspection commands.
+
 ## unixnu.toml
 
 ```toml

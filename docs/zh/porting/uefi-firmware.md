@@ -2,6 +2,8 @@
 
 UEFI 固件移植来自 Mu-Silicium，提供 UniXNU 和 DarwinBoot 使用的服务。
 
+重复构建时，在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径。修改启动参数后，按[参数应用流程](/zh/xnu/boot-arguments#apply-arguments)重新构建负载和启动镜像。画面停在加载器交接阶段时，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
+
 ## 必需的集成 {#required-integration}
 
 选择设备后，从 UniXNU 仓库构建固件：

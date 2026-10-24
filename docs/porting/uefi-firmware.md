@@ -2,6 +2,8 @@
 
 The UEFI firmware port comes from Mu-Silicium. It supplies the services UniXNU and DarwinBoot use.
 
+For repeated builds, save paths in [unixnu.local.toml](/reference/configuration#local-build-inputs). After changing boot arguments, rebuild the payload and boot image using the [argument workflow](/xnu/boot-arguments#apply-arguments). Follow the [green-bar diagnosis](/guide/debugging#green-bar) for a stall at loader handoff.
+
 ## Required integration
 
 Build firmware from the UniXNU checkout after selecting the device:

@@ -1,5 +1,11 @@
 # Troubleshooting
 
+## Early boot checks
+
+- A top green bar marks DarwinBoot's handoff before the kernel branch. Follow the [green-bar diagnosis](/guide/debugging#green-bar).
+- To apply changed boot arguments, rebuild the payload and boot image, then boot that image. Follow [apply boot arguments](/xnu/boot-arguments#apply-arguments).
+- Save firmware and image paths in [unixnu.local.toml](/reference/configuration#local-build-inputs) for `./unixnu firmware`, `./unixnu kernel`, and `./unixnu bootimg`.
+
 ## Build
 
 | Symptom | Check | Action |

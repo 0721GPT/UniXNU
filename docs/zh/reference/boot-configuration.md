@@ -2,6 +2,8 @@
 
 UniXNU 启动管理器先从启动所在卷读取 `\EFI\UniXNU\unixnu.toml`，再扫描其他卷。kit 目录中的 `Kit.toml` 使用相同的 match 和注入段。
 
+启动参数保存在负载的 `EFI/UniXNU/unixnu.toml` 中。修改后运行 `./unixnu payload` 和 `./unixnu bootimg`，再启动新镜像。参数优先级和检查命令见[应用启动参数](/zh/xnu/boot-arguments#apply-arguments)。
+
 ## unixnu.toml
 
 ```toml

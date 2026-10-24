@@ -2,6 +2,8 @@
 
 bring-up 按阶段推进。每个阶段都有可见结果和日志行，一次隔离一个问题。
 
+重复构建时，在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径。修改启动参数后，按[参数应用流程](/zh/xnu/boot-arguments#apply-arguments)重新构建负载和启动镜像。画面停在加载器交接阶段时，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
+
 ## 阶段 1：UEFI
 
 目标：固件进入 UEFI shell、启动菜单或 UniXNU。

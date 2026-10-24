@@ -200,13 +200,24 @@ python3 scripts/patch-xnu-entry-probe.py <kernel> --panic-screen --no-reset
 
 panic 屏幕把格式化后的 panic 消息和寄存器写到 framebuffer，并保持显示。`--no-reset` 停止自动复位，屏幕保留到拍照完成。
 
+### 交接时的绿色条 {#green-bar}
+
+顶部绿色条由 DarwinBoot 的 `DarwinEnter` 在 `ExitBootServices` 之后绘制，随后才执行缓存维护、关闭 MMU 和跳转 XNU。画面停在这里时，需要入口探针或串口日志定位后续阶段。仅凭绿色条，原因未查明。
+
+1. 记录最后的 `DARWINBOOT:` 日志，包括内核入口地址、显示几何信息、命令行和 CPU 状态。确认所选内核和 ADT 对应同一设备及 OS 配置。
+2. 对 `scripts/patch-xnu-entry-probe.py` 支持的内核，在设备配置中设置 `[payload] panic_screen = true`，运行 `./unixnu payload` 和 `./unixnu bootimg`，再启动新镜像。检查 `logs/payload-patch.log` 中的探针安装结果。
+3. 查看绿色条下方的蓝色和品红色条。蓝色表示进入 MMU 关闭状态下的内核入口，品红色表示到达开启 MMU 前的位置。缺少探针画面时，检查记录的 framebuffer 基址和行跨度。
+4. 使用 `entry_probe_reset_delay = 6` 设置开启 MMU 后的定时复位检查点。在设备移植记录中保存色条、复位时间、串口输出和 `payload.json`。
+
+配置修改未体现在启动镜像中时，按[应用启动参数](/zh/xnu/boot-arguments#apply-arguments)检查。
+
 ### 颜色条
 
 早期启动会在 framebuffer 上画三条 1/16 屏幕高度的色条。正常方向下从上到下：
 
 | 色条 | 绘制者 | 含义 |
 | --- | --- | --- |
-| 绿色 | DarwinBoot `DarwinEnter` | 已退出 boot services，控制权到达内核入口 |
+| 绿色 | DarwinBoot `DarwinEnter` | 已退出 boot services，进入跳转内核前的加载器交接阶段 |
 | 蓝色 | 入口探针阶段 1 | 内核入口代码已执行，MMU 仍关闭 |
 | 品红 | 入口探针阶段 2 | 内核到达打开 MMU 之前的位置 |
 

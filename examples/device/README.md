@@ -33,3 +33,12 @@ python3 scripts/porting-record.py check --device ../UniXNU-example
 ```
 
 Run this command from UniXNU.
+
+## Local builds and boot diagnosis
+
+Copy `unixnu.example.toml` to `unixnu.local.toml` in the main checkout and fill
+in device inputs using the [configuration reference](https://unixnu.com/reference/configuration#local-build-inputs).
+Read [boot arguments](https://unixnu.com/xnu/boot-arguments#apply-arguments)
+before changing the command line. Rebuild the payload and boot image after
+argument changes. Use the [green-bar diagnosis](https://unixnu.com/guide/debugging#green-bar)
+for stalls at loader handoff. Record the last confirmed stage and relevant logs.

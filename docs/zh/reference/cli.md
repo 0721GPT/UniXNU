@@ -4,7 +4,9 @@
 ./unixnu <command> [options]
 ```
 
-选项写在命令之后。驱动从 `-D`、`UNIXNU_DEVICE` 或 `out/state.json` 读取设备仓库。
+选项写在命令之后。驱动从 `-D`、`UNIXNU_DEVICE`、本地构建文件或 `out/state.json` 读取设备仓库。
+
+`kernel`、`package`、`firmware`、`payload`、`prelink` 和 `userdata` 是 `build <step>` 的快捷命令。在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径和启动参数后，可运行 `./unixnu kernel`、`./unixnu firmware`、`./unixnu payload` 和 `./unixnu bootimg`。`--config FILE` 选择其他本地构建文件，`status --json` 的 `build_config` 字段显示其路径。
 
 ## 命令
 

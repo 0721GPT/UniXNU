@@ -6,6 +6,20 @@
 Build the device firmware with `./unixnu build firmware --uefi ../uefi-<device>` before packing the boot image. Its DSC and FDF must include UniXNU, UniXNUDxe, DarwinBoot and the payload volume driver. For the Mu-Silicium FDT initrd path, use the shared `UniXNURamDiskDxe` with DiskIoDxe and FAT support. Follow [firmware integration](/porting/uefi-firmware#required-integration).
 :::
 
+## Saved build inputs
+
+Copy `unixnu.example.toml` to `unixnu.local.toml` and fill in the paths and platform seed using the [local build configuration](/reference/configuration#local-build-inputs). Then run:
+
+```sh
+./unixnu defconfig <device>_defconfig
+./unixnu kernel
+./unixnu firmware
+./unixnu payload
+./unixnu bootimg
+```
+
+After changing boot arguments, run `./unixnu payload` and `./unixnu bootimg`, then boot the new image. The [boot argument guide](/xnu/boot-arguments#apply-arguments) shows how to inspect the packed configuration.
+
 ## Quick start
 
 ```sh

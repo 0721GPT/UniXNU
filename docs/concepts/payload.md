@@ -4,6 +4,8 @@ The payload is a FAT volume that becomes the ramdisk of the Android boot image. 
 
 For a Mu-Silicium initrd payload, embed `UniXNURamDiskDxe`, DiskIoDxe and the FAT driver in the firmware. They expose the payload volume before UniXNU reads its configuration. See [payload discovery](/porting/uefi-firmware#payload-discovery).
 
+Boot arguments are stored in the payload's `EFI/UniXNU/unixnu.toml`. After changing them, run `./unixnu payload` and `./unixnu bootimg`, then boot the new image. See [apply boot arguments](/xnu/boot-arguments#apply-arguments) for precedence and inspection commands.
+
 ## Volume layout
 
 ```

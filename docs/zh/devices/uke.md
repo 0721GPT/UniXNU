@@ -9,7 +9,7 @@ uke 是搭载 SM7675 的小米平板 7 和 POCO Pad X1。下面的移植是独�
 
 ## 状态
 
-原厂 ABL 已到阶段 1 到 5：UEFI 固件、UniXNU 菜单、负载、DarwinBoot 和 XNU 入口。绿色条表示内核入口代码已执行。真机上 UFS 根已挂载，launchd 启动。屏幕停在 Apple 标志，因为 IOMFB 找不到默认 framebuffer surface。
+原厂 ABL 已到阶段 1 到 5：UEFI 固件、UniXNU 菜单、负载、DarwinBoot 和 XNU 入口。绿色条标记 DarwinBoot 跳转内核前的交接阶段。真机上 UFS 根已挂载，launchd 启动。屏幕停在 Apple 标志，因为 IOMFB 找不到默认 framebuffer surface。
 
 阶段 6 的完整内核用 `uke-full_defconfig` 编译并预链接。UFS 块类绑定到固定的原始候选。真机上根卷已挂载，launchd 已运行；显示和 GPU 仍是阻塞点。
 
@@ -18,7 +18,7 @@ uke 是搭载 SM7675 的小米平板 7 和 POCO Pad X1。下面的移植是独�
 | UEFI 固件 | 工作 |
 | UniXNU 菜单 | 工作 |
 | 负载和 DarwinBoot | 工作 |
-| XNU 入口 | 工作，绿色条 |
+| DarwinBoot 交接 | 绿色条 |
 | 根设备 | 已挂载，launchd 启动 |
 | 显示 | Apple 标志，无默认 framebuffer surface |
 | watchdog | 部分生效，watchdogd 仍触发 SIGTRAP |

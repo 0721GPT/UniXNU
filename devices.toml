@@ -3,4 +3,4 @@ schema_version = 1
 [[device]]
 name = "sheng"
 repository = "UniXNU/UniXNU-sheng"
-revision = "93e25c6b8606902de13f12c4d160c860f52a7d98"
+revision = "516a780473a2ac59c8b438e132bb60204dda9e22"

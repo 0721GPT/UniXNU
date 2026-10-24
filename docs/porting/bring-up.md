@@ -2,6 +2,8 @@
 
 Bring-up proceeds in stages. Each stage has a visible result and a log line. Isolate one stage at a time.
 
+For repeated builds, save paths in [unixnu.local.toml](/reference/configuration#local-build-inputs). After changing boot arguments, rebuild the payload and boot image using the [argument workflow](/xnu/boot-arguments#apply-arguments). Follow the [green-bar diagnosis](/guide/debugging#green-bar) for a stall at loader handoff.
+
 ## Stage 1: UEFI
 
 Goal: the firmware reaches a UEFI shell, a boot menu or the UniXNU application.

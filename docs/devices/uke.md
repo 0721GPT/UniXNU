@@ -9,7 +9,7 @@ uke is the Xiaomi Pad 7 and POCO Pad X1 with the SM7675 SoC. The port below is a
 
 ## State
 
-The stock ABL reaches stages 1 to 5: UEFI firmware, UniXNU menu, payload, DarwinBoot and the XNU entry. The green bar means the kernel entry code ran. On hardware, UFS root mounts and launchd starts. The display stays on the Apple logo because IOMFB finds no default framebuffer surface.
+The stock ABL reaches stages 1 to 5: UEFI firmware, UniXNU menu, payload, DarwinBoot and the XNU entry. The green bar marks DarwinBoot handoff before the kernel branch. On hardware, UFS root mounts and launchd starts. The display stays on the Apple logo because IOMFB finds no default framebuffer surface.
 
 The stage 6 full kernel compiles and prelinks with `uke-full_defconfig`. The UFS block class binds to the pinned original candidate. On hardware, the root volume mounts and launchd runs; display and GPU remain the blockers.
 
@@ -18,7 +18,7 @@ The stage 6 full kernel compiles and prelinks with `uke-full_defconfig`. The UFS
 | UEFI firmware | works |
 | UniXNU menu | works |
 | Payload and DarwinBoot | works |
-| XNU entry | works, green bar |
+| DarwinBoot handoff | green bar |
 | Root device | mounted; launchd starts |
 | Display | Apple logo; no default framebuffer surface |
 | Watchdog | partial; watchdogd still hits SIGTRAP |
