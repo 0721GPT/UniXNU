@@ -78,6 +78,8 @@ export default withMermaid(defineConfig({
               items: [
                 { text: '移植总览', link: '/zh/porting/' },
                 { text: '设备仓库', link: '/zh/porting/device-repository' },
+                { text: '适配记录', link: '/zh/porting/records' },
+                { text: 'UFS 移植', link: '/zh/porting/ufs' },
                 { text: 'SM8550 支持', link: '/zh/porting/sm8550' },
                 { text: '迁移指南', link: '/zh/porting/migration' },
                 { text: 'UEFI 固件', link: '/zh/porting/uefi-firmware' },
@@ -317,6 +319,8 @@ export default withMermaid(defineConfig({
           items: [
             { text: 'Porting overview', link: '/porting/' },
             { text: 'Device repository', link: '/porting/device-repository' },
+            { text: 'Porting records', link: '/porting/records' },
+            { text: 'UFS porting', link: '/porting/ufs' },
             { text: 'SM8550 support', link: '/porting/sm8550' },
             { text: 'Migration', link: '/porting/migration' },
             { text: 'UEFI firmware', link: '/porting/uefi-firmware' },

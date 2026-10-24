@@ -225,3 +225,13 @@ Record unavailable hardware checks as pending. Keep build completion and device
 observations separate. Update English and Chinese documentation, root README,
 root `AGENTS.md`, component metadata, and firmware references with the final names
 and commands.
+
+## Structured porting record
+
+Copy `porting.toml` and `.github/workflows/porting-record.yml` from the template.
+Populate each area from the implementation with hardware, configuration,
+procedure, findings, completion criteria and evidence. Cover selected components
+and their dependencies. Put board driver submodules in the device repository.
+Run the record checker, require `Porting record` on the official device branch,
+and update the published revision in UniXNU `devices.toml`. The site renders
+this record. Read the [record guide](/porting/records) and [UFS guide](/porting/ufs).

@@ -88,3 +88,12 @@ display, input, and GPU observations separately from host builds.
 
 Preserve unrelated working-tree changes. Keep documentation concise and describe
 current behavior. Use standard terms, neutral headings, and ordinary punctuation.
+
+## Porting record
+
+Read the device's `porting.toml` and the
+[record guide](https://unixnu.com/porting/records) before implementation.
+For storage, also read the [UFS guide](https://unixnu.com/porting/ufs).
+Update each affected area's findings or evidence with its code change.
+The documentation site renders this same record. Follow its schema and
+completion levels for both maintainer and agent work.

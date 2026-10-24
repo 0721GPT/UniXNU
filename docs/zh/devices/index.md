@@ -4,7 +4,7 @@
 
 | 设备 | SoC | 支持功能 | 设备仓库 | 固件 |
 | --- | --- | --- | --- | --- |
-| 小米平板 6S Pro（sheng） | SM8550 | 显示、触控、UFS、GPU | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
+| 小米平板 6S Pro（sheng） | SM8550 | [各部分的实现与证据](/zh/devices/sheng) | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
 
 ## 社区移植
 
@@ -117,3 +117,5 @@
 ## sheng
 
 [sheng 页面](/zh/devices/sheng)记录小米平板 6S Pro 移植。它是一个设备条目。[Novatek 触控驱动](/zh/drivers/sheng-novatek-touch)把 sheng 的触控驱动作为内置 XNU 驱动的完整示例。
+
+官方设备页由设备仓库的 `porting.toml` 生成，更新流程见[适配记录](/zh/porting/records)。

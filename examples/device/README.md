@@ -9,7 +9,9 @@ hardware inputs before building.
 4. Fill the DTS model, compatible values, memory map, CPU selection, and peripherals.
 5. List firmware sources and hashes in `proprietary-files.txt`.
 6. Set partition geometry and payload inputs from the device's records.
-7. Set `example = false`, select the defconfig, fetch, and inspect `status --json`.
+7. Complete each area in `porting.toml`, including ownership paths, findings and completion criteria.
+8. Enable the template CI workflow and require its `Porting record` check on the official device branch.
+9. Set `example = false`, select the defconfig, fetch, and inspect `status --json`.
 
 The zero memory range and `REQUIRED_` values identify inputs to complete.
 `patches/xnu/series` lists board patches in application order. `package/` contains
@@ -19,3 +21,15 @@ board packaging. Shared resources come from the selected SoC and component sourc
 - [Device tree](https://unixnu.com/porting/device-tree)
 - [Component catalog](https://unixnu.com/reference/components)
 - [Migration](https://unixnu.com/porting/migration)
+
+`porting.toml` is the shared maintainer and agent record. The site renders it
+from the device commit pinned in UniXNU's `devices.toml`. Publish that pin with
+the English and Chinese device pages. Put board driver submodules in this
+device repository. See the [record guide](https://unixnu.com/porting/records)
+and [UFS guide](https://unixnu.com/porting/ufs).
+
+```sh
+python3 scripts/porting-record.py check --device ../UniXNU-example
+```
+
+Run this command from UniXNU.

@@ -4,7 +4,7 @@ A device entry is a pair of repositories and the values that make the generic st
 
 | Device | SoC | Support | Device repository | Firmware |
 | --- | --- | --- | --- | --- |
-| Xiaomi Pad 6S Pro (sheng) | SM8550 | Display, Touch, UFS, GPU | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
+| [Xiaomi Pad 6S Pro (sheng)](/devices/sheng) | SM8550 | [Implementation and evidence by area](/devices/sheng) | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
 
 ## Community ports
 
@@ -117,3 +117,5 @@ Device pages are the place for board specific values. The general guide uses pla
 ## sheng
 
 The [sheng page](/devices/sheng) records the Xiaomi Pad 6S Pro port. It is one device entry. The [Novatek touch driver](/drivers/sheng-novatek-touch) uses the sheng touch driver as a worked example of a built-in XNU driver.
+
+Official device pages render each repository's `porting.toml`. See the [record workflow](/porting/records).

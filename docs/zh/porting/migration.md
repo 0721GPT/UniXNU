@@ -212,3 +212,11 @@ sheng 的 archive 和镜像步骤需要：
 无法执行的硬件检查记为待验证。构建完成与设备观察分别记录。
 用最终名称和命令更新中英文文档、根目录 README、根目录 `AGENTS.md`、组件元数据
 和固件引用。
+
+## 结构化适配记录
+
+复制模板中的 `porting.toml` 和 `.github/workflows/porting-record.yml`。按实际代码
+为每个部分填写硬件、配置、操作、经验、完成条件和证据，并覆盖所选组件及依赖。
+把板级驱动子模块放入设备仓库。运行记录检查，将 `Porting record` 设为官方设备分支
+的必需检查，并更新 UniXNU `devices.toml` 的发布版本。设备页由这份记录生成。
+详见[记录指南](/zh/porting/records)和 [UFS 指南](/zh/porting/ufs)。

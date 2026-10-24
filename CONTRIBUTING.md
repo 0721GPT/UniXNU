@@ -107,3 +107,11 @@ Report a security issue privately to the maintainers. Do not open a public issue
 ## License
 
 Contributions are licensed under BSD-2-Clause-Patent. The `LICENSE` file in each directory applies to that directory.
+
+## Official device records
+
+Update the affected areas in the device's `porting.toml` with each code change.
+Use the [record guide](https://unixnu.com/porting/records) for required hardware,
+configuration, findings, evidence and completion criteria. The site renders the
+same record for maintainers and agents. Official device branches require its CI
+check. Board driver submodules belong to device repositories.

@@ -19,8 +19,6 @@
 
 # UniXNU
 
-Adreno740 and AdrenoMetal provide GPU acceleration on the Xiaomi Pad 6S Pro (sheng). The render server composites the system UI through the Adreno 740, and listed processes get their own Metal devices. See the [Adreno 740 driver documentation](https://unixnu.com/drivers/adreno740).
-
 An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI.
 
 ## Documentation
@@ -45,9 +43,22 @@ The documentation is at [unixnu.com](https://unixnu.com). Its sources, navigatio
 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | Device repository for the Xiaomi Pad 6S Pro |
 | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | UEFI firmware port for the Xiaomi Pad 6S Pro |
 
-Drivers and kits are independent public repositories under the UniXNU organization, included as submodules. Clone with `--recurse-submodules`, or run `git submodule update --init --recursive`.
+The main checkout contains shared drivers and kits. Device repositories own their board driver submodules; sheng supplies ShengUfs and ShengHidInput alongside its touch and preflight components. The catalog describes available components, and the build tools assemble the selected device sources. Clone repositories with `--recurse-submodules`.
 
 Device repositories select pinned SoC sources, OS profiles, and components. The build tools merge the profiles, resolve dependencies, compile the board DTS, and generate the ADT. Start with [AGENTS.md](AGENTS.md), [the device template](examples/device/README.md), and [the migration guide](https://unixnu.com/porting/migration).
+
+## Official device development
+
+Every official device maintains `porting.toml` with hardware inputs, configuration,
+procedures, findings, evidence and completion criteria for each subsystem.
+Maintainers and agents use this record. The site renders it from the device
+revision pinned in `devices.toml`.
+
+The required CI check covers the record structure, component dependencies and
+updates to findings or evidence for changed code. Start with the
+[record guide](https://unixnu.com/porting/records),
+[UFS porting guide](https://unixnu.com/porting/ufs) and
+[device template](examples/device/README.md).
 
 ## Contributing
 

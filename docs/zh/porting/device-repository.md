@@ -9,6 +9,8 @@ UniXNU-<device>/
   AGENTS.md
   README.md
   board.toml
+  porting.toml
+  .github/workflows/porting-record.yml
   feeds.toml
   configs/<device>_defconfig
   dts/<device>.dts
@@ -384,3 +386,12 @@ entry = "<entry id>"
 - [设备树](/zh/porting/device-tree)
 - [设备配置参考](/zh/reference/configuration)
 - [设备](/zh/devices/)
+
+## 适配记录
+
+`porting.toml` 与 `board.toml` 位于设备仓库根目录。每个部分包含开发经验、证据和
+完成条件，记录字段与 `board.toml` 及组件依赖匹配。设备 CI 检查代码路径对应部分
+的经验或证据更新。字段、状态和发布流程见[记录指南](/zh/porting/records)。
+
+板级驱动子模块归属设备仓库。sheng 在设备仓库固定 ShengUfs、ShengHidInput、
+ShengNovatekTouch 和 ShengPreflight。

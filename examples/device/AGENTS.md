@@ -46,4 +46,13 @@ Run from UniXNU, replacing the device path and defconfig:
 
 Record commands, revisions, output paths, results, and unresolved inputs.
 Report hardware boot, storage, display, input, and GPU results separately.
-Update the device page in UniXNU's documentation site and keep this README concise.
+Update the device revision in UniXNU's devices.toml for publication and keep this README concise.
+
+## Porting record
+
+Read the device's `porting.toml` and the
+[record guide](https://unixnu.com/porting/records) before implementation.
+For storage, also read the [UFS guide](https://unixnu.com/porting/ufs).
+Update each affected area's findings or evidence with its code change.
+The documentation site renders this same record. Follow its schema and
+completion levels for both maintainer and agent work.

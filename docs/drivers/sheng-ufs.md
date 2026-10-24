@@ -18,3 +18,9 @@ profile enables `CONFIG_XNU_NATIVE_UFS` and supplies the board inputs.
 ```sh
 ./unixnu build kernel -D ../UniXNU-sheng
 ```
+
+## Porting and records
+
+The sheng device repository supplies ShengUfs as a submodule. Follow the
+[UFS porting guide](/porting/ufs) and maintain controller, clock, PHY, SMMU,
+DMA, partition and completion details in the [storage record](/devices/sheng#storage).

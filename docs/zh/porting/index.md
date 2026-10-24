@@ -41,3 +41,9 @@ sheng 提供其固件、电源、内存和显示输入。参见 [SM8550 支持](
 - [组件目录](/zh/reference/components)
 - [迁移指南](/zh/porting/migration)
 - [UEFI 固件](/zh/porting/uefi-firmware)
+
+## 适配记录
+
+官方设备使用 `porting.toml` 逐项记录硬件、配置、经验、证据和完成条件。维护者与 agent
+使用同一份记录，设备页从固定版本生成。实现前阅读[记录指南](/zh/porting/records)，
+存储适配同时阅读 [UFS 指南](/zh/porting/ufs)。

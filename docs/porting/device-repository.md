@@ -10,6 +10,8 @@ UniXNU-<device>/
   AGENTS.md
   README.md
   board.toml
+  porting.toml
+  .github/workflows/porting-record.yml
   feeds.toml
   configs/<device>_defconfig
   dts/<device>.dts
@@ -391,3 +393,14 @@ The `[match]` keys are all required. Within one key, any listed value matches. A
 - [Device tree](/porting/device-tree)
 - [Device configuration reference](/reference/configuration)
 - [Devices](/devices/)
+
+## Porting record
+
+`porting.toml` sits beside `board.toml`. Every area contains development findings,
+evidence and completion criteria. Its identity and component coverage match the
+board configuration and catalog dependencies. Device CI checks findings or
+evidence updates for changed code paths. See the [record guide](/porting/records)
+for fields, status levels and publication.
+
+Board driver submodules belong to the device repository. sheng pins ShengUfs,
+ShengHidInput, ShengNovatekTouch and ShengPreflight there.

@@ -85,3 +85,11 @@ VitePress fails the build on a broken internal link.
 
 - [Repository layout](/contributing/repository)
 - [Overview](/guide/overview)
+
+## Device records
+
+Site builds require Python 3.11 or newer. `npm run build` fetches the device
+revisions in `devices.toml`, validates their records and renders device pages.
+Edit `porting.toml` in the device repository and update its registry revision
+after publication. Both language editions include the same record. See the
+[record guide](/porting/records).

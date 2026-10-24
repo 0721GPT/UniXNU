@@ -19,8 +19,6 @@
 
 # UniXNU
 
-Adreno740 和 AdrenoMetal 在小米平板 6S Pro（sheng）上提供 GPU 加速。render server 通过 Adreno 740 合成系统界面，列入白名单的进程会获得各自的 Metal 设备。详见 [Adreno 740 驱动文档](https://unixnu.com/zh/drivers/adreno740)。
-
 一个独立项目，通过 UEFI 在非 Apple ARM64 硬件上运行 iOS 与 macOS。
 
 ## 文档
@@ -45,9 +43,18 @@ Adreno740 和 AdrenoMetal 在小米平板 6S Pro（sheng）上提供 GPU 加速�
 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | 小米平板 6S Pro 的设备仓库 |
 | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | 小米平板 6S Pro 的 UEFI 固件移植 |
 
-驱动和 kit 是 UniXNU 组织下的独立公开仓库，以子模块形式引入。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
+主仓库检出共享驱动和 kit。设备仓库维护板级驱动子模块，sheng 提供 ShengUfs、ShengHidInput、触控和 preflight 组件。组件目录描述可用组件，构建工具组装所选设备的源码。克隆仓库时使用 `--recurse-submodules`。
 
 设备仓库选择固定版本的 SoC 源码、OS 配置和组件。构建工具合并配置、解析依赖、编译板级 DTS 并生成 ADT。先读 [AGENTS.md](AGENTS.md)、[设备模板](examples/device/README.md)和[迁移指南](https://unixnu.com/zh/porting/migration)。
+
+## 官方设备开发
+
+每个官方设备维护 `porting.toml`，为每个子系统记录硬件输入、配置、步骤、经验、
+证据和完成条件。维护者与 agent 共用这份记录。文档站按 `devices.toml` 固定的设备版本生成页面。
+
+必需 CI 检查覆盖记录结构、组件依赖，以及代码改动对应部分的经验或证据更新。
+从[记录指南](https://unixnu.com/zh/porting/records)、[UFS 移植指南](https://unixnu.com/zh/porting/ufs)
+和[设备模板](examples/device/README.md)开始。
 
 ## 参与贡献
 

@@ -83,3 +83,9 @@ VitePress 在内部链接断开时构建失败。
 
 - [仓库布局](/zh/contributing/repository)
 - [总览](/zh/guide/overview)
+
+## 设备记录
+
+站点构建需要 Python 3.11 或更新版本。`npm run build` 从 `devices.toml` 的固定版本
+获取设备记录，检查后生成页面。更新记录时修改设备仓库的 `porting.toml`，发布后更新
+注册版本。中英文设备页引用同一份记录。详见[记录指南](/zh/porting/records)。

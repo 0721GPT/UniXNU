@@ -44,3 +44,10 @@ power, memory, and display inputs. See [SM8550 support](/porting/sm8550).
 - [Component catalog](/reference/components)
 - [Migration](/porting/migration)
 - [UEFI firmware](/porting/uefi-firmware)
+
+## Porting records
+
+Official devices record hardware, configuration, findings, evidence and completion
+criteria in `porting.toml`. Maintainers and agents use the same record; device
+pages render its pinned revision. Read the [record guide](/porting/records)
+and the [UFS guide](/porting/ufs) before storage work.

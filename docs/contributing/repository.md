@@ -81,3 +81,11 @@ Commit messages describe changes. Documentation describes current behavior.
 - [Component catalog](/reference/components)
 - [Documentation site](/contributing/documentation)
 - [Build](/building)
+
+## Device records and source ownership
+
+Main-repository submodules provide shared components. Device repositories own
+board driver submodules. The catalog supports discovery and selection. Official
+devices maintain `porting.toml` for maintainers and agents; the site renders the
+revision pinned in `devices.toml`. Code changes update the corresponding findings
+or evidence. See the [record guide](/porting/records).

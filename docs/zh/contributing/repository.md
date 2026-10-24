@@ -76,3 +76,9 @@ UniXNU/
 - [组件目录](/zh/reference/components)
 - [文档站](/zh/contributing/documentation)
 - [构建](/zh/building)
+
+## 设备记录与源码所有权
+
+主仓库的子模块提供共享组件，板级驱动子模块由设备仓库维护。组件目录用于发现和选择。
+官方设备的 `porting.toml` 供维护者和 agent 共用，设备页按 `devices.toml` 固定版本生成。
+代码改动需要更新对应部分的经验或证据。参见[记录指南](/zh/porting/records)。
