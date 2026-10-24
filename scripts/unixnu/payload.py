@@ -159,7 +159,9 @@ def build(ctx, kernel=None):
         command.append('--trust-cache')
     if addon:
         command.append('--gpu-addon')
-    if adt.get('ipad_identity'):
+    if adt.get('iphone_identity'):
+        command.append('--iphone-identity')
+    elif adt.get('ipad_identity'):
         command.append('--ipad-identity')
     if data and adt.get('persistent_data'):
         command.append('--persistent-data')
