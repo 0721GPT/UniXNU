@@ -1,13 +1,15 @@
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c
-@@ -198,7 +198,11 @@
+@@ -198,7 +198,13 @@
  void
  entropy_init(void)
  {
 +	extern bool crypto_init;
-+	if (!crypto_init) {
-+		panic("fuxi-diag: entropy_init ran before crypto registration");
++	extern void *g_crypto_funcs;
++	if (!crypto_init || g_crypto_funcs == NULL) {
++		panic("fuxi-diag: entropy_init before registration init=%d funcs=%p",
++		    (int)crypto_init, g_crypto_funcs);
 +	}
  	SHA512_Init(&entropy_data.sha512_ctx);
  
