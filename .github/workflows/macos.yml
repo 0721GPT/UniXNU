@@ -208,6 +208,16 @@ jobs:
       # Fork addition: the target kernelcache has an external PC-relative encoding and
       # upstream emit_prelink.py aborts on it. Overwrite the submodule copy before the
       # kernel step, which assembles the tree and runs the prelink.
+      # Fork addition: the payload step patches a panic screen into the kernel and
+      # compiles it against the firmware's framebuffer font. patch-xnu-entry-probe.py
+      # looks for it under $UNIXNU_UEFI or {tree}/uefi-sheng; the macOS workflow runs no
+      # firmware step, so check our firmware out and point the variable at it.
+      - name: Check out the firmware for the panic screen font
+        run: |
+          git clone --depth 1 https://github.com/Sohytrs/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
+          test -f "$RUNNER_TEMP/uefi-fuxi/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h"
+          echo "UNIXNU_UEFI=$RUNNER_TEMP/uefi-fuxi" >> "$GITHUB_ENV"
+
       - name: Patch the prelink emitter
         run: |
           # The kernel step runs its own "git submodule update --init"; creating the
