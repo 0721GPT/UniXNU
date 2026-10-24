@@ -8,6 +8,22 @@ ShengUfs combines SM8550 controller access, firmware adoption, SMMU handling,
 GPT/window parsing and sheng persistence policy. Its hardware constants and
 board policy require review for each target.
 
+Use [driver build integration](/porting/drivers#build-integration) to connect
+initialization, archive recipes and the OS ABI, then run this page's hardware checks.
+
+## Sources and interfaces {#source-map}
+
+These links identify reviewed source revisions. Match interfaces to the selected
+SoC, component and OS versions. Files in `UniXNU-sheng` provide board integration
+examples.
+
+| Implementation | Source | What to read and implement |
+| --- | --- | --- |
+| Controller and DMA | [NativeUfs.cpp](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/NativeUfs.cpp), [SmmuTakeover.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/SmmuTakeover.h) | Request-list ownership, mappings and context takeover |
+| Command completion | [RootCommands.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/RootCommands.h#L33) | `hostSubmit`: descriptors, doorbell, timeout, OCS, response and SCSI status |
+| Storage policy | [RootLayout.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/RootLayout.h), [RootPublication.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/RootPublication.h) | GPT/window bounds and root IOMedia publication |
+| Clock state | [GccUfs.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/GccUfs.h) | Branch enable and hardware-gating interpretation |
+
 ## Procedure {#procedure}
 
 1. Fill the [hardware inventory](#hardware-inventory) from target sources. Resolve controller, PHY, clocks, resets, SMMU and DMA ownership before programming them.

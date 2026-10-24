@@ -3,6 +3,21 @@
 先完成[平台与内存](/zh/porting/platform)。收集固件 GOP 地址、大小、分辨率、行跨度、
 像素格式和保留内存范围，确认面板、显示控制器、背光控制器及其电源控制方。
 
+实现后按[驱动接入步骤](/zh/porting/drivers#build-integration)连接初始化调用、归档配方和 OS ABI，
+再执行本页对应的硬件验证。
+
+## 源码与接口 {#source-map}
+
+以下链接固定到已核对的源码版本。使用所选 SoC、组件和 OS 版本核对接口；
+`UniXNU-sheng` 中的文件提供板级集成示例。
+
+| 实现部分 | 源码 | 阅读与实现内容 |
+| --- | --- | --- |
+| OS 显示接口 | [NativeLegacyDisplay.cpp](https://github.com/UniXNU/GopFramebuffer/blob/cf3b42979a9c44219e7bb149543e6fc3388b58ed/NativeLegacyDisplay.cpp), [OriginalMobileFramebufferABI.h](https://github.com/UniXNU/GopFramebuffer/blob/cf3b42979a9c44219e7bb149543e6fc3388b58ed/OriginalMobileFramebufferABI.h) | provider 方法、请求布局及选定 MobileFramebuffer ABI |
+| 帧所有权 | [NativeGOPWire.h](https://github.com/UniXNU/GopFramebuffer/blob/cf3b42979a9c44219e7bb149543e6fc3388b58ed/NativeGOPWire.h#L6), [NativeGOPPresenter.cpp](https://github.com/UniXNU/GopFramebuffer/blob/cf3b42979a9c44219e7bb149543e6fc3388b58ed/NativeGOPPresenter.cpp) | `NGPPresent`、`NGPSwap`、`NGPComplete`：缓冲边界与交换完成 |
+| 亮度实现 | [AppleARMBacklight.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/AppleARMBacklight.cpp), [GeniI2c.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/GeniI2c.h#L80) | OS 属性与 `geni_i2c_start_write/read`、事件及超时处理 |
+| 时序参考 | [DisplayTimingProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/DisplayTimingProbe.cpp) | 目标控制器计数器与刷新测量 |
+
 ## 1. 确认固件扫描输出
 
 构建[集成后的 UEFI 固件](/zh/porting/uefi-firmware)，确认菜单显示正确。
@@ -29,13 +44,17 @@
 5. 按目标控制器适配时序读取。sheng 的 `sheng-dpu=1` 通过 `DisplayTimingProbe.cpp`
    采样 SM8550 DPU 和双 DSI 计数器。根据实际面板模式设置刷新策略；`sheng-vsync=120` 是 sheng 的请求值。
 
+对 `NativeGOPWire.h` 路径，先通过 mode 请求读取格式和几何参数，再检查每个呈现缓冲的大小与行跨度。
+GPU 交接使用 `NGPSwap.sequence` 跟踪待处理帧，复制完成后用相同序列提交 `NGPComplete`。
+交换结束前保留源帧和 IOSurface 引用，超时或失败时完成对应错误处理。
+
 **预期结果：** XNU 发布显示服务、呈现画面并完成交换。分别记录请求刷新率和测得的帧时序。
 
 ## 3. 确认亮度控制接口
 
-sheng 使用两个 I2C 地址为 `0x11` 的 KTZ8866，分别位于 GENI 引擎 `0xa84000` 和 `0x988000`。
-`package/AppleARMBacklight.cpp` 实现 `ShengBacklight`，`GeniI2c.c` 实现传输状态机，
-`BacklightProbe.cpp` 启动服务。
+选择目标的 I2C、DSI 命令或 PWM 传输方式及亮度编码。
+`AppleARMBacklight.cpp` 提供 KTZ8866 控制器的 OS 服务示例，
+`GeniI2c.h` 定义该示例使用的 GENI 传输状态机。
 
 复用前记录目标设备的控制器数量、寄存器编码、亮度范围、I2C 引擎、从地址、引脚、时钟、中断和供电顺序。
 使用 DSI 命令或 PWM 背光的设备，需要在面向 OS 的亮度服务下实现相应传输与亮度编码。
@@ -44,8 +63,10 @@ sheng 使用两个 I2C 地址为 `0x11` 的 KTZ8866，分别位于 GENI 引擎 `
 
 1. 更新板级引擎映射、时钟投票和中断路由。sheng 的 GENI 路径采用固件加载的引擎代码与时序；
    核对该交接状态，或实现目标所需初始化。
-2. 实现控制器亮度写入与回读。sheng 将最大 2047 的 11 位值分写到 `0x04`、`0x05`，同时控制两个芯片。
-3. 保留有超时的传输、取消和工作循环调度，确认错误与超时情况后再启用渐变调光。
+2. 实现目标控制器的亮度编码、写入和回读，按面板连接匹配控制器数量和更新顺序。
+3. 使用 GENI 示例时，先调用 `geni_i2c_prepare`，再启动读写，把中断状态交给 `geni_i2c_event`，
+   到期时调用 `geni_i2c_timeout`。当前传输完成或取消后再发起下一次传输。
+   服务请求在工作循环上处理，确认失败处理后再启用渐变调光。
 4. 根据选定 OS ABI 配置 `IODisplayParameters` 亮度范围和 `backlight-control`。
    服务接受 brightness 与 `FadePeriod` 属性。
 5. 构建服务和注册封装。sheng 的显示配方包含两者，`sheng-backlight=1` 启用 probe。

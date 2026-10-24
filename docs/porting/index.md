@@ -17,8 +17,8 @@ hardware observations as sources. Read the target repositories' root `AGENTS.md`
 
 Create a [porting record](/porting/records) as you collect these facts. For each
 subsystem, record its input source, implementation, current result and next
-measurement. The [driver adaptation checklist](/porting/drivers) lists all
-subsystems used by sheng, including code that lives inside the device package.
+measurement. The [driver adaptation checklist](/porting/drivers) links subsystem interfaces,
+source references and build integration, including services in the device package.
 
 **Result:** a hardware inventory and a list of missing inputs. Hardware addresses
 and partition geometry must come from the target board.

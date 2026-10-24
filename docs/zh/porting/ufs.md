@@ -6,6 +6,21 @@
 ShengUfs 包含 SM8550 控制器访问、固件状态接管、SMMU、GPT/窗口解析和 sheng
 持久存储策略。每个目标需要检查其硬件常量和板级策略。
 
+实现后按[驱动接入步骤](/zh/porting/drivers#build-integration)连接初始化调用、归档配方和 OS ABI，
+再执行本页对应的硬件验证。
+
+## 源码与接口 {#source-map}
+
+以下链接固定到已核对的源码版本。使用所选 SoC、组件和 OS 版本核对接口；
+`UniXNU-sheng` 中的文件提供板级集成示例。
+
+| 实现部分 | 源码 | 阅读与实现内容 |
+| --- | --- | --- |
+| 控制器与 DMA | [NativeUfs.cpp](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/NativeUfs.cpp), [SmmuTakeover.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/SmmuTakeover.h) | 请求队列所有权、映射和上下文接管 |
+| 命令完成 | [RootCommands.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/RootCommands.h#L33) | `hostSubmit`：描述符、doorbell、超时、OCS、响应和 SCSI 状态 |
+| 存储策略 | [RootLayout.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/RootLayout.h), [RootPublication.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/RootPublication.h) | GPT/窗口边界和根 IOMedia 发布 |
+| 时钟状态 | [GccUfs.h](https://github.com/UniXNU/ShengUfs/blob/e2b32cc429e8cf1501161c1d8c517f8994ceb9b2/GccUfs.h) | 分支使能与硬件门控状态解析 |
+
 ## 操作步骤 {#procedure}
 
 1. 根据目标资料填写[硬件清单](#硬件清单)，写寄存器前确认控制器、PHY、时钟、复位、SMMU 和 DMA 的所有权。

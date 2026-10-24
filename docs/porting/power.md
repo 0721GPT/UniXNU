@@ -1,96 +1,181 @@
-# DSP, audio and power adaptation
+# DSP, audio and power drivers
 
-Start after [platform and memory](/porting/platform). The board owns firmware
-loading, resource votes and policy. Read the
-[sheng package](https://github.com/UniXNU/UniXNU-sheng/tree/main/package) as an
-implementation reference and use the target's DTS and firmware inputs.
+Complete [platform memory, interrupts and DMA](/porting/platform) first.
+Implement the transport, device protocol and OS service as separate parts.
+Use the source references below for the matching hardware and firmware interface.
+Each step produces a specific interface or observable result.
 
-## 1. Start the DSP services
+## 1. Identify the target interfaces
 
-`AdspProbe.cpp` connects firmware loading, SMEM, SMP2P, GLINK, IPCC and RPMh.
-The helpers are `QcomMdt.c`, `QcomSmem.c`, `QcomSmp2p.c`, `QcomGlink.c`,
-`QcomQmp.c` and `QcomRpmh.c`. `ShengAdsp.h` exposes channels to battery and audio.
+Collect these inputs from the target DTS, firmware source and vendor driver:
 
-1. Record signed firmware, PAS service IDs, DSP memory/carveouts, command database,
-   SMEM items, mailbox interrupts and regulator/clock votes.
-2. Adapt those addresses and IDs in the board code. Preserve firmware-owned and
-   secure reservations in the DTS and the firmware memory map.
-3. Validate firmware loading and authentication before releasing the DSP.
-4. Check ready/crash notifications, then GLINK channel negotiation and messages.
-5. Connect service callbacks with bounded queues and prompt returns.
+| Function | Inputs | Implementation output |
+| --- | --- | --- |
+| DSP | Firmware/PAS IDs, memory reservations, mailbox interrupts, shared-memory layout, clock and power ownership | Firmware loader and message transport |
+| Audio | Codec/amplifier IDs, buses, clocks, routes, DSP topology, supported formats and OS audio ABI | Endpoint configuration, stream engine and OS service |
+| Battery | Gauge or firmware protocol, property IDs, units, current sign and notification messages | Measurement decoder and power-source service |
+| Power | Clock domains, OPP tables, regulators, firmware votes and thermal limits | Board policy using the appropriate controller interfaces |
 
-sheng's service clients use `sheng-adsp=2`. Inspect `native_adsp_stats` and the
-channel states before enabling them. Firmware, reserved regions and remote item
-IDs require target-specific verification on another SoC.
+Use [firmware inventory](/porting/device-repository) to record each binary's source
+and version. A board with a direct I2C gauge implements that gauge's register
+protocol; a board using a DSP battery manager implements its message protocol.
+Choose the transport before selecting the reference code.
 
-**Expected result:** DSP readiness and bidirectional channel traffic, with
-failures and restarts visible in the record.
+## 2. Implement the DSP transport {#dsp}
 
-## 2. Adapt the audio path
+| Source | Implementation to inspect |
+| --- | --- |
+| [AdspProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/AdspProbe.cpp) | Firmware loading, SMEM, SMP2P, GLINK, mailbox and resource setup |
+| [ShengAdsp.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengAdsp.h#L15) | `ShengAdspClient`, channel registration and queued sends |
+| [LegacyDisplayProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/LegacyDisplayProbe.cpp#L493) | Initialization order for DSP and its consumers |
 
-`AudioProbe.cpp` opens the `adsp_apps` channel and uses `ShengGpr.c` to query the
-DSP audio framework. `sheng-audio=1` accepts the remote channel opening;
-`sheng-audio=2` initiates it locally. Both require the DSP path above.
-`native_audio_stats[0] == 5` records a ready framework response.
+The sheng files illustrate a Qualcomm GLINK integration. For that interface:
 
-To implement playback or capture on a target:
+1. Adapt firmware authentication, reserved memory and power votes to the target.
+   Establish the mailbox and ready/crash notification paths before opening a channel.
+2. Implement the channel state and receive callbacks from `ShengAdspClient`.
+   They run on the DSP thread: copy received bytes into a bounded queue and wake
+   the consumer's work loop. Keep request processing and waits on the consumer.
+3. Register the target channel with `sheng_adsp_channel(name, intent_size,
+   intent_count, initiator, callbacks, context)`. Get the name, receive-buffer
+   sizes and opening direction from the target service protocol.
+4. Handle `sheng_adsp_send` results: `0` queues the message, `-1` reports a full
+   queue or oversized message, and `-2` reports invalid arguments. The reference
+   API accepts messages up to `SHENG_ADSP_MAX_MESSAGE` (512 bytes). A service with
+   larger packets needs corresponding transport and receive-buffer support.
+5. On disconnect, cancel requests and invalidate remote handles. On reconnect,
+   negotiate the channel and restore subscriptions before resuming consumers.
 
-1. Inventory the codec, amplifiers, buses, clocks, regulators and endpoint wiring.
-2. Implement the DSP graph and endpoint routing for the selected firmware.
-3. Connect an OS audio interface with the required sample formats and buffering.
-4. Check route start/stop, buffer completion, audible playback or captured samples,
-   then underrun and recovery behavior.
+**Result:** a channel opens, exchanges a bounded request/response, reports a
+failure and reconnects. Record the channel name and response bytes with
+[log capture](/porting/log-capture).
 
-**Current scope:** the sheng source supplies DSP loading, GLINK/GPR transport and
-framework readiness probes. Endpoint routing, OS audio publication and
-playback/capture qualification are required work for an audio port.
+## 3. Implement audio streams {#audio}
 
-## 3. Publish battery state
+For Qualcomm AudioReach/GPR firmware, use these references in execution order:
 
-`ShengBattery.cpp` implements `IOPMPowerSource`. `ShengBattmgr.c` reads the battery
-manager over the DSP's PMIC GLINK channel; `BatteryProbe.cpp` registers the
-service. `sheng-battery=1` enables it with `sheng-adsp=2`.
+| Source | Purpose |
+| --- | --- |
+| [ShengGpr.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengGpr.h#L24), [AudioProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/AudioProbe.cpp#L148) | Packet headers, tokens, APM readiness query, response timeout and retry |
+| [Linux q6apm.h](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm.h), [q6apm.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm.c) | Graph lifecycle, memory mapping and read/write requests |
+| [Linux audioreach.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/audioreach.c), [topology.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/topology.c) | Module configuration, graph connections, media formats and endpoint parameters |
+| [Linux q6apm-dai.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm-dai.c) | `q6apm_dai_prepare`, stream events and period-buffer flow |
 
-1. Match the target battery-manager protocol, property IDs, units and signed
-   values, including temperature, current and capacity.
-2. Adapt its channel, request timeouts and notification handling.
-3. Publish capacity, charging/external-power state, voltage and current through
-   the selected OS power-source ABI.
-4. Compare readings with a known reference; observe updates when power is
-   connected and disconnected and while capacity changes.
+Linux supplies protocol and stream-lifecycle references. Implement their
+allocation, scheduling, DMA and completion operations using the selected XNU
+interfaces, and retain the applicable source licenses when reusing code.
 
-**Expected result:** battery values and notifications reach the OS with correct
-units. Charging control remains owned by the DSP firmware in this implementation.
-Record charging policy separately from battery reporting.
+1. **Open and identify the service.** Verify the target firmware's GPR domains,
+   ports, packet size and opcodes. Match replies to request tokens. Use the
+   readiness exchange as the first protocol check.
+2. **Describe one complete route.** Record graph/subgraph IDs, module instance IDs,
+   connections, codec port, amplifier setup, clocks and channel map for one
+   playback or capture endpoint. Obtain these from the target firmware topology
+   and codec driver. Implement that route's register operations and power order.
+3. **Implement graph commands.** Add open, configure, prepare, start, stop and
+   close operations following `q6apm_graph_*`. Check every response and keep the
+   graph ID and state with its owning stream. Release successfully created
+   objects when a later operation fails.
+4. **Implement the buffer path.** Allocate DSP-accessible period buffers, map
+   them through the firmware protocol, set PCM format and channel mapping, then
+   prepare/start the graph. Queue playback through the equivalent of
+   `q6apm_write_async`; queue capture buffers through `q6apm_read`. On completion,
+   synchronize caches, advance the stream position and reuse the completed buffer.
+   Stop outstanding work before unmapping and closing the graph.
+5. **Connect the OS service.** Identify the target OS audio provider, required
+   methods, request layouts, mapped-memory types and completion notifications
+   from the selected kernelcache and framework. Record these ABI inputs using
+   [built-in driver integration](/drivers/xnu-drivers#compile-against-the-kernel-abi).
+   Connect format selection, start/stop, position and buffer completion to the
+   stream engine. Publish only formats and routes implemented by that endpoint.
+6. **Exercise the route.** Play a known PCM signal or record a known input. Check
+   channel order, rate, position and buffer contents. Repeat start/stop and test
+   buffer starvation, timeout and DSP restart. Verify OS application playback
+   or recording after the direct stream path succeeds.
 
-## 4. Adapt CPU frequency and platform power
+**Result:** a complete route carries PCM data, reports progress and releases its
+resources. Save the route description, format, stream counters and captured
+output. The next endpoint gets its own route configuration and observations.
 
-`CpuFreqProbe.cpp` reads Qualcomm EPSS frequency tables and controls CPU/L3
-performance states. Its sheng domain bases, CPU counts and reference clocks are
-board inputs. Map the target CPU affinities to their frequency domains, inspect
-the LUT and enabled state, then choose an operating point within the target's
-power and thermal policy. Review `sheng-cpufreq` and `sheng-cpufreq-cap` parsing
-before applying those modes.
+## 4. Implement battery reporting {#battery}
 
-`ShengPlatformPower.cpp` supplies the PMGR integration selected by
-`CONFIG_XNU_SHENG_PMGR` and `sheng-pmgr`. Review its initialization and every
-consumer before adapting it to another platform. Qualcomm RPMh/QMP/SCM helpers
-require the target's firmware interfaces and resource ownership.
+| Source | Purpose |
+| --- | --- |
+| [ShengBattmgr.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengBattmgr.h#L30), [ShengBattmgr.c](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengBattmgr.c) | Request/response format, refresh state machine and unit conversion |
+| [ShengBattery.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengBattery.cpp#L39) | `IOPMPowerSource` properties, work loop, timers and notification handling |
+| [BatteryProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/BatteryProbe.cpp#L16) | Class registration and service startup |
+| [XNU IOPMPowerSource.h](https://github.com/apple-oss-distributions/xnu/blob/xnu-10063.141.1/iokit/IOKit/pwr_mgt/IOPMPowerSource.h) | Power-source setters and status publication API; match the selected XNU version |
+| [Linux qcom_battmgr.c](https://github.com/torvalds/linux/blob/v6.12/drivers/power/supply/qcom_battmgr.c) | Qualcomm battery-manager protocol variants and property handling |
 
-**Expected result:** requested frequency changes have observed effects under
-load and remain within the selected limits. Qualify peripheral power transitions
-and system sleep/resume individually, including restoration of dependent devices.
+1. Implement the target gauge read or firmware request. For the referenced PMIC
+   GLINK protocol, match owner, message type, opcode, property ID and response
+   length before consuming a value. Keep one request outstanding and handle its
+   timeout before advancing the refresh cycle.
+2. Store valid readings separately from absent or failed values. Implement a
+   snapshot with presence, external power, charge state, capacity, voltage,
+   current, temperature and time remaining. Document each raw-to-OS conversion.
+   The reference maps voltage/current from micro-units to milli-units, capacity
+   from hundredths of a percent, and remaining time from seconds to minutes.
+   Confirm the target's units and charging-current sign before using those mappings.
+3. Subclass `IOPMPowerSource` using the selected XNU headers. Create a work loop,
+   response queue and request/refresh timers. Feed received messages to the
+   decoder; update properties from a completed snapshot.
+4. Publish the initial valid properties with `registerService()`, then notify
+   changes with `updateStatus()`. Set installed, external-power and charging
+   state consistently with capacity and measurements. Adapt adapter details to
+   the target OS property definitions.
+5. Subscribe to change notifications and schedule periodic refresh. On transport
+   loss, cancel pending requests and mark readings stale in the driver; apply
+   the selected OS policy for unavailable data until refresh succeeds.
+6. Compare raw readings and published properties against the target's gauge or
+   stock-system readings. Exercise connect/disconnect, charging/discharging,
+   response timeout and service restart. Check OS-visible updates separately
+   from protocol responses.
 
-## 5. Build and record
+**Result:** the OS receives measurements with documented units and timely updates.
+If the firmware owns charging control, retain that ownership while implementing
+measurement publication. A host-controlled charger needs its own controller
+protocol, limits and thermal policy.
 
-The sheng display archive includes DSP, audio and battery sources. The separate
-platform-power recipe builds PMGR integration. From the assembled tree:
+## 5. Implement frequency and power operations {#power}
+
+Read [CpuFreqProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/CpuFreqProbe.cpp) for EPSS LUT and CPU/L3 operating-point access, [QcomRpmh.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/QcomRpmh.h) for resource
+votes, and [ShengPlatformPower.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengPlatformPower.cpp) for the OS-facing platform-power integration.
+These are references for the corresponding Qualcomm hardware interfaces.
+
+1. Match CPU affinities to performance domains. Read the target's LUT entries,
+   reference clocks and enabled state; convert entries into rates using that
+   controller's encoding.
+2. Implement an operating-point request and status readback. Apply the target's
+   regulator, interconnect and thermal requirements in the documented order.
+3. Define ownership and reference counting for peripheral power votes. Release
+   resources after dependent DMA and interrupts are stopped.
+4. Connect the selected OS power callbacks. For suspend/resume, save the required
+   state, restore clocks and mappings, rearm interrupts and resume consumers.
+5. Measure frequency under load, then verify each peripheral transition and
+   resume path with its dependent drivers active.
+
+**Result:** frequency requests and power transitions have observed effects and
+preserve the dependent devices' operation.
+
+## 6. Build and verify the interfaces
+
+Follow [driver build integration](/porting/drivers#build-integration) to add the
+sources, ABI bindings, initialization caller and archive inputs. The reference
+[build-gop-legacy-display.py](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/scripts/build-gop-legacy-display.py#L253) shows how the DSP, battery service and audio probe are compiled; [LegacyDisplayProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/LegacyDisplayProbe.cpp#L493)
+shows their call order. Choose initialization points that satisfy the target's
+platform, transport and OS dependencies.
+
+From the main checkout with the target selected:
 
 ```sh
-rg -n 'adsp_|audio_|battery_|cpufreq_' scripts/build-gop-legacy-display.py
-rg -n 'sheng-cpufreq|sheng-pmgr' kits/sheng/CpuFreqProbe.cpp kits/sheng/ShengPlatformPower.cpp
+./unixnu status --json
+./unixnu kernel
+./unixnu payload
+./unixnu bootimg
 ```
 
-Adapt the source lists and callers, then [rebuild the kernel and images](/building).
-Record DSP readiness, audio routing, battery publication, frequency control and
-sleep/resume as separate results. Return to [bring-up](/porting/bring-up).
+Before building, prepare the selected OS and [local inputs](/reference/configuration#local-build-inputs).
+Use the target's documented enable arguments. Record protocol replies, graph or
+service publication, data flow and restart behavior in its [porting record](/porting/records).
+Continue with [bring-up](/porting/bring-up).

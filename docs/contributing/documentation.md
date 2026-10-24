@@ -104,3 +104,12 @@ revisions in `devices.toml`, validates their records and renders device pages.
 Edit `porting.toml` in the device repository and update its registry revision
 after publication. Both language editions include the same record. See the
 [record guide](/porting/records).
+
+## Driver guides
+
+Organize steps by hardware inputs, interface implementation, OS integration,
+build and verification. Link real source files at reviewed revisions and name
+the relevant symbols, call order, data ownership and error handling. Use board
+sources as references and keep device status in device records. Each step states
+what to change and how to observe its result. Use matching source references in
+the English and Chinese editions.

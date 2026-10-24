@@ -3,6 +3,20 @@
 先完成[平台 DMA](/zh/porting/platform)和基础[显示呈现](/zh/porting/display)。
 阅读 [Adreno740 运行路径](/zh/drivers/adreno740)与 [AdrenoMetal 接口](/zh/drivers/adreno-metal)。
 
+实现后按[驱动接入步骤](/zh/porting/drivers#build-integration)连接初始化调用、归档配方和 OS ABI，
+再执行本页对应的硬件验证。
+
+## 源码与接口 {#source-map}
+
+以下链接固定到已核对的源码版本。使用所选 SoC、组件和 OS 版本核对接口；
+`UniXNU-sheng` 中的文件提供板级集成示例。
+
+| 实现部分 | 源码 | 阅读与实现内容 |
+| --- | --- | --- |
+| 电源与固件 | [NativeAdrenoGmuPlatform.h](https://github.com/UniXNU/Adreno740/blob/4e0314df8ad29d52f6fa3f9383a540adcd618b87/NativeAdrenoGmuPlatform.h#L15), [build-adreno740-kits.py](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/scripts/build-adreno740-kits.py) | `NativeAdrenoGmuPlatform::bind/services`、映射窗口、计时器和固件输入 |
+| 提交与内存 | [NativeAdrenoClient.h](https://github.com/UniXNU/Adreno740/blob/4e0314df8ad29d52f6fa3f9383a540adcd618b87/NativeAdrenoClient.h#L14), [NativeAdrenoVm.h](https://github.com/UniXNU/Adreno740/blob/4e0314df8ad29d52f6fa3f9383a540adcd618b87/NativeAdrenoVm.h) | `NativeAdrenoTransport`、BO 生命周期、GPU 映射和完成 |
+| OS/前端接口 | [NativeOfflineAccelerator.cpp](https://github.com/UniXNU/AdrenoMetal/blob/454ff2ce83766ce7b3e0f355e83f1d72907708b3/NativeOfflineAccelerator.cpp), [OfflineMetalWire.h](https://github.com/UniXNU/AdrenoMetal/blob/454ff2ce83766ce7b3e0f355e83f1d72907708b3/OfflineMetalWire.h) | 加速器发布及配套前端使用的请求结构 |
+
 ## 1. 匹配 GPU 代际与 OS ABI
 
 Adreno740 实现 A740 内核接口。AdrenoMetal 使用该接口、Turnip、metal2vulkan
@@ -36,7 +50,7 @@ sheng 的 `scripts/build-adreno740-kits.py` 嵌入以下本地输入：
 ## 3. 建立内存和命令提交路径
 
 1. 核对 ArmSmmu4K context 所有权、stream 选择、地址宽度和缓存维护。
-   sheng 在 GPU SMMU 上使用 GPU stream 0/1 与 GMU stream 5。
+   使用目标硬件描述中的 GPU 和固件 stream ID。
 2. 适配保留内存和 GPU 虚拟地址窗口，确保扫描输出、固件、ring 和客户端分配位于各自拥有的范围。
 3. 使用有界任务确认 CP 初始化、ring 推进和 fence 完成。
 4. 渲染已知图像并检查结果，再运行 UI 工作负载。
@@ -47,6 +61,12 @@ sheng 配方把这些 kit、ArmSmmu4K 和板级投票链接到 `libAdreno740.a`�
 `build-adreno740-accelerator.py` 构建 accelerator。创建目标配方时保留该顺序。
 
 **预期结果：** 命令完成、fence 推进、已知图像正确。GPU 结果与桌面呈现结果分别记录。
+
+使用 `NativeAdrenoClient` 接口时，按以下顺序实现一次有界提交：
+查询 ABI/能力，分配 BO，将其映射到允许的 IOVA，填写命令，再提交并等待返回的 fence。
+通过 `NativeAdrenoTransport.call` 连接实际内核分发端，保留各请求的输入/输出大小。
+CPU 读取结果前完成缓存同步；fence 超时时先停止队列并确认 DMA 已停止，再释放 BO 和映射。
+在错误返回中保留失败的请求类型、句柄和 fence，便于定位分配、映射或执行阶段。
 
 ## 4. 构建并加入 Metal
 

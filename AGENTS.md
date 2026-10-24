@@ -124,3 +124,8 @@ Follow [Port a device](https://unixnu.com/porting/) in order. Read the
 components. Follow each subsystem guide for board inputs, implementation paths,
 archive integration and expected results. Include board-package services such as
 brightness, buttons, Wi-Fi, DSP, battery and CPU frequency in the porting record.
+
+Driver guides describe implementation steps for the selected hardware. Link exact
+source files and relevant symbols, identify the interface to implement, and give
+build integration and observable results. Use board implementations as examples.
+Keep board status in device records and cite reviewed source revisions.

@@ -3,16 +3,23 @@
 先完成[平台中断和 DMA](/zh/porting/platform)。确认无线芯片、PCI ID、固件和 board-data 变体。
 实现回调前阅读 [Ath12kWifi](/zh/drivers/ath12k-wifi)和 `include/nw_abi.h`。
 
+实现后按[驱动接入步骤](/zh/porting/drivers#build-integration)连接初始化调用、归档配方和 OS ABI，
+再执行本页对应的硬件验证。
+
+## 源码与接口 {#source-map}
+
+以下链接固定到已核对的源码版本。使用所选 SoC、组件和 OS 版本核对接口；
+`UniXNU-sheng` 中的文件提供板级集成示例。
+
+| 实现部分 | 源码 | 阅读与实现内容 |
+| --- | --- | --- |
+| 可复用接口 | [nw_abi.h](https://github.com/UniXNU/Ath12kWifi/blob/f6bf561f92cc42761bdd417fce1d53fe1db9477c/include/nw_abi.h#L9) | `lx_platform`、`nw_board`、`nw_wifi_events` 与 station 调用 |
+| 工作线程实现 | [nw_wifi.c](https://github.com/UniXNU/Ath12kWifi/blob/f6bf561f92cc42761bdd417fce1d53fe1db9477c/src/nw_wifi.c) | `nw_wifi_start/step/stop` 与事件分发 |
+| 硬件集成 | [WifiProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/WifiProbe.cpp) | PCIe、MSI、DMA 分配及固件访问回调 |
+| OS 集成 | [WifiNet.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/WifiNet.cpp) | 网络服务、Apple80211 请求和收发所有权 |
+
 ## 1. 区分集成层次
 
-| 源码 | 职责 |
-| --- | --- |
-| Ath12kWifi `include/nw_abi.h` | 板级回调与 station API |
-| Ath12kWifi `src/` 和 `shim/` | ath12k、PCI/MHI、QRTR 和运行时集成 |
-| sheng `package/WifiProbe.cpp` | PCIe 电源、PHY、BAR、MSI、DMA、固件访问和驱动循环 |
-| sheng `package/WifiPcieTables.h` | 板级选择的 PCIe PHY 配置 |
-| sheng `package/MhiBoot.c` | 板级 MHI 固件启动 probe |
-| sheng `package/WifiNet.cpp` | XNU 网络接口、Apple80211 请求和事件 |
 
 阅读[板级源码](https://github.com/UniXNU/UniXNU-sheng/tree/main/package)。
 sheng 的 WCN7850 位于 SM8550 PCIe0。组件还包含 QCC2072 和 QCN9274 定义。
@@ -45,6 +52,13 @@ sheng 使用 `native_ufs_extra_*` 提供 DMA 内存区，使用 `native_ufs_part
 
 调用 `nw_wifi_start`，再由板级工作线程调用 `nw_wifi_step`。事件回调在该线程执行，应及时返回。
 停止推进时检查 `nw_wifi_stats`、`nw_wifi_where`、板级 MSI 计数和固件日志。
+
+实现回调时按 `nw_abi.h` 保持所有权：`dma_alloc` 返回清零的 CPU 内存和端点可达的 bus 地址，
+`dma_map` 为范围外的缓冲返回 0，`dma_sync` 按传输方向同步缓存。
+`fw_get` 按文件名返回数据与长度，保证数据在组件消费期间有效。
+先安装 `nw_wifi_events`，再启动工作线程；`nw_wifi_step` 非零时继续推进。
+接收回调若要把帧交给异步 OS 路径，应在返回前复制到 OS 拥有的缓冲。
+关闭接口时停止新提交，停止工作线程和组件后再释放 BAR、MSI 与 DMA 资源。
 
 **预期结果：** 固件与 QRTR 服务启动，随后扫描产生 BSS 记录。分别记录固件启动和扫描成功。
 

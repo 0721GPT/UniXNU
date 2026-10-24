@@ -4,16 +4,24 @@ Start with [platform interrupts and DMA](/porting/platform). Identify the actual
 radio, PCI ID, firmware and board-data variant. Read [Ath12kWifi](/drivers/ath12k-wifi)
 and its `include/nw_abi.h` before implementing callbacks.
 
+Use [driver build integration](/porting/drivers#build-integration) to connect
+initialization, archive recipes and the OS ABI, then run this page's hardware checks.
+
+## Sources and interfaces {#source-map}
+
+These links identify reviewed source revisions. Match interfaces to the selected
+SoC, component and OS versions. Files in `UniXNU-sheng` provide board integration
+examples.
+
+| Implementation | Source | What to read and implement |
+| --- | --- | --- |
+| Reusable interface | [nw_abi.h](https://github.com/UniXNU/Ath12kWifi/blob/f6bf561f92cc42761bdd417fce1d53fe1db9477c/include/nw_abi.h#L9) | `lx_platform`, `nw_board`, `nw_wifi_events` and station calls |
+| Worker implementation | [nw_wifi.c](https://github.com/UniXNU/Ath12kWifi/blob/f6bf561f92cc42761bdd417fce1d53fe1db9477c/src/nw_wifi.c) | `nw_wifi_start/step/stop` and event dispatch |
+| Hardware integration | [WifiProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/WifiProbe.cpp) | PCIe, MSI, DMA allocation and firmware access callbacks |
+| OS integration | [WifiNet.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/WifiNet.cpp) | Network service, Apple80211 requests and receive/transmit ownership |
+
 ## 1. Separate the integration layers
 
-| Source | Responsibility |
-| --- | --- |
-| Ath12kWifi `include/nw_abi.h` | Board callbacks and station API |
-| Ath12kWifi `src/` and `shim/` | ath12k, PCI/MHI, QRTR and runtime integration |
-| sheng `package/WifiProbe.cpp` | PCIe power, PHY, BAR, MSI, DMA, firmware access and driver loop |
-| sheng `package/WifiPcieTables.h` | Board-selected PCIe PHY configuration |
-| sheng `package/MhiBoot.c` | Board MHI firmware-startup probe |
-| sheng `package/WifiNet.cpp` | XNU network interface, Apple80211 requests and events |
 
 Read the [board sources](https://github.com/UniXNU/UniXNU-sheng/tree/main/package).
 sheng uses WCN7850 on SM8550 PCIe0. The component also contains QCC2072 and
@@ -56,6 +64,15 @@ board data and calibration provenance in `proprietary-files.txt`.
 Call `nw_wifi_start`, then service `nw_wifi_step` from the board worker. Event
 callbacks run from that worker and must return promptly. Inspect `nw_wifi_stats`,
 `nw_wifi_where`, board MSI counts and the firmware log when progress stops.
+
+Preserve callback ownership from `nw_abi.h`: `dma_alloc` returns zeroed CPU
+memory and an endpoint-reachable bus address; `dma_map` returns 0 for buffers
+outside the DMA window; `dma_sync` handles the transfer direction. `fw_get`
+returns data and length by filename and keeps the data valid while consumed.
+Install `nw_wifi_events` before starting the worker; continue stepping while
+`nw_wifi_step` returns nonzero. Copy receive data into OS-owned storage before
+returning when delivery continues asynchronously. On shutdown, stop new submissions,
+stop the worker and component, then release BAR, MSI and DMA resources.
 
 **Expected result:** firmware and QRTR services start, then scanning reports BSS
 entries. Firmware startup and successful scanning are separate checkpoints.

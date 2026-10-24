@@ -4,6 +4,21 @@ Complete [platform DMA](/porting/platform) and basic [display presentation](/por
 first. Read the [Adreno740 runtime path](/drivers/adreno740) and
 [AdrenoMetal interface](/drivers/adreno-metal).
 
+Use [driver build integration](/porting/drivers#build-integration) to connect
+initialization, archive recipes and the OS ABI, then run this page's hardware checks.
+
+## Sources and interfaces {#source-map}
+
+These links identify reviewed source revisions. Match interfaces to the selected
+SoC, component and OS versions. Files in `UniXNU-sheng` provide board integration
+examples.
+
+| Implementation | Source | What to read and implement |
+| --- | --- | --- |
+| Power and firmware | [NativeAdrenoGmuPlatform.h](https://github.com/UniXNU/Adreno740/blob/4e0314df8ad29d52f6fa3f9383a540adcd618b87/NativeAdrenoGmuPlatform.h#L15), [build-adreno740-kits.py](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/scripts/build-adreno740-kits.py) | `NativeAdrenoGmuPlatform::bind/services`, mapped windows, timers and firmware inputs |
+| Submission and memory | [NativeAdrenoClient.h](https://github.com/UniXNU/Adreno740/blob/4e0314df8ad29d52f6fa3f9383a540adcd618b87/NativeAdrenoClient.h#L14), [NativeAdrenoVm.h](https://github.com/UniXNU/Adreno740/blob/4e0314df8ad29d52f6fa3f9383a540adcd618b87/NativeAdrenoVm.h) | `NativeAdrenoTransport`, BO lifetime, GPU mappings and completion |
+| OS/frontend interface | [NativeOfflineAccelerator.cpp](https://github.com/UniXNU/AdrenoMetal/blob/454ff2ce83766ce7b3e0f355e83f1d72907708b3/NativeOfflineAccelerator.cpp), [OfflineMetalWire.h](https://github.com/UniXNU/AdrenoMetal/blob/454ff2ce83766ce7b3e0f355e83f1d72907708b3/OfflineMetalWire.h) | Accelerator publication and request structures used by the matching frontend |
+
 ## 1. Match the GPU generation and OS ABI
 
 Adreno740 implements the A740 kernel interface. AdrenoMetal uses that interface,
@@ -42,7 +57,7 @@ Confirm GMU startup and HFI response before submitting commands.
 ## 3. Establish memory and command submission
 
 1. Review ArmSmmu4K context ownership, stream selection, address width and cache
-   maintenance. sheng uses GPU streams 0/1 and GMU stream 5 on its GPU SMMU.
+   maintenance. Use the target GPU and firmware stream IDs from its hardware description.
 2. Adapt reserved memory and GPU virtual-address windows. Keep scanout, firmware,
    ring and client allocations within their owned ranges.
 3. Confirm CP initialization, ring progress and fence completion with bounded work.
@@ -56,6 +71,14 @@ into `libAdreno740.a`, then builds the accelerator through
 
 **Expected result:** commands complete, fences advance and the known image is
 correct. Record GPU results independently from desktop presentation.
+
+With `NativeAdrenoClient`, implement one bounded submission in this order:
+query ABI/capabilities, allocate a BO, map it to an allowed IOVA, populate commands,
+submit and wait for the returned fence. Bind `NativeAdrenoTransport.call` to the
+actual kernel dispatcher, preserving each request's input/output sizes. Synchronize
+caches before CPU readback. On fence timeout, stop the queue and confirm DMA has stopped
+before releasing the BO and mapping. Report the failed request, handle and fence
+to distinguish allocation, mapping and execution failures.
 
 ## 4. Build and stage Metal
 

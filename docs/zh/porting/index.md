@@ -13,7 +13,7 @@ UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步�
 阅读目标仓库根目录的 `AGENTS.md`。
 
 收集信息时建立[移植记录](/zh/porting/records)，逐项记录输入来源、实现、当前结果和下一项测量。
-[驱动适配清单](/zh/porting/drivers)覆盖 sheng 使用的各子系统，包括设备 package 内的代码。
+[驱动适配清单](/zh/porting/drivers)链接子系统接口、源码参考和构建接入步骤，包括设备 package 内的服务。
 
 **结果：** 硬件清单和缺失输入列表。寄存器地址与分区布局必须取自目标设备。
 
