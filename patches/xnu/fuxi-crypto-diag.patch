@@ -1,20 +1,43 @@
+diff --git a/libkern/crypto/register_crypto.c b/libkern/crypto/register_crypto.c
+index 7d3a56d..f1a7d9d 100644
+--- a/libkern/crypto/register_crypto.c
++++ b/libkern/crypto/register_crypto.c
+@@ -34,9 +34,17 @@
+ SECURITY_READ_ONLY_LATE(bool) crypto_init = false;
+ SECURITY_READ_ONLY_LATE(crypto_functions_t) g_crypto_funcs = NULL;
+ 
++/* Fork diagnostics: prove whether this function ran and from which address. */
++void *fuxi_reg_addr = NULL;
++unsigned long fuxi_reg_calls = 0;
++void *fuxi_reg_value = NULL;
++
+ int
+ register_crypto_functions(const crypto_functions_t funcs)
+ {
++	fuxi_reg_calls++;
++	fuxi_reg_addr = (void *)&g_crypto_funcs;
++	fuxi_reg_value = (void *)funcs;
+ 	if (g_crypto_funcs) {
+ 		return -1;
+ 	}
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
-index d57d48c..e3eb16f 100644
+index d57d48c..956898f 100644
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c
-@@ -199,6 +199,16 @@ __startup_func
+@@ -199,6 +199,17 @@ __startup_func
  void
  entropy_init(void)
  {
 +	extern bool crypto_init;
 +	extern void *g_crypto_funcs;
 +	extern void *fuxi_reg_addr;
++	extern void *fuxi_reg_value;
 +	extern unsigned long fuxi_reg_calls;
 +	void *caller = __builtin_return_address(0);
 +	if (!crypto_init || g_crypto_funcs == NULL) {
-+		panic("fuxi-diag: i=%d f=%p calls=%lu ra=%p self=%p",
++		panic("fuxi-diag: i=%d f=%p calls=%lu ra=%p self=%p reg=%p val=%p",
 +		    (int)crypto_init, (void *)g_crypto_funcs, fuxi_reg_calls,
-+		    caller, (void *)&g_crypto_funcs);
++		    caller, (void *)&g_crypto_funcs, fuxi_reg_addr, fuxi_reg_value);
 +	}
  	SHA512_Init(&entropy_data.sha512_ctx);
  
