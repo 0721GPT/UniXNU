@@ -1,22 +1,49 @@
+diff --git a/libkern/crypto/register_crypto.c b/libkern/crypto/register_crypto.c
+index 7d3a56d..f1a7d9d 100644
+--- a/libkern/crypto/register_crypto.c
++++ b/libkern/crypto/register_crypto.c
+@@ -34,9 +34,17 @@
+ SECURITY_READ_ONLY_LATE(bool) crypto_init = false;
+ SECURITY_READ_ONLY_LATE(crypto_functions_t) g_crypto_funcs = NULL;
+ 
++/* Fork diagnostics: prove whether this function ran and from which address. */
++void *fuxi_reg_addr = NULL;
++unsigned long fuxi_reg_calls = 0;
++void *fuxi_reg_value = NULL;
++
+ int
+ register_crypto_functions(const crypto_functions_t funcs)
+ {
++	fuxi_reg_calls++;
++	fuxi_reg_addr = (void *)&g_crypto_funcs;
++	fuxi_reg_value = (void *)funcs;
+ 	if (g_crypto_funcs) {
+ 		return -1;
+ 	}
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
-index d57d48c..96a82cf 100644
+index d57d48c..52f2047 100644
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c
-@@ -199,6 +199,18 @@ __startup_func
+@@ -199,6 +199,23 @@ __startup_func
  void
  entropy_init(void)
  {
 +	extern bool crypto_init;
 +	extern void *g_crypto_funcs;
 +	extern kern_return_t source_corecrypto14_status;
++	extern void *fuxi_reg_addr;
++	extern void *fuxi_reg_value;
++	extern unsigned long fuxi_reg_calls;
 +	if (!crypto_init || g_crypto_funcs == NULL) {
 +		/*
-+		 * status tells the bootstrap apart: 5 (KERN_FAILURE) means it never ran,
-+		 * 0 means it ran and still left the kernel table empty, which points at a
-+		 * second copy of the provider writing its own table.
++		 * calls/addr tell the cases apart: calls 0 means the provider never reached
++		 * register_crypto_functions, and a different addr means this translation
++		 * unit is looking at another copy of the variable.
 +		 */
-+		panic("fuxi-diag: init=%d funcs=%p status=%d",
-+		    (int)crypto_init, g_crypto_funcs, (int)source_corecrypto14_status);
++		panic("fuxi-diag: i=%d f=%p self=%p reg=%p val=%p calls=%lu st=%d",
++		    (int)crypto_init, (void *)g_crypto_funcs, (void *)&g_crypto_funcs,
++		    fuxi_reg_addr, fuxi_reg_value, fuxi_reg_calls,
++		    (int)source_corecrypto14_status);
 +	}
  	SHA512_Init(&entropy_data.sha512_ctx);
  
