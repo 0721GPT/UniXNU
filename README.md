@@ -23,7 +23,7 @@
 
 An independent project to run iOS and macOS on non-Apple ARM64 hardware through UEFI.
 
-UniXNU provides shared build tools, ARM64 support, OS profiles and reusable components for ports across SoCs and devices. SoC repositories supply common platform support, and device repositories supply board configuration and hardware integration. The Xiaomi Pad 6S Pro (sheng) is an SM8550 device port built on this shared platform.
+UniXNU provides shared build tools, ARM64 support, OS profiles and reusable components for ports across SoCs and devices. SoC repositories supply common platform support, and device repositories supply board configuration and hardware integration.
 
 **🎉 News:** Adreno740 and AdrenoMetal provide GPU acceleration on sheng. The render server composites the system UI through the Adreno 740, and listed processes get their own Metal devices. These components are shared GPU implementations; each device port supplies the required firmware, power, memory and display integration. See the [Adreno 740 driver documentation](https://unixnu.com/drivers/adreno740).
 
