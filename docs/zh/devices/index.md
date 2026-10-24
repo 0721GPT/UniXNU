@@ -24,6 +24,7 @@
 | [小米 10（umi）](/zh/devices/umi) | SM8250 | iPadOS 17.7.11 Hello／设置，触摸可用；CPU 显示、UFS 和持久化 Data | reAAAq |
 | [小米 MIX 2（chiron）](/zh/devices/chiron) | SDM835 | 真机运行最小 4 KiB XNU 和 PID 1 心跳 | to-mid |
 | [小米平板 7 / POCO Pad X1（uke）](/zh/devices/uke) | SM7675 | 根已挂载，launchd 启动；显示 surface 待完成 | Allenwdk |
+| [POCO X7 / Redmi Note 14 Pro 5G（malachite）](/zh/devices/malachite) | MT6878 | UEFI正常工作，UFS正常，XNU rootfs已加载，USB、触控等未实现 | ghidgdsr |
 | [Brave Ark 平板（braveark）](/zh/devices/braveark) | SM8635 | 8 核 XNU BSD init；iPadOS 根卷进行中 | tattwamashi |
 | [小米平板 8 Pro（piano）](/zh/devices/piano) | SM8750 | 内核在 CI 编译并预链接，未在平板上运行 | code002-2 |
 | [小米 13 Pro（nuwa）](/zh/devices/nuwa) | SM8550 | 源内核可编译，平台静态库和预链接待完成 | wh1stl3 |
