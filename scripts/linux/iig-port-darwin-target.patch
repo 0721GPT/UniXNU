@@ -1,29 +1,12 @@
-iig-port: parse for a Darwin target on a non-Apple host
+iig-port: Darwin parsing and Clang resource headers
 
 Against Nyktis/iig-port @ ea6d147.
 
-libclang parses for its default triple. Apple's iig only runs on a Mac, where
-that is the host's Darwin triple, so xnu's Makefiles never pass one. Built on
-Linux, the default is the Linux host's triple and xnu's mach/machine/*.h stop
-with "architecture not supported". On a non-Apple host, prepend
---target=arm64-apple-darwin unless the caller already passed --target=;
-on a Mac nothing changes.
-
-Any Darwin triple yields the same output, so the plain arm64-apple-darwin
-is enough. iig's own argument check
-rejects -target X and -arch, so --target=X is the only spelling that reaches
-libclang.
-
-It also hands libclang -resource-dir, the directory of clang's builtin
-headers, unless the caller passed one. apt.llvm.org's libclang 24 works that
-directory out only relative to an empty driver path (clang -v shows an empty
-InstalledDir and "lib/clang/24/include"), so EXTERNAL_HEADERS/stdint.h's
-#include_next found clang's stdint.h only from some working directories, and
-the DriverKit .iig files failed with "'stdint.h' file not found". libclang's
-C API has no call for the directory, so the patch derives it from the library
-file dladdr() names and clang_getClangVersion()'s major version, trying
-<prefix>/lib/clang/N (an upstream install, libclang in <prefix>/lib) and
-/usr/lib/clang/N (Debian and apt.llvm.org, libclang in /usr/lib/<triple>).
+On Linux, use --target=arm64-apple-darwin when the caller supplies no target.
+The setup script defines UNIXNU_CLANG_RESOURCE_DIR from the selected clang's
+-print-resource-dir output. Standalone builds derive the resource directory
+from the loaded libclang library and its version. An explicit -resource-dir
+argument takes priority.
 
 --- a/iig.cpp
 +++ b/iig.cpp
@@ -39,7 +22,7 @@ file dladdr() names and clang_getClangVersion()'s major version, trying
  namespace {
  
  const char kIIGVersion[] = "DriverKit-440";
-@@ -1375,6 +1380,51 @@ void add_direct_iig_includes(const Options &opt, ParseState *state)
+@@ -1375,6 +1380,54 @@ void add_direct_iig_includes(const Options &opt, ParseState *state)
  
  void resolve_parameter_facts(ParseState *state);
  
@@ -56,6 +39,9 @@ file dladdr() names and clang_getClangVersion()'s major version, trying
 +// apt.llvm.org). Empty when neither exists.
 +static std::string libclang_resource_dir()
 +{
++#ifdef UNIXNU_CLANG_RESOURCE_DIR
++	return UNIXNU_CLANG_RESOURCE_DIR;
++#endif
 +	Dl_info info;
 +	if (dladdr((void *)&clang_createIndex, &info) == 0 || info.dli_fname == nullptr) {
 +		return "";
@@ -91,7 +77,7 @@ file dladdr() names and clang_getClangVersion()'s major version, trying
  int parse_iig(const Options &opt, ParseState *state)
  {
  	for (std::size_t i = 0; i < opt.clang_args.size(); ++i) {
-@@ -1395,6 +1445,30 @@ int parse_iig(const Options &opt, ParseState *state)
+@@ -1395,6 +1448,30 @@ int parse_iig(const Options &opt, ParseState *state)
  
  	CXIndex index = clang_createIndex(0, 0);
  	std::vector<const char *> args;
