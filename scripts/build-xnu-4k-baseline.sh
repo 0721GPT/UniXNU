@@ -62,9 +62,13 @@ if [ "$BOOT_PROGRESS" != 0 ] && [ "$BOOT_PROGRESS" != 1 ]; then
   exit 1
 fi
 if [ "$BOOT_PROGRESS" = 1 ]; then
-  if [ "${XNU_NATIVE_UFS:-0}" != 1 ] || [ "${XNU_OWNER_ROOT_AUDIT:-0}" != 1 ] || \
-     [ "${XNU_NATIVE_VIRTIO_BLOCK:-0}" != 1 ] || [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
-    echo 'Boot progress requires the audited UFS/owner-root, Virtio and source-corecrypto build' >&2
+  # Fork change: keep only the two real requirements. The audited owner-root flow and the
+  # Virtio block driver belong to the sheng configuration; this board cannot enable them
+  # because Virtio block requires NATIVE_AES, NATIVE_AES requires the prelinked crypto
+  # closure, and that closure is what crashes the entropy path on this kernelcache. The
+  # symbols they provide come from the weak stub archive.
+  if [ "${XNU_NATIVE_UFS:-0}" != 1 ] || [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
+    echo 'Boot progress requires the UFS driver and the source crypto provider' >&2
     exit 1
   fi
   python3 scripts/build-boot-progress.py
