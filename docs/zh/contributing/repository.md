@@ -1,92 +1,66 @@
 # 仓库布局
 
-基础仓库和每个设备仓库使用相同布局。
+UniXNU 组装独立的 SoC、设备和组件仓库。
 
-```
+```text
 UniXNU/
-  unixnu                  入口
-  scripts/unixnu/         构建驱动
-  package/                UniXNU EDK II package
-  drivers/                内置 XNU 驱动
-  kits/                   内核库
-  patches/                XNU、libpthread、Mesa 补丁
-  scripts/                构建和校验脚本
-  docs/                   本文档站
-  assets/                 标志
-  feeds.toml              固定的外部源码
-  .gitmodules             模块子模块
-  examples/device/        示例设备仓库
+  AGENTS.md
+  components.toml
+  unixnu
+  scripts/unixnu/
+  profiles/arch/arm64/
+  profiles/os/
+  drivers/
+  kits/
+  patches/
+  package/
+  examples/device/
+  docs/
 ```
 
-驱动和 kit 是独立的公开仓库。每个驱动单独一个仓库。`UniXNU-<device>` 用 `drivers/` 下的子模块引用需要的驱动。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
-
-## 模块类型
-
-| 类型 | 目录 | 内容 |
-| --- | --- | --- |
-| driver | `drivers/<Name>` | XNU 驱动源码和参考 plist |
-| kit | `kits/<Name>` | 内核库 |
-| patch | `patches/<Name>` | 补丁集 |
-| script | `scripts/` | 构建和校验脚本 |
-| package | `package/` | UniXNU package |
-| refer | 拉取的树 | Apple 源码或 edk2 |
-
-设备仓库可以提供任意类型，同名模块覆盖基础模块。
-
-## 驱动仓库
-
-| 规则 | 结果 |
+| 仓库 | 职责 |
 | --- | --- |
-| 每个驱动一个仓库 | 驱动仓库只包含一个硬件驱动及其参考 plist |
-| 设备引用 | `UniXNU-<device>` 把驱动作为子模块加入 `drivers/<Name>` |
-| 官方机型或通用栈 | 驱动可以贡献到 UniXNU 组织 |
-| 其他机型或本地实验 | 驱动由维护者独立维护，并以子模块链接 |
-| Topic | 每个驱动仓库都带 `unixnu` topic |
+| `UniXNU` | 构建工具、组件目录、ARM64 支持、OS 配置、模板、UEFI package 和文档站 |
+| `UniXNU-<soc>-common` | SoC 共享配置、DTSI、平台操作和补丁系列 |
+| `UniXNU-<device>` | 板级 DTS、外设、组件选择、分区和打包 |
+| 组件仓库 | 驱动、库、加载器和工具 |
+| `uefi-<device>` | UEFI 平台集成 |
 
-社区机型的驱动不提交到基础仓库。设备仓库把它列为子模块，设备页记录对应仓库。
+文档源码、导航、翻译、资源、配置和部署工作流均由 `UniXNU` 维护。每个维护中的仓库
+包含简洁的 README 和根目录 `AGENTS.md`，链接到相关站点页面。
 
-## 解析顺序
+## 源码
 
-1. `--local-module [KIND:]NAME=PATH`
-2. `--local-<kind> DIR`
-3. `--local DIR`
-4. `feeds.toml` 的 `local` 键或 `local.toml`
-5. 设备仓库
-6. 基础仓库，包括其模块子模块
-7. `feeds.toml` 的 git 源码
+组件目录记录规范 ID、源码版本、依赖、构建命令、输出和运行时标识符。解析器从目录、
+设备 feeds、子模块和本地覆盖中选择源码。解析优先级见[配置参考](/zh/reference/configuration)。
 
-## 构建树
+| 类型 | 组装路径 | 内容 |
+| --- | --- | --- |
+| `driver` | `drivers/<ID>` | 驱动源码和参考 plist |
+| `kit` | `kits/<ID>` | 库或工具 |
+| `patch` | `patches/<name>` | 补丁集 |
+| `script` | `scripts/` | 构建或验证脚本 |
+| `package` | `package/` | UEFI package |
+| `refer` | `refer/<name>` | 外部源码 |
+| `soc` | 所选配置根目录 | SoC 配置和共享硬件支持 |
 
-`unixnu tree` 写 `out/<board>/tree`：
+格式 2 按 ARM64、SoC、OS、设备顺序应用配置。组装目标为
+`out/<device>/<os_profile>/<config>/tree`。模块使用链接，脚本被复制，设备 `package/`
+成为 `kits/<board.kit>`。补丁后的源码和生成文件保存在目标输出树中。
 
-```
-tree/
-  drivers/  kits/  patches/  refer/
-  scripts/  package/
-  build/    .cache/
-```
+## 组件开发
 
-符号链接指向选中的模块，脚本被复制，设备 `package/` 出现在 `kits/<board.kit>`。
+1. 阅读 `AGENTS.md`，搜索 `components.toml` 并检查现有接口。
+2. 将共享控制器或协议代码放在组件仓库。
+3. 将 SoC 操作和资源放在 SoC 仓库，板级策略放在设备仓库。
+4. 记录源码身份、版本、依赖、构建命令、输出和运行时标识符。
+5. 同步更新使用者、README、根目录 `AGENTS.md` 和中英文站点页面。
+6. 运行受影响的构建命令，分别记录主机和硬件结果。
 
-## 脚本
-
-构建脚本从自身路径定位构建树。`scripts/` 中的脚本可以读取 `ROOT`、`build/`、`.cache/`、`refer/`、`drivers/`、`kits/`、`patches/` 和 `package/`。
-
-## 新增模块
-
-组织中的每个仓库都带有 `unixnu` topic。独立维护的驱动仓库在被设备仓库引用前也要带上它。
-
-1. 为一个驱动或一个 kit 创建公开仓库。
-2. 在仓库设置中添加 `unixnu` topic。
-3. 在设备仓库把它作为子模块加入 `drivers/<Name>` 或 `kits/<Name>`。通用栈的驱动加入基础仓库。
-4. 从板级文件或内核脚本引用。
-5. 在对应文档章节记录。
-
-设备适配完成后，把设备页面和移植记录贡献到本仓库。
+规范名称使用硬件范围、协议或功能。仓库改名保留提交历史和固定版本。
+兼容别名按官方源码身份解析，社区源码保持自己的身份。
 
 ## 提交范围
-
-一个提交只改一个主题：
 
 | 前缀 | 主题 |
 | --- | --- |
@@ -94,12 +68,11 @@ tree/
 | `fix(<area>)` | 缺陷修复 |
 | `docs` | 文档 |
 | `build(<area>)` | 构建系统 |
-| `chore` | 清理 |
+| `chore` | 维护 |
 
-提交信息描述变化，文档描述当前状态。
-
-## 下一步
+提交信息描述改动，文档描述当前行为。
 
 - [设备仓库](/zh/porting/device-repository)
+- [组件目录](/zh/reference/components)
 - [文档站](/zh/contributing/documentation)
 - [构建](/zh/building)

@@ -1,92 +1,71 @@
 # Repository layout
 
-The base repository and every device repository share the same layout.
+UniXNU assembles independent SoC, device, and component repositories.
 
-```
+```text
 UniXNU/
-  unixnu                  entry point
-  scripts/unixnu/         build driver
-  package/                UniXNU EDK II package
-  drivers/                built-in XNU drivers
-  kits/                   kernel libraries
-  patches/                XNU, libpthread and Mesa patches
-  scripts/                build and verification scripts
-  docs/                   this site
-  assets/                 logos
-  feeds.toml              pinned external sources
-  .gitmodules             module submodules
-  examples/device/        sample device repository
+  AGENTS.md
+  components.toml
+  unixnu
+  scripts/unixnu/
+  profiles/arch/arm64/
+  profiles/os/
+  drivers/
+  kits/
+  patches/
+  package/
+  examples/device/
+  docs/
 ```
 
-Drivers and kits are independent public repositories. Each driver has its own repository. `UniXNU-<device>` references the drivers it uses as submodules under `drivers/`. Clone with `--recurse-submodules`, or run `git submodule update --init --recursive`.
-
-## Module kinds
-
-| Kind | Directory | Contents |
-| --- | --- | --- |
-| driver | `drivers/<Name>` | XNU driver source and reference plist |
-| kit | `kits/<Name>` | Kernel library |
-| patch | `patches/<Name>` | Patch set |
-| script | `scripts/` | Build and verification scripts |
-| package | `package/` | UniXNU package |
-| refer | fetched tree | Apple source or edk2 |
-
-A device repository can supply any kind. Its module overrides the base module with the same name.
-
-## Driver repositories
-
-| Rule | Result |
+| Repository | Responsibility |
 | --- | --- |
-| One driver per repository | a driver repository contains one hardware driver and its reference plist |
-| Device reference | `UniXNU-<device>` adds the driver as a submodule under `drivers/<Name>` |
-| Official device or generic stack | the driver can be contributed to the UniXNU organization |
-| Other device or local experiment | the driver stays under its maintainer and is linked as a submodule |
-| Topic | every driver repository carries the `unixnu` topic |
+| `UniXNU` | Build tools, component catalog, ARM64 support, OS profiles, template, UEFI package, documentation site |
+| `UniXNU-<soc>-common` | Shared SoC configuration, DTSI, platform operations, patch series |
+| `UniXNU-<device>` | Board DTS, peripherals, selected components, partitions, packaging |
+| Component repositories | Drivers, libraries, loaders, tools |
+| `uefi-<device>` | UEFI platform integration |
 
-A driver for a community device is not sent to the base repository. The device repository names it as a submodule and the device page records the repository.
+The site source, navigation, translations, assets, configuration, and deployment
+workflow are maintained in `UniXNU`. Each maintained repository has a concise
+README and root `AGENTS.md` linking to its relevant pages.
 
-## Resolution order
+## Sources
 
-1. `--local-module [KIND:]NAME=PATH`
-2. `--local-<kind> DIR`
-3. `--local DIR`
-4. a `local` key in `feeds.toml` or `local.toml`
-5. the device repository
-6. the base repository, including its module submodules
-7. a git source in `feeds.toml`
+The component catalog records canonical IDs, source revisions, dependencies,
+build commands, outputs, and runtime identifiers. The resolver selects sources
+from the catalog, device feeds, submodules, and local overrides. See the
+[configuration reference](/reference/configuration) for resolution precedence.
 
-## Build tree
+| Kind | Assembled path | Contents |
+| --- | --- | --- |
+| `driver` | `drivers/<ID>` | Driver source and reference plist |
+| `kit` | `kits/<ID>` | Library or tool |
+| `patch` | `patches/<name>` | Patch set |
+| `script` | `scripts/` | Build or verification scripts |
+| `package` | `package/` | UEFI package |
+| `refer` | `refer/<name>` | External source |
+| `soc` | Selected profile root | SoC profile and shared hardware support |
 
-`unixnu tree` writes `out/<board>/tree`:
+Format 2 applies ARM64, SoC, OS, and device profiles. The assembled target is
+`out/<device>/<os_profile>/<config>/tree`. Modules are linked, scripts are copied,
+and device `package/` appears as `kits/<board.kit>`. Patched sources and generated
+files stay in the target output tree.
 
-```
-tree/
-  drivers/  kits/  patches/  refer/
-  scripts/  package/
-  build/    .cache/
-```
+## Component work
 
-Symbolic links point at the selected modules. Scripts are copied. The device `package/` appears as `kits/<board.kit>`.
+1. Read `AGENTS.md`, search `components.toml`, and inspect existing interfaces.
+2. Put shared controller or protocol code in its component repository.
+3. Put SoC operations and resources in the SoC repository and board policy in the device repository.
+4. Record source identity, revision, dependencies, build command, outputs, and runtime identifiers.
+5. Update consumers, README, root `AGENTS.md`, and English/Chinese site pages together.
+6. Run the affected build commands and record host and hardware results separately.
 
-## Scripts
-
-The build scripts locate the tree from their own path. A script in `scripts/` can read `ROOT`, `build/`, `.cache/`, `refer/`, `drivers/`, `kits/`, `patches/` and `package/`.
-
-## Add a module
-
-Every repository in the organization carries the `unixnu` topic. Independently maintained driver repositories also carry it before a device repository references them.
-
-1. Create a public repository for one driver, or for one kit.
-2. Add the `unixnu` topic in the repository settings.
-3. Add it as a submodule under `drivers/<Name>` or `kits/<Name>` in the device repository. A driver for the generic stack is added to the base repository instead.
-4. Reference it from the board file or the kernel script.
-5. Document the module in the matching section.
-
-After a device port, contribute the device page and the porting notes to this repository.
+Canonical names use hardware scope, protocol, or function. Repository renames
+preserve history and pinned revisions. Compatibility aliases use official source
+identity; community sources keep their own identity.
 
 ## Commit scope
-
-A commit changes one subject:
 
 | Prefix | Subject |
 | --- | --- |
@@ -94,12 +73,11 @@ A commit changes one subject:
 | `fix(<area>)` | Defect repair |
 | `docs` | Documentation |
 | `build(<area>)` | Build system |
-| `chore` | Cleanup |
+| `chore` | Maintenance |
 
-The commit message describes the change. The documentation describes the current state.
-
-## Next steps
+Commit messages describe changes. Documentation describes current behavior.
 
 - [Device repository](/porting/device-repository)
+- [Component catalog](/reference/components)
 - [Documentation site](/contributing/documentation)
 - [Build](/building)

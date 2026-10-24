@@ -88,13 +88,17 @@ userdata 镜像保存 IPSW 中未修改的 `OS` 和 `Cryptex1,SystemOS` 磁盘�
 
 ## 仓库
 
+`UniXNU` 维护构建工具、组件目录、ARM64 与 OS 配置、模板、UEFI package 和文档站。`UniXNU-<soc>-common` 维护共享 SoC 配置、DTSI、平台操作和补丁。组件仓库维护驱动、库、加载器和工具。
+
 | 仓库 | 用途 |
 | --- | --- |
-| `UniXNU` | 构建驱动、UEFI 启动管理器、DarwinBoot、通用驱动、kit、补丁和文档 |
+| `UniXNU` | 构建工具、组件目录、ARM64 与 OS 配置、模板、UEFI package 和文档站 |
+| `UniXNU-<soc>-common` | SoC 配置、DTSI、平台操作和补丁 |
+| 组件仓库 | 驱动、库、加载器和工具 |
 | `UniXNU-<device>` | 板级描述、内核 defconfig、设备脚本、设备驱动和 package |
 | `uefi-<device>` | 设备的 Mu-Silicium UEFI 移植 |
 
-设备仓库的目录布局与 `UniXNU` 相同。它的 `drivers/`、`kits/`、`patches/`、`scripts/` 和 `package/` 会覆盖同名通用模块。
+设备仓库选择固定版本的 SoC 支持、OS 配置和组件，用 DTS 描述板级外设，并提供固件输入、分区布局与打包。构建工具解析依赖并组装目标树。
 
 ## 构建产物
 
@@ -105,7 +109,7 @@ out/
   state.json                 记住的设备仓库
   feeds/                     拉取的 git 源码
   ipsw/<build>/              解压的 IPSW 成员
-  <board>/
+  <device>/<os_profile>/<config>/
     .config                  选中的 defconfig
     tree/                    组装后的构建树
     logs/                    每一步的日志

@@ -19,7 +19,7 @@ Windows 交互模式运行 `scripts\debug-terminal.cmd --port COM21`，输入 `:
 | 命令 | 结果 |
 | --- | --- |
 | `all` / `collect` | 排队发送有界查询；`collect` 额外请求 replay/sample，至少 15 秒后保存 |
-| `logs wifi` / `logs gpu` / `logs panic` | 筛选保留的会话日志，不代表新的硬件观测 |
+| `logs wifi` / `logs gpu` / `logs panic` | 筛选保留的会话日志，记录对应会话的硬件观测 |
 | `save` | 导出主题文本与会话元数据 |
 | `watch status 2` / `unwatch` | 轮询只读状态查询 / 停止轮询 |
 | `screen.start` / `screen.stop` | 打开本机浏览器投屏 / 停止帧传输 |
@@ -48,7 +48,7 @@ Fastboot 验证需要 PATH 中有 `fastboot`，收到内核重启确认且 CDC �
 python -m unittest discover -s tests/terminal -v
 ```
 
-可选 C 发送端互操作测试需要设置 `GIULIA_SCREEN_FIXTURE`，指向设备仓库屏幕测试脚本生成的样本。默认测试使用合成数据包和模拟串口，不代表硬件已经可用。
+可选 C 发送端互操作测试需要设置 `GIULIA_SCREEN_FIXTURE`，指向设备仓库屏幕测试脚本生成的样本。默认测试使用合成数据包和模拟串口。硬件状态通过设备检查记录。
 
 ## 日志来源
 
@@ -343,15 +343,15 @@ python3 scripts/qemu-entry/gdb-stop.py --help
 | 串口日志 | UART 抓取文件 |
 | 诊断照片 | 标题栏、整页、trace 页、脉冲条 |
 | panic 照片 | panic 屏幕 |
-| 启动报告 | `out/<board>/boot/boot.json` |
-| 负载报告 | `out/<board>/payload/payload.json` |
-| 构建日志 | `out/<board>/logs/` |
+| 启动报告 | `out/<device>/<os_profile>/<config>/boot/boot.json` |
+| 负载报告 | `out/<device>/<os_profile>/<config>/payload/payload.json` |
+| 构建日志 | `out/<device>/<os_profile>/<config>/logs/` |
 
 每张照片都记录启动镜像哈希：
 
 ```sh
-shasum -a 256 out/<board>/boot/boot.img
-jq . out/<board>/boot/boot.json
+shasum -a 256 out/<device>/<os_profile>/<config>/boot/boot.img
+jq . out/<device>/<os_profile>/<config>/boot/boot.json
 ```
 
 ## 下一步

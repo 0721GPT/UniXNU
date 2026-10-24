@@ -1,6 +1,6 @@
 # 驱动仓库
 
-每个硬件驱动单独一个仓库。设备仓库用 `drivers/<Name>` 下的子模块引用需要的驱动。每个驱动仓库都带 `unixnu` topic。
+驱动和库使用独立仓库。[组件目录](/zh/reference/components)记录范围、接口、依赖、版本、构建命令和输出。SoC 与设备配置选择规范 ID。维护中的驱动仓库带有 `unixnu` topic。
 
 ## 官方驱动
 
@@ -8,20 +8,20 @@
 
 | 驱动 | 仓库 | 层 | 页面 |
 | --- | --- | --- | --- |
-| NativeAdreno | [UniXNU/NativeAdreno](https://github.com/UniXNU/NativeAdreno) | XNU GPU | [NativeAdreno](/zh/drivers/native-adreno) |
-| NativeMetal | [UniXNU/NativeMetal](https://github.com/UniXNU/NativeMetal) | XNU Metal 前端 | [NativeMetal](/zh/drivers/native-metal) |
-| NativeUfs | [UniXNU/NativeUfs](https://github.com/UniXNU/NativeUfs) | XNU 存储 | [NativeUfs](/zh/drivers/native-ufs) |
-| NativeHidInput | [UniXNU/NativeHidInput](https://github.com/UniXNU/NativeHidInput) | XNU 输入 | [NativeHidInput](/zh/drivers/native-hid-input) |
-| NativeRamBlock | [UniXNU/NativeRamBlock](https://github.com/UniXNU/NativeRamBlock) | XNU 存储 | [NativeRamBlock](/zh/drivers/native-ram-block) |
-| NativeMobileDisplay | [UniXNU/NativeMobileDisplay](https://github.com/UniXNU/NativeMobileDisplay) | XNU 显示 | [NativeMobileDisplay](/zh/drivers/native-mobile-display) |
-| NativeGeniSpi | [UniXNU/NativeGeniSpi](https://github.com/UniXNU/NativeGeniSpi) | XNU SPI | [NativeGeniSpi](/zh/drivers/native-geni-spi) |
-| NativeAES | [UniXNU/NativeAES](https://github.com/UniXNU/NativeAES) | XNU 加密 | [NativeAES](/zh/drivers/native-aes) |
-| NativeKeyStoreEvents | [UniXNU/NativeKeyStoreEvents](https://github.com/UniXNU/NativeKeyStoreEvents) | XNU keystore | [NativeKeyStoreEvents](/zh/drivers/native-keystore-events) |
-| NativeVirtioBlock | [UniXNU/NativeVirtioBlock](https://github.com/UniXNU/NativeVirtioBlock) | XNU 存储 | [NativeVirtioBlock](/zh/drivers/native-virtio-block) |
-| NativeVirtioConsole | [UniXNU/NativeVirtioConsole](https://github.com/UniXNU/NativeVirtioConsole) | XNU 控制台 | [NativeVirtioConsole](/zh/drivers/native-virtio-console) |
-| NativeNovatekTouch | [UniXNU/NativeNovatekTouch](https://github.com/UniXNU/NativeNovatekTouch) | XNU 触控 | [NativeNovatekTouch](/zh/drivers/native-novatek-touch) |
-| NativePrelink | [UniXNU/NativePrelink](https://github.com/UniXNU/NativePrelink) | 内核工具 | [NativePrelink](/zh/drivers/native-prelink) |
-| NativeWifi | [UniXNU/NativeWifi](https://github.com/UniXNU/NativeWifi) | XNU Wi-Fi | [NativeWifi](/zh/drivers/native-wifi) |
+| Adreno740 | [UniXNU/Adreno740](https://github.com/UniXNU/Adreno740) | XNU GPU | [Adreno740](/zh/drivers/adreno740) |
+| AdrenoMetal | [UniXNU/AdrenoMetal](https://github.com/UniXNU/AdrenoMetal) | XNU Metal 前端 | [AdrenoMetal](/zh/drivers/adreno-metal) |
+| ShengUfs | [UniXNU/ShengUfs](https://github.com/UniXNU/ShengUfs) | XNU 存储 | [ShengUfs](/zh/drivers/sheng-ufs) |
+| ShengHidInput | [UniXNU/ShengHidInput](https://github.com/UniXNU/ShengHidInput) | XNU 输入 | [ShengHidInput](/zh/drivers/sheng-hid-input) |
+| RamBlock | [UniXNU/RamBlock](https://github.com/UniXNU/RamBlock) | XNU 存储 | [RamBlock](/zh/drivers/ram-block) |
+| GopFramebuffer | [UniXNU/GopFramebuffer](https://github.com/UniXNU/GopFramebuffer) | XNU 显示 | [GopFramebuffer](/zh/drivers/gop-framebuffer) |
+| QcomGeniSpi | [UniXNU/QcomGeniSpi](https://github.com/UniXNU/QcomGeniSpi) | XNU SPI | [QcomGeniSpi](/zh/drivers/qcom-geni-spi) |
+| SoftwareAES | [UniXNU/SoftwareAES](https://github.com/UniXNU/SoftwareAES) | XNU 加密 | [SoftwareAES](/zh/drivers/software-aes) |
+| AppleKeyStoreState | [UniXNU/AppleKeyStoreState](https://github.com/UniXNU/AppleKeyStoreState) | XNU keystore | [AppleKeyStoreState](/zh/drivers/apple-key-store-state) |
+| VirtioMmioBlock | [UniXNU/VirtioMmioBlock](https://github.com/UniXNU/VirtioMmioBlock) | XNU 存储 | [VirtioMmioBlock](/zh/drivers/virtio-mmio-block) |
+| VirtioMmioConsole | [UniXNU/VirtioMmioConsole](https://github.com/UniXNU/VirtioMmioConsole) | XNU 控制台 | [VirtioMmioConsole](/zh/drivers/virtio-mmio-console) |
+| ShengNovatekTouch | [UniXNU/ShengNovatekTouch](https://github.com/UniXNU/ShengNovatekTouch) | XNU 触控 | [ShengNovatekTouch](/zh/drivers/sheng-novatek-touch) |
+| XnuPrelink | [UniXNU/XnuPrelink](https://github.com/UniXNU/XnuPrelink) | 内核工具 | [XnuPrelink](/zh/drivers/xnu-prelink) |
+| Ath12kWifi | [UniXNU/Ath12kWifi](https://github.com/UniXNU/Ath12kWifi) | XNU Wi-Fi | [Ath12kWifi](/zh/drivers/ath12k-wifi) |
 | ArmCpu | [UniXNU/ArmCpu](https://github.com/UniXNU/ArmCpu) | XNU CPU 和 GIC | [ArmCpu](/zh/drivers/arm-cpu) |
 | ArmDTPlatform | [UniXNU/ArmDTPlatform](https://github.com/UniXNU/ArmDTPlatform) | XNU 平台专家 | [ArmDTPlatform](/zh/drivers/arm-dt-platform) |
 | ArmVirtPlatform | [UniXNU/ArmVirtPlatform](https://github.com/UniXNU/ArmVirtPlatform) | XNU 平台 | [ArmVirtPlatform](/zh/drivers/arm-virt-platform) |
@@ -70,7 +70,7 @@
 ## 规则
 
 - 每个硬件驱动单独一个仓库。
-- `UniXNU-<device>` 用 `drivers/<Name>` 子模块引用驱动。
+- SoC 和设备配置按 ID 选择目录组件，feeds 与子模块提供额外源码。
 - 官方机型或通用栈的驱动可以贡献到 UniXNU 组织。
 - 其他驱动由维护者独立维护，以子模块链接。
 - 每个驱动仓库都带 `unixnu` topic。

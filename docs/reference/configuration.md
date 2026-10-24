@@ -1,6 +1,25 @@
 # Device configuration
 
-A device repository has four configuration files: `board.toml`, `configs/<name>_defconfig`, `feeds.toml` and `local.toml`.
+Format 2 uses `schema_version = 2` at the top of `board.toml`. Files without
+this field use format 1. See the [device repository specification](/porting/device-repository)
+for profile ownership and examples.
+
+## Profile fields
+
+| Table | Key | Meaning |
+| --- | --- | --- |
+| `board` | `soc_source` | Name of a pinned `kind = "soc"` source |
+| `board` | `os_profile` | Directory under `profiles/os/` |
+| `components` | `include` | Canonical component IDs; dependencies are resolved in build order |
+| `kernel` | `config_fragments` | Ordered profile-relative configuration files |
+| `kernel` | `patch_series` | Ordered profile-relative series files |
+| `device_tree` | `source` | DTS entry point, such as `device:dts/sheng.dts` |
+| `device_tree` | `include_dirs` | DTS include paths, such as `soc:dts` |
+
+Layers apply as ARM64, SoC, OS, device. Tables merge by key; arrays replace.
+The selected defconfig applies after `config_fragments`. File prefixes are
+`arch:`, `soc:`, `os:`, and `device:`. Series entries also accept
+`component:<ID>/path`. `unixnu status --json` reports the effective configuration.
 
 ## board.toml
 
@@ -145,7 +164,7 @@ Each `CONFIG_XNU_<NAME>` becomes `XNU_<NAME>`. `{tree}` in a string becomes the 
 ```toml
 [[source]]
 name = "Name"
-kind = "driver"          # driver, kit, patch, package, refer
+kind = "driver"          # driver, kit, patch, script, package, refer, soc
 git = "https://github.com/ORG/REPO"
 ref = "main"
 path = "drivers/Name"
@@ -185,7 +204,7 @@ package = "/path/to/package"
 commit = "0123456789abcdef"
 ```
 
-Written by `unixnu fetch`. A build uses the locked commit. The lock records git sources only.
+Written by `unixnu fetch` for Git sources. Format 2 gives an explicit source commit priority over the lock, including the selected OS XNU revision. Format 1 uses lock-first precedence. Official aliases can reuse lock entries recorded under their accepted source names.
 
 ## Module resolution
 

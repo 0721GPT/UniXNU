@@ -19,13 +19,13 @@
 
 # UniXNU
 
-🎉 **News:** 原生 Metal GPU 驱动已完全工作在小米平板 6S Pro（sheng）上。render server 通过 Adreno 740 合成系统界面，列入白名单的进程会获得各自的 Metal 设备。详见 [Adreno 740 驱动文档](https://unixnu.com/zh/drivers/native-adreno)。
+Adreno740 和 AdrenoMetal 在小米平板 6S Pro（sheng）上提供 GPU 加速。render server 通过 Adreno 740 合成系统界面，列入白名单的进程会获得各自的 Metal 设备。详见 [Adreno 740 驱动文档](https://unixnu.com/zh/drivers/adreno740)。
 
 一个独立项目，通过 UEFI 在非 Apple ARM64 硬件上运行 iOS 与 macOS。
 
 ## 文档
 
-文档位于 [unixnu.com](https://unixnu.com)，覆盖启动链、构建驱动、设备移植、驱动开发、XNU 4 KiB 页补丁、启动参数和设备说明。
+文档位于 [unixnu.com](https://unixnu.com)，源码、导航、翻译、资源、配置和部署工作流由本仓库维护。文档覆盖启动链、构建驱动、设备移植、驱动开发、XNU 4 KiB 页补丁、启动参数和设备说明。
 
 - [总览](https://unixnu.com/zh/guide/overview)
 - [构建](https://unixnu.com/zh/building)
@@ -40,13 +40,14 @@
 
 | 仓库 | 内容 |
 | --- | --- |
-| [UniXNU](https://github.com/UniXNU/UniXNU) | 构建驱动、UEFI 启动管理器、模块子模块和补丁 |
+| [UniXNU](https://github.com/UniXNU/UniXNU) | 构建工具、组件目录、ARM64 支持、OS 配置、模板、UEFI package 和文档站 |
+| [UniXNU-sm8550-common](https://github.com/UniXNU/UniXNU-sm8550-common) | SM8550 共享配置、DTSI、平台操作和补丁系列 |
 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | 小米平板 6S Pro 的设备仓库 |
 | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | 小米平板 6S Pro 的 UEFI 固件移植 |
 
 驱动和 kit 是 UniXNU 组织下的独立公开仓库，以子模块形式引入。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
 
-设备仓库采用与本仓库相同的目录布局。同名模块会覆盖基础仓库的模块，设备仓库的 `package/` 在构建树中成为 kit。
+设备仓库选择固定版本的 SoC 源码、OS 配置和组件。构建工具合并配置、解析依赖、编译板级 DTS 并生成 ADT。先读 [AGENTS.md](AGENTS.md)、[设备模板](examples/device/README.md)和[迁移指南](https://unixnu.com/zh/porting/migration)。
 
 ## 参与贡献
 

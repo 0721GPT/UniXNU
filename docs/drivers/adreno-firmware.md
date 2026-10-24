@@ -8,7 +8,7 @@ Adreno GMU firmware and HFI kit. Loads the GMU firmware and speaks the HFI proto
 
 ## State
 
-Used by NativeAdreno.
+Used by Adreno740.
 
 ## Build
 

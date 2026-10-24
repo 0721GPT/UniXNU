@@ -8,7 +8,7 @@ ARM SMMUv2 原生 4 KiB 表 kit。构建并编程 stage-1/stage-2 context 表。
 
 ## 状态
 
-NativeAdreno 和存储驱动使用它。
+Adreno740 和存储驱动使用它。
 
 ## 构建
 

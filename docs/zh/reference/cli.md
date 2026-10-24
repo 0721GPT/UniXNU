@@ -14,7 +14,7 @@
 unixnu defconfig [NAME]
 ```
 
-列出设备仓库的 `configs/*_defconfig`。指定名称时复制到 `out/<board>/.config` 并解析。
+列出设备仓库的 `configs/*_defconfig`。指定名称时复制到 `out/<device>/<os_profile>/<config>/.config` 并解析。
 
 ### fetch
 
@@ -30,7 +30,7 @@ unixnu fetch [NAME...] [--update]
 unixnu tree
 ```
 
-解析模块、拉取步骤需要的参考源码，并组装 `out/<board>/tree`。
+解析模块、拉取步骤需要的参考源码，并组装 `out/<device>/<os_profile>/<config>/tree`。
 
 ### ipsw
 
@@ -65,8 +65,10 @@ unixnu bootimg [--fd FILE] [--dtb FILE] [--ramdisk FILE|none] [-o FILE]
 
 ### status
 
+显示设备、输出路径、配置层、组件范围、源码版本、本地覆盖和补丁顺序。`--json` 输出最终配置，字段包括 `profiles`、`board`、`components`、`modules` 和 `patch_order`。状态读取缓存或本地 SoC 源码；缺少源码时先运行 `fetch`。
+
 ```
-unixnu status
+unixnu status [--json]
 ```
 
 打印设备、输出根、配置路径和每个模块来源。标记本地模块并报告未固定的模块。

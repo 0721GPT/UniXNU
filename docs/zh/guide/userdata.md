@@ -8,7 +8,7 @@ userdata 镜像为 XNU 提供根文件系统。它保存目标 IPSW 中未修改
 ./unixnu build userdata --ipsw /path/to/restore.ipsw
 ```
 
-步骤按 `[userdata] windows` 提取 IPSW 组件，用 `hdiutil` 读取每个磁盘镜像，写出原始镜像到 `out/<board>/userdata/userdata-root.img`。
+步骤按 `[userdata] windows` 提取 IPSW 组件，用 `hdiutil` 读取每个磁盘镜像，写出原始镜像到 `out/<device>/<os_profile>/<config>/userdata/userdata-root.img`。
 
 报告 `userdata-root.json` 记录窗口偏移、大小、哈希、分区容量和刷写命令。
 
@@ -61,7 +61,7 @@ manifest 为小端：
 ## 刷写
 
 ```sh
-fastboot flash userdata out/<board>/userdata/userdata-root.img
+fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
 ```
 
 驱动把命令写入报告。设备仓库可以提供封装脚本，在刷写前检查镜像和分区。

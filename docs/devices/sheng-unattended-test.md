@@ -14,7 +14,7 @@ Build the test image with both arguments:
   --kernel-arg=sheng-log=1 --kernel-arg=sheng-autoreset=120
 ```
 
-The log writer opens the window only after NativeUfs has read the root layout. The reset happens once, after that round's log is on the medium.
+The log writer opens the window only after ShengUfs has read the root layout. The reset happens once, after that round's log is on the medium.
 
 ## Log reader
 
@@ -24,7 +24,7 @@ The reader is a fastboot-boot-only Linux image. It copies the log window into RA
 python3 package/linux-log/build-linux-log-boot.py \
   --boot boot_sheng_singleboot.img --busybox busybox \
   --rebootbl rebootbl --module nvmem-reboot-mode.ko \
-  --out out/sheng/boot/sheng-linux-log.img
+  --out out/sheng/ipados-17.7.11-21H461/sheng/boot/sheng-linux-log.img
 ```
 
 `rebootbl` is the static aarch64 Linux program in `package/linux-log/rebootbl.cpp`. It calls `reboot(RESTART2, "bootloader")` through the device tree's `nvmem-reboot-mode` cell.
@@ -32,9 +32,9 @@ python3 package/linux-log/build-linux-log-boot.py \
 ## Run
 
 ```sh
-fastboot boot out/sheng/boot/boot.img
+fastboot boot out/sheng/ipados-17.7.11-21H461/sheng/boot/boot.img
 # Wait for the tablet to return to fastboot by itself.
-fastboot boot out/sheng/boot/sheng-linux-log.img
+fastboot boot out/sheng/ipados-17.7.11-21H461/sheng/boot/sheng-linux-log.img
 python3 scripts/read-sheng-log.py --wait 240
 ```
 
@@ -43,8 +43,8 @@ python3 scripts/read-sheng-log.py --wait 240
 The one-command form runs the same cycle:
 
 ```sh
-SERIAL=<serial> READER=out/sheng/boot/sheng-linux-log.img \
-  scripts/run-sheng-unattended.sh out/sheng/boot/boot.img 420
+SERIAL=<serial> READER=out/sheng/ipados-17.7.11-21H461/sheng/boot/sheng-linux-log.img \
+  scripts/run-sheng-unattended.sh out/sheng/ipados-17.7.11-21H461/sheng/boot/boot.img 420
 ```
 
 If the tablet does not return within the limit, the script says so and waits for a manual fastboot entry.

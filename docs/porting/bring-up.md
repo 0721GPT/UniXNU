@@ -17,7 +17,7 @@ Checks:
 Tools:
 
 ```sh
-fastboot boot out/<board>/boot/boot.img
+fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
 A firmware stall leaves the device in the bootloader. Start the same image again.
@@ -117,7 +117,7 @@ python3 scripts/qemu-entry/make-dt.py --armvirt --armcpu --smp 2 \
 
 python3 package/Scripts/stage-esp.py -o out/esp \
   package/UniXNUPkg/Test/Qemu/esp \
-  --put out/<board>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI
 
 python3 package/Scripts/qemu-run.py out/esp \
   --log out/qemu.log --screenshot out/qemu.png \

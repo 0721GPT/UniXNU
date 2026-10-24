@@ -41,7 +41,9 @@ args = "-v serial=3"
 
 ## ADT sidecar
 
-The ADT uses Apple's flattened node encoding. The board script named in `[payload.adt] tool` generates it. The payload step calls the tool with:
+Format 2 compiles `[device_tree] source` with the declared include paths. The common generator combines the hardware DTB, resolved OS/device properties, and payload inputs, then writes Apple node encoding. See [Device tree](/porting/device-tree).
+
+Format 1 uses the board script named in `[payload.adt] tool`, with these arguments:
 
 | Option | Source |
 | --- | --- |

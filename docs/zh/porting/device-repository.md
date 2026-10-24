@@ -1,26 +1,87 @@
 # 设备仓库
 
-设备仓库描述一块板子，并提供与通用树不同的模块。
+设备仓库选择共享 SoC 与 OS 支持，并描述一块板。添加驱动前阅读[组件目录](/zh/reference/components)。
 
 ## 布局
 
-```
+```text
 UniXNU-<device>/
-  board.toml                  板级描述
-  configs/<name>_defconfig    内核配置
-  feeds.toml                  可选外部源码
-  local.toml                  可选本地覆盖，Git 忽略
-  drivers/                    设备 XNU 驱动
-  kits/                       设备内核库
-  patches/                    设备补丁
-  scripts/                    构建和 bring-up 脚本
-  package/                    UniXNU kit 内容
-  .gitmodules                 模块子模块
-  .cache/firmware/            专有输入，不跟踪
-  unixnu.lock                 unixnu fetch 写入
+  AGENTS.md
+  README.md
+  board.toml
+  feeds.toml
+  configs/<device>_defconfig
+  dts/<device>.dts
+  patches/xnu/series
+  proprietary-files.txt
+  package/
+  local.toml
+  unixnu.lock
 ```
 
-目录布局与 `UniXNU` 相同。设备仓库中的同名模块覆盖基础仓库模块。每个驱动单独一个仓库，在这里以 `drivers/<Name>` 子模块引用。只服务这台设备的驱动保持独立维护，除非它服务官方机型或通用栈。每个驱动仓库都带 `unixnu` topic。
+`local.toml` 保存本地覆盖，`unixnu fetch` 将源码版本写入 `unixnu.lock`。组件源码
+来自目录、feeds 或本地检出。`package/` 在构建树中成为 `kits/<board.kit>`。
+
+## 配置层
+
+```toml
+schema_version = 2
+
+[board]
+name = "sheng"
+soc = "SM8550"
+soc_source = "sm8550"
+os_profile = "ipados-17.7.11-21H461"
+kit = "sheng"
+
+[components]
+include = ["ArmDTPlatform", "ArmCpu", "Adreno740", "AdrenoMetal", "ShengUfs", "ShengHidInput", "ShengNovatekTouch", "GopFramebuffer"]
+
+[device_tree]
+source = "device:dts/sheng.dts"
+include_dirs = ["soc:dts"]
+```
+
+解析器按以下顺序读取：
+
+1. `UniXNU/profiles/arch/arm64/profile.toml`
+2. 所选 SoC 仓库的 `soc.toml`
+3. `UniXNU/profiles/os/<os_profile>/profile.toml`
+4. 设备 `board.toml`
+
+表按键合并，普通数组替换继承数组。组件依赖按构建顺序补全。`unixnu status --json`
+显示最终设置、源码、覆盖项和补丁顺序。
+
+省略 `schema_version` 的文件使用格式 1 及其模块路径。格式 2 的输出位于
+`out/<device>/<os_profile>/<config>/`，其中 `<config>` 为去掉 `_defconfig` 的配置名。
+
+## 有序配置和补丁
+
+```toml
+[kernel]
+defconfig = "sheng_defconfig"
+config_fragments = ["arch:configs/common.config", "soc:configs/sm8550.config"]
+patch_series = ["arch:patches/xnu/series", "soc:patches/xnu/series", "os:patches/xnu/series", "device:patches/xnu/series"]
+```
+
+配置片段按列表顺序应用，随后应用所选设备 defconfig。同名设置使用后面的值。
+series 每行列出一个补丁，按行序应用，`#` 开始注释。相对路径从 series 所在目录
+解析。`arch:`、`soc:`、`os:` 和 `device:` 指向对应配置根目录。
+`component:<ID>/path` 指向组件文件。内核构建将解析后的补丁序列应用到目标独立的 XNU 源码。
+
+SoC 源码在设备 `feeds.toml` 中固定：
+
+```toml
+[[source]]
+name = "sm8550"
+kind = "soc"
+git = "https://github.com/UniXNU/UniXNU-sm8550-common"
+commit = "<40-character SoC commit>"
+```
+
+`board.soc_source` 选择该源码的名称，`board.os_profile` 选择 UniXNU 的 OS 配置目录。
+`proprietary-files.txt` 记录固件文件、来源和哈希。格式 2 的 `[device_tree]` 选择硬件
+DTS，共享生成器结合 `[payload.adt]` 输入和 OS 身份生成 ADT。
 
 ## board.toml
 
@@ -86,14 +147,14 @@ windows = [
 [kernel]
 defconfig = "<name>_defconfig"
 archives = [
-  "scripts/build-native-aes-bindings.py",
+  "scripts/build-software-aes-bindings.py",
   "scripts/build-libpthread-kernel.py",
   "scripts/build-corecrypto-14.py",
   "scripts/build-corecrypto-14.py --namespace",
 ]
 
 [kernel.prelink]
-tool = "kits/NativePrelink/emit_prelink.py"
+tool = "kits/XnuPrelink/emit_prelink.py"
 kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
 kernelcache_sha256 = "..."
 slide = "-0x1000000"
@@ -186,7 +247,6 @@ timeout = 3
 kernel_args = ["-v", "serial=3"]
 
 [payload.adt]
-tool = "scripts/make-<device>-adt.py"
 chip_id = "0"
 owned_memory_size = "0x10000000"
 root_match_volume_uuid = "00000000-0000-0000-0000-000000000000"
@@ -214,7 +274,7 @@ unique_chip_id = "required"
 
 `--owner-trust-cache` 传入 owner 签名的包，包含原始缓存和额外模块。它替换 `--trust-cache`，并跳过 `trust_cache_sha256`。
 
-`[payload.adt]` 的键传给 ADT 工具。工具契约由设备决定，通用键见[设备树](/zh/porting/device-tree)。
+格式 2 使用 `[device_tree]` 和共享 ADT 生成器，`[payload.adt]` 提供 payload 输入，OS 配置提供 Apple 身份。格式 1 使用声明的 `tool`。参见[设备树](/zh/porting/device-tree)。
 
 ## defconfig
 
@@ -267,10 +327,22 @@ kind 为 `driver`、`kit`、`patch`、`package` 或 `refer`。`path` 只拉取�
 3. `--local DIR`
 4. `feeds.toml` 的 `local` 键或 `local.toml` 条目
 5. 设备仓库
-6. 基础仓库
-7. `feeds.toml` 的 git 源码
+6. 所选 SoC 仓库
+7. 基础仓库
+8. `feeds.toml` 的 git 源码
 
-本地模块以符号链接进入 `out/<board>/tree`。`unixnu status` 会标记它们并报告锁文件未固定。
+格式 2 在设备的 `local.toml` 中接受源码覆盖：
+
+```toml
+[[source]]
+kind = "soc"
+name = "sm8550"
+local = "../UniXNU-sm8550-common"
+```
+
+本地相对路径从包含该条目的配置文件目录解析。路径解析前展开 `~` 和环境变量。
+
+本地模块以符号链接进入 `out/<device>/<os_profile>/<config>/tree`。`unixnu status` 会标记它们并报告锁文件未固定。
 
 ## package 与 kit
 

@@ -14,7 +14,7 @@ Options follow the command. The driver reads a device repository from `-D`, `UNI
 unixnu defconfig [NAME]
 ```
 
-Lists `configs/*_defconfig` in the device repository. With a name, copies the file to `out/<board>/.config` and parses it.
+Lists `configs/*_defconfig` in the device repository. With a name, copies the file to `out/<device>/<os_profile>/<config>/.config` and parses it.
 
 ### fetch
 
@@ -30,7 +30,7 @@ Updates the module submodules of this repository and the device repository, then
 unixnu tree
 ```
 
-Resolves modules, fetches the references the steps need, and assembles `out/<board>/tree`.
+Resolves modules, fetches the references the steps need, and assembles `out/<device>/<os_profile>/<config>/tree`.
 
 ### ipsw
 
@@ -51,7 +51,7 @@ Runs the named steps in this order: kernel, prelink, package, payload, firmware.
 
 `build prelink` repeats the prelink without rebuilding XNU.
 
-`build kernel` runs the compile-record pass and the `[kernel] archives` builders before the link.
+`build kernel` prepares the ordered patches, runs the compile-record pass, and builds selected component recipes plus `[kernel] archives` commands before linking. `component:<ID>` marks a component recipe position.
 
 `build userdata --dry-run` checks the IPSW and the partition size.
 
@@ -66,10 +66,10 @@ Packs the boot image. The firmware volume defaults to the output under `--uefi`.
 ### status
 
 ```
-unixnu status
+unixnu status [--json]
 ```
 
-Prints the device, output root, configuration path and the origin of every module. Marks local modules and reports that they are not pinned.
+Prints the device, output path, profile roots, component scope, source revisions, local overrides, and patch order. `--json` emits `schema_version`, `device`, `name`, `output`, `configuration`, `config_path`, `configured`, `profiles`, `configuration_sources`, `board`, `components`, `modules`, and `patch_order`. Status reads cached or local SoC sources; run `fetch` to obtain a missing source.
 
 ### clean
 

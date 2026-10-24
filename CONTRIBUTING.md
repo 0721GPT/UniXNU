@@ -1,19 +1,20 @@
 # Contributing to UniXNU
 
-Read the [documentation](https://unixnu.com) before changing the build driver, the kernel patches or a device port. The [repository layout](https://unixnu.com/contributing/repository) page describes the module system.
+Read [AGENTS.md](AGENTS.md) and the [documentation](https://unixnu.com) before changing the build driver, the kernel patches or a device port. The [repository layout](https://unixnu.com/contributing/repository) page describes the module system.
 
 ## Repository scope
 
 | Repository | Changes |
 | --- | --- |
-| `UniXNU` | Build driver, UEFI boot manager, DarwinBoot, generic drivers, kits, patches and documentation |
-| `UniXNU-<device>` | Board file, defconfig, device scripts, driver submodules and package |
-| `Native<driver>` | One hardware driver and its reference plist |
+| `UniXNU` | Build tools, component catalog, ARM64 and OS profiles, template, UEFI package and documentation site |
+| `UniXNU-<soc>-common` | SoC configuration, DTSI, platform operations and patches |
+| `UniXNU-<device>` | Board DTS, peripheral inputs, component selection, partition layout and packaging |
+| Component repository | Driver, library, loader or tool with a defined hardware, protocol or functional scope |
 | `uefi-<device>` | Mu-Silicium UEFI port |
 
-A change that applies to one board belongs in the device repository. A change that applies to the stack belongs in this repository.
+Board policy belongs in the device repository. Shared SoC operations belong in the SoC repository. Reusable drivers and libraries belong in component repositories. Build tools, ARM64 support, OS profiles and site documentation belong in UniXNU.
 
-Every driver lives in its own repository. `UniXNU-<device>` references the drivers it needs as submodules under `drivers/`. A driver for an official device or the generic stack can be contributed to the UniXNU organization. A driver for another device or a local experiment stays independently maintained, and the device repository references it as a submodule.
+Profiles select catalog components by canonical ID. Feeds and submodules supply source repositories. Inspect component scope, OS ABI and board dependencies before adding an implementation.
 
 ## Repository topics
 
@@ -42,7 +43,8 @@ Use `--local-module` or `--local` to test a module from a working directory with
 - Keep one subject per commit.
 - Add a test when it prevents a failure a future edit would introduce. A behavior visible on every run needs no assertion.
 - Put device-specific values in the device repository.
-- Put stack-wide behavior in `UniXNU`.
+- Put shared SoC operations in the SoC repository and reusable implementations in component repositories.
+- Keep the documentation site, navigation, assets and deployment in `UniXNU`.
 - Keep the English and Simplified Chinese documentation pages in sync.
 
 ## Commit messages
@@ -59,18 +61,18 @@ The message describes the change. The documentation describes the resulting stat
 
 ## Kernel patches
 
-1. Edit `.cache/xnu-work` after a first kernel build.
+1. Edit `out/<device>/<os_profile>/<config>/tree/.cache/xnu-work` after kernel preparation.
 2. Generate the patch with `git diff`.
-3. Name it so the apply order is correct.
+3. Add it to the owning profile's patch series in dependency order.
 4. Rebuild the kernel and the prelink.
 5. Record the kernelcache pin if the ABI changed.
 
-Late patches use the `zzy-` and `zzz-` prefixes.
+`unixnu status --json` reports the resolved patch order.
 
 ## Drivers
 
 - One hardware driver per repository.
-- `UniXNU-<device>` references each driver as a submodule under `drivers/<Name>`.
+- SoC and device profiles select components through `components.toml`.
 - A driver is contributed to the UniXNU organization only when it serves an official device or the generic stack. Otherwise it stays independently maintained and is linked as a submodule.
 - Every driver repository carries the `unixnu` topic.
 - Built-in XNU drivers compile against the recorded XNU flags in `*.cpo.json`.

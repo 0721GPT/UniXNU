@@ -82,3 +82,5 @@ The device needs:
 - [Build](/building) describes the commands that consume these inputs.
 - [Device repository](/porting/device-repository) describes the board file.
 - [Devices](/devices/) lists device repositories and their specific inputs.
+
+For the sheng target, review the [ABI, SDK, firmware, and image input inventory](/porting/migration#build-inputs) before starting the full build.

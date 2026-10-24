@@ -1,53 +1,43 @@
 # 移植总览
 
-一个设备移植包含两个仓库和一份板级配置。
+UniXNU 通过共享配置和独立仓库组装设备构建。
 
-| 仓库 | 内容 |
+| 仓库 | 职责 |
 | --- | --- |
-| `UniXNU-<device>` | `board.toml`、内核 defconfig、设备脚本、驱动、kit、补丁和设备 package |
-| `uefi-<device>` | Mu-Silicium UEFI 移植：设备配置、DSC/FDF、预检和厂商输入 |
+| `UniXNU` | 构建工具、组件目录、ARM64 支持、OS 配置、模板、UEFI package 和文档站 |
+| `UniXNU-<soc>-common` | SoC 配置、DTSI、共享平台操作和补丁 |
+| `UniXNU-<device>` | 板级 DTS、外设、组件选择、分区布局和打包 |
+| 组件仓库 | 驱动、库、加载器和工具 |
+| `uefi-<device>` | UEFI 平台集成 |
 
-`UniXNU` 提供构建驱动、UEFI 启动管理器、DarwinBoot 和通用驱动。设备仓库会覆盖同名模块。
+## 工作流程
 
-## 移植清单
+1. 阅读仓库根目录的 `AGENTS.md`、[设备仓库规范](/zh/porting/device-repository)和[组件目录](/zh/reference/components)。
+2. 选择 SoC 仓库和 OS 配置。逐项确认组件的硬件接口、OS ABI、板级输入和已验证设备。
+3. 复制 `examples/device/`，填写板级配置、源码固定版本、DTS、固件输入和私有文件清单。
+4. 在板级 DTS 中包含 SoC DTSI。[共享生成器](/zh/porting/device-tree)将编译后的硬件树转换成 XNU ADT。
+5. [构建](/zh/building)内核、package、固件、payload 和启动镜像。
+6. 按[bring-up 顺序](/zh/porting/bring-up)验证，分别记录主机构建结果和设备观察结果。
+7. 在本文档站维护设备页面和组件参考。
 
-1. [移植 UEFI 固件](/zh/porting/uefi-firmware)，让设备能进入菜单、使用 framebuffer 和负载卷。
-2. [创建设备仓库](/zh/porting/device-repository)，包含 `board.toml`、defconfig 和 package。
-3. 选择目标 IPSW 和设备身份。
-4. [生成 ADT](/zh/porting/device-tree)，提供 XNU 读取的节点和属性。
-5. 构建负载和启动镜像。
-6. [按阶段 bring-up](/zh/porting/bring-up)：固件、菜单、负载、内核入口、平台专家、存储、根卷、用户态。
-7. 为显示、存储、输入和电源加入设备驱动和 kit。
-8. 构建 userdata 镜像并刷写。
+现有设备仓库使用[迁移指南](/zh/porting/migration)。
 
-## 通用部分
+## 归属
 
-以下部分来自 `UniXNU`，通常无需设备副本：
+ARM64 公共支持包含 CPU 接口、页表支持和通用构建设置。SoC 仓库包含同一 SoC
+各板共用的控制器资源和平台操作。OS 配置包含 XNU 与 IPSW 版本、预链接配置、ABI
+要求和版本相关修复。
 
-- 构建驱动和模块解析。
-- UniXNU 和配置 schema。
-- DarwinBoot 和加载器协议。
-- NativePrelink。
-- 4 KiB XNU 补丁。
-- 通用平台专家、CPU、VirtIO 和块驱动。
+设备仓库提供外设连接、固件选择、保留内存调整、电源策略、分区几何和显示集成。
+可复用的控制器与协议实现放在独立组件中。
 
-## 设备相关部分
-
-- UEFI 固件移植和厂商二进制。
-- 固件基址和大小。
-- 设备树和 ADT 生成器。
-- 内核 defconfig 及其选择的静态库。
-- 板级电源、显示、触控和 GPU 驱动。
-- IPSW 身份和 trust cache。
-- userdata 分区几何。
-
-## 设备页面
-
-[设备](/zh/devices/)章节列出设备仓库。每个页面记录该设备的数值。移植指南使用占位符，具体数值链接到设备页面。
+SM8550 的 SoC 配置选择 Adreno740。AdrenoMetal 依赖内核 GPU 接口和所选 OS ABI。
+sheng 提供其固件、电源、内存和显示输入。参见 [SM8550 支持](/zh/porting/sm8550)。
 
 ## 下一步
 
 - [设备仓库](/zh/porting/device-repository)
-- [UEFI 固件](/zh/porting/uefi-firmware)
 - [设备树](/zh/porting/device-tree)
-- [bring-up 顺序](/zh/porting/bring-up)
+- [组件目录](/zh/reference/components)
+- [迁移指南](/zh/porting/migration)
+- [UEFI 固件](/zh/porting/uefi-firmware)

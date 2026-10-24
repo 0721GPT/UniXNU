@@ -58,13 +58,13 @@ The `compatible` property selects a driver. `IONameMatch` compares against the p
 | `package/UniXNUPkg/Driver` | UEFI drivers |
 | `package/UniXNUPkg/Test` | UEFI test drivers and payloads |
 
-Drivers and kits are independent repositories included as submodules. A device repository can override any of these directories with its own version.
+Drivers and kits are independent repositories. Profiles select catalog components, and feeds or local overrides supply sources. Check the [component catalog](/reference/components) before adding an implementation.
 
 ## Next steps
 
 - [Driver repositories](/drivers/repositories)
 - [UEFI drivers](/drivers/uefi-drivers)
 - [XNU drivers](/drivers/xnu-drivers)
-- [Adreno 740 driver](/drivers/native-adreno)
+- [Adreno 740 driver](/drivers/adreno740)
 - [Kext bundles](/drivers/kexts)
 - [Device tree matching](/drivers/device-tree-matching)

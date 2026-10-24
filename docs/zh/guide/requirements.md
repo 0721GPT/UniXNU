@@ -82,3 +82,5 @@ sheng 板级文件仍以 iPadOS 17.7.11 为默认目标。iPhone X iOS 16.7.16 �
 - [构建](/zh/building)介绍使用这些输入的命令。
 - [设备仓库](/zh/porting/device-repository)介绍板级文件。
 - [设备](/zh/devices/)列出设备仓库和各自的输入。
+
+开始 sheng 完整构建前，核对 [ABI、SDK、固件和镜像输入清单](/zh/porting/migration#构建输入)。

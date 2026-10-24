@@ -1,53 +1,46 @@
 # Porting overview
 
-A device port has two repositories and one board configuration.
+UniXNU assembles a device from shared profiles and independent repositories.
 
-| Repository | Contents |
+| Repository | Responsibility |
 | --- | --- |
-| `UniXNU-<device>` | `board.toml`, kernel defconfig, device scripts, drivers, kits, patches and device package |
-| `uefi-<device>` | Mu-Silicium UEFI port: device configuration, DSC/FDF, preflight and vendor inputs |
+| `UniXNU` | Build tools, catalog, ARM64 support, OS profiles, templates, UEFI package, documentation site |
+| `UniXNU-<soc>-common` | SoC configuration, DTSI, shared platform operations, patches |
+| `UniXNU-<device>` | Board DTS, peripherals, component selection, partition layout, packaging |
+| Component repositories | Drivers, libraries, loaders, tools |
+| `uefi-<device>` | UEFI platform integration |
 
-`UniXNU` supplies the build driver, the UEFI boot manager, DarwinBoot and the generic drivers. A device repository overrides any module with the same name.
+## Workflow
 
-## Porting checklist
+1. Read the repository's root `AGENTS.md`, [device repository specification](/porting/device-repository), and [component catalog](/reference/components).
+2. Select a SoC repository and OS profile. Check the hardware interfaces, OS ABI, board inputs, and verified devices of each component.
+3. Copy `examples/device/`. Fill in the board configuration, source pins, DTS, firmware inputs, and proprietary-file inventory.
+4. Include the SoC DTSI in the board DTS. The [shared generator](/porting/device-tree) converts the compiled hardware tree into XNU's ADT.
+5. [Build](/building) the kernel, package, firmware, payload, and boot image.
+6. Follow the [bring-up order](/porting/bring-up). Record host build results and device observations separately.
+7. Publish the device page and component references in this documentation site.
 
-1. [Port the UEFI firmware](/porting/uefi-firmware) so the device reaches a menu, a framebuffer and a payload volume.
-2. [Create the device repository](/porting/device-repository) with `board.toml`, a defconfig and the package directory.
-3. Select the target IPSW and its identity.
-4. [Generate the ADT](/porting/device-tree) with the nodes and properties XNU consumes.
-5. Build the payload and the boot image.
-6. [Bring up in stages](/porting/bring-up): firmware, menu, payload, kernel entry, platform expert, storage, root, userland.
-7. Add device drivers and kits for display, storage, input and power.
-8. Build the userdata image and flash it.
+Use the [migration guide](/porting/migration) for an existing device repository.
 
-## What stays generic
+## Ownership
 
-These parts come from `UniXNU` and usually need no device copy:
+Common ARM64 support includes CPU interfaces, page-table support, and generic
+build settings. SoC support contains controller resources and operations shared
+by boards using that SoC. OS profiles contain XNU and IPSW versions, prelink
+configuration, ABI requirements, and version-specific fixes.
 
-- The build driver and module resolution.
-- UniXNU and its configuration schema.
-- DarwinBoot and the loader protocol.
-- NativePrelink.
-- The 4 KiB XNU patches.
-- The generic platform expert, CPU, VirtIO and block drivers.
+The device supplies peripheral wiring, firmware selection, reserved-memory
+adjustments, power policy, partition geometry, and display integration. Reusable
+controller and protocol implementations remain components.
 
-## What is device specific
-
-- The UEFI firmware port and its vendor binaries.
-- The firmware base and size.
-- The device tree and the ADT generator.
-- The kernel defconfig and the archives it selects.
-- The board power, display, touch and GPU drivers.
-- The IPSW identity and the trust caches.
-- The userdata partition geometry.
-
-## Device pages
-
-The [Devices](/devices/) section lists device repositories. Each page records the values for that device. The porting guide uses placeholders and links to the device pages for concrete values.
+For SM8550, the SoC profile selects Adreno740. AdrenoMetal uses the kernel GPU
+interface and the selected OS ABI. The sheng device supplies its firmware,
+power, memory, and display inputs. See [SM8550 support](/porting/sm8550).
 
 ## Next steps
 
 - [Device repository](/porting/device-repository)
-- [UEFI firmware](/porting/uefi-firmware)
 - [Device tree](/porting/device-tree)
-- [Bring-up order](/porting/bring-up)
+- [Component catalog](/reference/components)
+- [Migration](/porting/migration)
+- [UEFI firmware](/porting/uefi-firmware)

@@ -1,6 +1,6 @@
 # 构建
 
-`unixnu` 是构建驱动。它读取设备仓库、解析模块、组装构建树，并按步骤执行。
+`unixnu` 解析 ARM64、SoC、OS 和设备配置，选择组件依赖并组装目标树。格式 2 输出位于 `out/<device>/<os_profile>/<config>/`，格式 1 使用 `out/<board>/`。
 
 ## 快速开始
 
@@ -24,9 +24,11 @@ git submodule update --init --recursive
 
 第一次使用 `-D` 后，设备仓库会记录在 `out/state.json` 中。
 
-启动镜像位于 `out/<board>/boot/boot.img`，旁边的 `boot.json` 是报告。选项写在子命令之后。
+启动镜像位于 `out/<device>/<os_profile>/<config>/boot/boot.img`，旁边的 `boot.json` 是报告。选项写在子命令之后。
 
 ## macOS runner
+
+CI 使用共享解析器读取最终配置和输出路径。
 
 内核、userdata 和 Data 种子步骤调用 Xcode、`hdiutil` 和 `diskutil`。fork 后可以在 GitHub 的 macOS runner 上运行这些步骤，不需要本地 Mac。workflow 是构建检查：只发布脱敏文本日志，不上传镜像。
 
@@ -54,7 +56,7 @@ job 运行在 `macos-26`。`xcode` 选择 `/Applications/Xcode_<version>.app`，
 
 设备仓库为私有仓库时，添加仓库 secret `UNIXNU_DEVICE_TOKEN`。
 
-workflow 在安装和构建前检查输入、defconfig、Xcode 路径和平台种子。它只发布 `*.log` 文件，替换其中的密钥和签名 URL，并写入每一步的结果摘要。内核、负载、userdata 镜像和 IPSW 成员不会上传。
+workflow 在安装和构建前检查输入、defconfig、Xcode 路径和平台种子。它只发布 `*.log` 文件，替换其中的密钥和签名 URL，并写入每一步的结果摘要。
 
 需要 bootstrap 候选、显示 ABI 证据或预置 kernelcache 的设备静态库链使用 `pre_build`。命令在检出之后、内核构建之前运行。workflow 在结束时删除抓取的 IPSW、feeds 和固件缓存。
 
@@ -63,9 +65,9 @@ bootstrap 候选示例：
 ```sh
 ./unixnu defconfig bootstrap_defconfig -D "$DEVICE_DIR"
 ./unixnu build kernel -D "$DEVICE_DIR"
-mkdir -p out/<board>/tree/build/native-prelink
-cp out/<board>/kernel/kernel.macho \
-   out/<board>/tree/build/native-prelink/<candidate>.macho
+mkdir -p out/<device>/<os_profile>/<config>/tree/build/xnu-prelink
+cp out/<device>/<os_profile>/<config>/kernel/kernel.macho \
+   out/<device>/<os_profile>/<config>/tree/build/xnu-prelink/<candidate>.macho
 ```
 
 候选名称以及显示和 kernelcache 输入由设备仓库决定。
@@ -96,9 +98,9 @@ sudo scripts/linux/setup-toolchain.py
 
 | 命令 | 作用 |
 | --- | --- |
-| `defconfig [NAME]` | 列出设备仓库的 `configs/*_defconfig`，或把选中的文件复制到 `out/<board>/.config`。 |
+| `defconfig [NAME]` | 列出设备仓库的 `configs/*_defconfig`，或将选中配置合并到目标 `.config`。 |
 | `fetch [NAME...] [--update]` | 拉取 git 源码并把 commit 写入设备仓库的 `unixnu.lock`。`--update` 忽略锁文件。 |
-| `tree` | 解析模块、拉取步骤需要的参考源码，并组装 `out/<board>/tree`。 |
+| `tree` | 解析模块、拉取步骤需要的参考源码，并组装 `out/<device>/<os_profile>/<config>/tree`。 |
 | `ipsw info` | 打印目标 IPSW 的产品、build 和全部组件。 |
 | `ipsw fetch [COMPONENT...]` | 把指定组件解压到 `out/ipsw/<build>/`。 |
 | `build [kernel] [package] [firmware] [payload] [prelink]` | 执行指定步骤。默认执行四个步骤。`prelink` 只重做预链接。 |
@@ -135,7 +137,7 @@ sudo scripts/linux/setup-toolchain.py
 
 ### defconfig
 
-`defconfig` 把 `configs/<name>_defconfig` 复制到 `out/<board>/.config`，并在构建开始前解析文件，拒绝格式错误的行。
+`defconfig` 按顺序合并配置片段，再应用所选设备 defconfig，将结果写入目标 `.config`。构建前拒绝格式错误的行。
 
 ### fetch
 
@@ -143,7 +145,7 @@ sudo scripts/linux/setup-toolchain.py
 
 ### tree
 
-`tree` 按脚本期望的布局组装 `out/<board>/tree`：
+`tree` 按脚本期望的布局组装 `out/<device>/<os_profile>/<config>/tree`：
 
 ```
 tree/
@@ -164,20 +166,20 @@ IPSW 按成员读取，远程 IPSW 不会整体下载。zip 目录和需要的�
 
 内核步骤：
 
-1. 把 `patches/xnu` 和 `kits/NativePrelink/patches` 应用到固定版本的 XNU 源码。
+1. 解析声明的补丁系列与组件补丁，应用到目标独立的 XNU 源码。格式 1 使用其目录补丁顺序。
 2. 运行 `prepare-xnu-source.py` 恢复缺失的 DriverKit 头文件。
 3. `startup.o.json` 不存在时，先运行一次 XNU 以生成编译记录。该轮可以在链接前停止。
-4. 按 `[kernel] archives` 的顺序运行静态库脚本。
+4. 按顺序运行所选组件构建命令和 `[kernel] archives` 辅助命令，`component:<ID>` 指定组件位置，依赖先运行。
 5. 为 `ARM64`、机型 `BCM2837`、配置 `DEVELOPMENT`、iOS 17 构建 XNU，并链接静态库。
-6. 用 `kits/NativePrelink` 把原生内核与原始 kernelcache 预链接。重建会替换上一轮的结果。
+6. 用 `kits/XnuPrelink` 把原生内核与原始 kernelcache 预链接。重建会替换上一轮的结果。
 
 kernelcache 来自 IPSW，除非 `--kernelcache` 指定文件。`KernelCache` IM4P 的 LZFSE 负载由 macOS `compression_tool`（Linux 上为 `lzfse`）解码，选出 arm64 切片，并按 `[kernel.prelink] kernelcache_sha256` 校验。
 
-输出为 `out/<board>/kernel/kernel.macho`。
+输出为 `out/<device>/<os_profile>/<config>/kernel/kernel.macho`。
 
 ### package
 
-package 步骤用 EDK II 构建 `package/`，输出到 `out/<board>/package/Build/Out`，包含 `UniXNU.efi`、`UniXNUDxe.efi`、`HelloPayload.efi`、`SampleDriver.efi` 和 `XnuTest.efi`。
+package 步骤用 EDK II 构建 `package/`，输出到 `out/<device>/<os_profile>/<config>/package/Build/Out`，包含 `UniXNU.efi`、`UniXNUDxe.efi`、`HelloPayload.efi`、`SampleDriver.efi` 和 `XnuTest.efi`。
 
 ### firmware
 
@@ -199,7 +201,7 @@ package 步骤用 EDK II 构建 `package/`，输出到 `out/<board>/package/Buil
 - 可选的 `kernel.macho.trustcache`
 - 可选的 `scratch-data.img`
 
-内核命令行来自 `[payload] kernel_args`。额外的 `--kernel-arg NAME=VALUE` 替换板级同名参数。卷用 mtools 写入，不挂载。输出为 `out/<board>/payload/payload.img` 和 `payload.json`。
+内核命令行来自 `[payload] kernel_args`。额外的 `--kernel-arg NAME=VALUE` 替换板级同名参数。卷用 mtools 写入，不挂载。输出为 `out/<device>/<os_profile>/<config>/payload/payload.img` 和 `payload.json`。
 
 `--owner-trust-cache` 传入 owner 签名的包，包含原始缓存和额外模块。它替换 `--trust-cache`，并跳过 `[payload] trust_cache_sha256`。
 
@@ -207,7 +209,7 @@ package 步骤用 EDK II 构建 `package/`，输出到 `out/<board>/package/Buil
 
 ### userdata
 
-userdata 步骤构建 `userdata` 分区的原始镜像，保存 IPSW 中未修改的 `OS` 和 `SystemOS` 磁盘镜像，前置 `SHNGROOT` manifest。磁盘镜像用 `hdiutil` 只读挂载。输出为 `out/<board>/userdata/userdata-root.img` 和 `userdata-root.json`，报告会打印 `fastboot flash userdata` 命令。
+userdata 步骤构建 `userdata` 分区的原始镜像，保存 IPSW 中未修改的 `OS` 和 `SystemOS` 磁盘镜像，前置 `SHNGROOT` manifest。磁盘镜像用 `hdiutil` 只读挂载。输出为 `out/<device>/<os_profile>/<config>/userdata/userdata-root.img` 和 `userdata-root.json`，报告会打印 `fastboot flash userdata` 命令。
 
 ### bootimg
 
@@ -245,14 +247,14 @@ ramdisk 优先使用负载输出，也可以用 `--ramdisk FILE`，或用 `--ram
 | `out/state.json` | 记住的设备仓库 |
 | `out/feeds/` | 拉取的源码 |
 | `out/ipsw/<build>/` | 解压的 IPSW 成员 |
-| `out/<board>/.config` | 选中的 defconfig |
-| `out/<board>/tree/` | 组装后的构建树 |
-| `out/<board>/logs/` | 步骤日志 |
-| `out/<board>/kernel/kernel.macho` | 预链接内核 |
-| `out/<board>/package/Build/Out/` | EFI 程序 |
-| `out/<board>/payload/` | 负载镜像与报告 |
-| `out/<board>/boot/` | 启动镜像与报告 |
-| `out/<board>/userdata/` | userdata 镜像与报告 |
+| `out/<device>/<os_profile>/<config>/.config` | 选中的 defconfig |
+| `out/<device>/<os_profile>/<config>/tree/` | 组装后的构建树 |
+| `out/<device>/<os_profile>/<config>/logs/` | 步骤日志 |
+| `out/<device>/<os_profile>/<config>/kernel/kernel.macho` | 预链接内核 |
+| `out/<device>/<os_profile>/<config>/package/Build/Out/` | EFI 程序 |
+| `out/<device>/<os_profile>/<config>/payload/` | 负载镜像与报告 |
+| `out/<device>/<os_profile>/<config>/boot/` | 启动镜像与报告 |
+| `out/<device>/<os_profile>/<config>/userdata/` | userdata 镜像与报告 |
 
 ## 可复现性
 

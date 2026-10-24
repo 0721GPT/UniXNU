@@ -14,7 +14,7 @@
   --kernel-arg=sheng-log=1 --kernel-arg=sheng-autoreset=120
 ```
 
-日志写入器在 NativeUfs 读取根布局后才打开窗口。reset 只执行一次，且在该轮日志落盘之后。
+日志写入器在 ShengUfs 读取根布局后才打开窗口。reset 只执行一次，且在该轮日志落盘之后。
 
 ## 日志读取器
 
@@ -24,7 +24,7 @@
 python3 package/linux-log/build-linux-log-boot.py \
   --boot boot_sheng_singleboot.img --busybox busybox \
   --rebootbl rebootbl --module nvmem-reboot-mode.ko \
-  --out out/sheng/boot/sheng-linux-log.img
+  --out out/sheng/ipados-17.7.11-21H461/sheng/boot/sheng-linux-log.img
 ```
 
 `rebootbl` 是 `package/linux-log/rebootbl.cpp` 中的静态 aarch64 Linux 程序。它通过设备树的 `nvmem-reboot-mode` cell 调用 `reboot(RESTART2, "bootloader")`。
@@ -32,9 +32,9 @@ python3 package/linux-log/build-linux-log-boot.py \
 ## 运行
 
 ```sh
-fastboot boot out/sheng/boot/boot.img
+fastboot boot out/sheng/ipados-17.7.11-21H461/sheng/boot/boot.img
 # 等待平板自行回到 fastboot。
-fastboot boot out/sheng/boot/sheng-linux-log.img
+fastboot boot out/sheng/ipados-17.7.11-21H461/sheng/boot/sheng-linux-log.img
 python3 scripts/read-sheng-log.py --wait 240
 ```
 
@@ -43,8 +43,8 @@ python3 scripts/read-sheng-log.py --wait 240
 一条命令跑完整轮：
 
 ```sh
-SERIAL=<serial> READER=out/sheng/boot/sheng-linux-log.img \
-  scripts/run-sheng-unattended.sh out/sheng/boot/boot.img 420
+SERIAL=<serial> READER=out/sheng/ipados-17.7.11-21H461/sheng/boot/sheng-linux-log.img \
+  scripts/run-sheng-unattended.sh out/sheng/ipados-17.7.11-21H461/sheng/boot/boot.img 420
 ```
 
 如果平板没有在时限内返回，脚本会提示并等待手动进入 fastboot。

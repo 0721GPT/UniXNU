@@ -8,7 +8,7 @@ Adreno GMU 固件和 HFI kit。加载 GMU 固件并使用 HFI 协议。
 
 ## 状态
 
-NativeAdreno 使用它。
+Adreno740 使用它。
 
 ## 构建
 

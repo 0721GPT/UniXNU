@@ -50,7 +50,7 @@ ADT 属性 `/chosen/amfi-only-platform-code` 让 AMFI 保持在平台代码策�
 
 ## GPU client 授权
 
-NativeAdreno 在加速器服务上发布 `NativeSandboxGrantProcess`。补丁 `zzw-native-adreno-sandbox-grant` 把打开进程的名称与该属性比较，指定进程可以绕过 `mac_iokit_check_open_service` 和 `mac_iokit_check_open` 打开 user client。render server 就是该指定进程。
+Adreno740 在加速器服务上发布 `NativeSandboxGrantProcess`。补丁 `zzw-native-adreno-sandbox-grant` 把打开进程的名称与该属性比较，指定进程可以绕过 `mac_iokit_check_open_service` 和 `mac_iokit_check_open` 打开 user client。render server 就是该指定进程。
 
 ## verified root
 
@@ -65,7 +65,7 @@ NativeAdreno 在加速器服务上发布 `NativeSandboxGrantProcess`。补丁 `z
 
 ## 存储完整性
 
-`NativeVirtioBlock` 和 `NativeRamBlock` 共用 verified block 策略。构建脚本检查两个传输层导入相同的原始存储绑定，并检查编译对象与记录哈希一致。
+`VirtioMmioBlock` 和 `RamBlock` 共用 verified block 策略。构建脚本检查两个传输层导入相同的原始存储绑定，并检查编译对象与记录哈希一致。
 
 ## 报告
 

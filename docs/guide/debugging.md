@@ -343,15 +343,15 @@ Collect:
 | Serial log | UART capture file |
 | Diagnostic photos | Title bar, full page, trace pages, pulse strip |
 | Panic photo | Panic screen |
-| Boot report | `out/<board>/boot/boot.json` |
-| Payload report | `out/<board>/payload/payload.json` |
-| Build logs | `out/<board>/logs/` |
+| Boot report | `out/<device>/<os_profile>/<config>/boot/boot.json` |
+| Payload report | `out/<device>/<os_profile>/<config>/payload/payload.json` |
+| Build logs | `out/<device>/<os_profile>/<config>/logs/` |
 
 Record the boot image hash with every photo:
 
 ```sh
-shasum -a 256 out/<board>/boot/boot.img
-jq . out/<board>/boot/boot.json
+shasum -a 256 out/<device>/<os_profile>/<config>/boot/boot.img
+jq . out/<device>/<os_profile>/<config>/boot/boot.json
 ```
 
 ## Next steps

@@ -1,6 +1,6 @@
 # Driver repositories
 
-Every hardware driver has its own repository. A device repository references the drivers it uses as submodules under `drivers/<Name>`. Every driver repository carries the `unixnu` topic.
+Drivers and libraries have independent repositories. The [component catalog](/reference/components) records their scope, interfaces, dependencies, revisions, build commands, and outputs. SoC and device profiles select canonical IDs. Every maintained driver repository carries the `unixnu` topic.
 
 ## Official drivers
 
@@ -8,20 +8,20 @@ These repositories are maintained in the UniXNU organization.
 
 | Driver | Repository | Layer | Page |
 | --- | --- | --- | --- |
-| NativeAdreno | [UniXNU/NativeAdreno](https://github.com/UniXNU/NativeAdreno) | XNU GPU | [NativeAdreno](/drivers/native-adreno) |
-| NativeMetal | [UniXNU/NativeMetal](https://github.com/UniXNU/NativeMetal) | XNU Metal frontend | [NativeMetal](/drivers/native-metal) |
-| NativeUfs | [UniXNU/NativeUfs](https://github.com/UniXNU/NativeUfs) | XNU storage | [NativeUfs](/drivers/native-ufs) |
-| NativeHidInput | [UniXNU/NativeHidInput](https://github.com/UniXNU/NativeHidInput) | XNU input | [NativeHidInput](/drivers/native-hid-input) |
-| NativeRamBlock | [UniXNU/NativeRamBlock](https://github.com/UniXNU/NativeRamBlock) | XNU storage | [NativeRamBlock](/drivers/native-ram-block) |
-| NativeMobileDisplay | [UniXNU/NativeMobileDisplay](https://github.com/UniXNU/NativeMobileDisplay) | XNU display | [NativeMobileDisplay](/drivers/native-mobile-display) |
-| NativeGeniSpi | [UniXNU/NativeGeniSpi](https://github.com/UniXNU/NativeGeniSpi) | XNU SPI | [NativeGeniSpi](/drivers/native-geni-spi) |
-| NativeAES | [UniXNU/NativeAES](https://github.com/UniXNU/NativeAES) | XNU crypto | [NativeAES](/drivers/native-aes) |
-| NativeKeyStoreEvents | [UniXNU/NativeKeyStoreEvents](https://github.com/UniXNU/NativeKeyStoreEvents) | XNU keystore | [NativeKeyStoreEvents](/drivers/native-keystore-events) |
-| NativeVirtioBlock | [UniXNU/NativeVirtioBlock](https://github.com/UniXNU/NativeVirtioBlock) | XNU storage | [NativeVirtioBlock](/drivers/native-virtio-block) |
-| NativeVirtioConsole | [UniXNU/NativeVirtioConsole](https://github.com/UniXNU/NativeVirtioConsole) | XNU console | [NativeVirtioConsole](/drivers/native-virtio-console) |
-| NativeNovatekTouch | [UniXNU/NativeNovatekTouch](https://github.com/UniXNU/NativeNovatekTouch) | XNU touch | [NativeNovatekTouch](/drivers/native-novatek-touch) |
-| NativePrelink | [UniXNU/NativePrelink](https://github.com/UniXNU/NativePrelink) | Kernel tooling | [NativePrelink](/drivers/native-prelink) |
-| NativeWifi | [UniXNU/NativeWifi](https://github.com/UniXNU/NativeWifi) | XNU Wi-Fi | [NativeWifi](/drivers/native-wifi) |
+| Adreno740 | [UniXNU/Adreno740](https://github.com/UniXNU/Adreno740) | XNU GPU | [Adreno740](/drivers/adreno740) |
+| AdrenoMetal | [UniXNU/AdrenoMetal](https://github.com/UniXNU/AdrenoMetal) | XNU Metal frontend | [AdrenoMetal](/drivers/adreno-metal) |
+| ShengUfs | [UniXNU/ShengUfs](https://github.com/UniXNU/ShengUfs) | XNU storage | [ShengUfs](/drivers/sheng-ufs) |
+| ShengHidInput | [UniXNU/ShengHidInput](https://github.com/UniXNU/ShengHidInput) | XNU input | [ShengHidInput](/drivers/sheng-hid-input) |
+| RamBlock | [UniXNU/RamBlock](https://github.com/UniXNU/RamBlock) | XNU storage | [RamBlock](/drivers/ram-block) |
+| GopFramebuffer | [UniXNU/GopFramebuffer](https://github.com/UniXNU/GopFramebuffer) | XNU display | [GopFramebuffer](/drivers/gop-framebuffer) |
+| QcomGeniSpi | [UniXNU/QcomGeniSpi](https://github.com/UniXNU/QcomGeniSpi) | XNU SPI | [QcomGeniSpi](/drivers/qcom-geni-spi) |
+| SoftwareAES | [UniXNU/SoftwareAES](https://github.com/UniXNU/SoftwareAES) | XNU crypto | [SoftwareAES](/drivers/software-aes) |
+| AppleKeyStoreState | [UniXNU/AppleKeyStoreState](https://github.com/UniXNU/AppleKeyStoreState) | XNU keystore | [AppleKeyStoreState](/drivers/apple-key-store-state) |
+| VirtioMmioBlock | [UniXNU/VirtioMmioBlock](https://github.com/UniXNU/VirtioMmioBlock) | XNU storage | [VirtioMmioBlock](/drivers/virtio-mmio-block) |
+| VirtioMmioConsole | [UniXNU/VirtioMmioConsole](https://github.com/UniXNU/VirtioMmioConsole) | XNU console | [VirtioMmioConsole](/drivers/virtio-mmio-console) |
+| ShengNovatekTouch | [UniXNU/ShengNovatekTouch](https://github.com/UniXNU/ShengNovatekTouch) | XNU touch | [ShengNovatekTouch](/drivers/sheng-novatek-touch) |
+| XnuPrelink | [UniXNU/XnuPrelink](https://github.com/UniXNU/XnuPrelink) | Kernel tooling | [XnuPrelink](/drivers/xnu-prelink) |
+| Ath12kWifi | [UniXNU/Ath12kWifi](https://github.com/UniXNU/Ath12kWifi) | XNU Wi-Fi | [Ath12kWifi](/drivers/ath12k-wifi) |
 | ArmCpu | [UniXNU/ArmCpu](https://github.com/UniXNU/ArmCpu) | XNU CPU and GIC | [ArmCpu](/drivers/arm-cpu) |
 | ArmDTPlatform | [UniXNU/ArmDTPlatform](https://github.com/UniXNU/ArmDTPlatform) | XNU platform expert | [ArmDTPlatform](/drivers/arm-dt-platform) |
 | ArmVirtPlatform | [UniXNU/ArmVirtPlatform](https://github.com/UniXNU/ArmVirtPlatform) | XNU platform | [ArmVirtPlatform](/drivers/arm-virt-platform) |
@@ -70,7 +70,7 @@ These repositories are device forks that track an official driver. They are link
 ## Rules
 
 - One hardware driver per repository.
-- `UniXNU-<device>` references each driver as a submodule under `drivers/<Name>`.
+- SoC and device profiles select catalog components by ID. Feeds and submodules supply additional sources.
 - A driver for an official device or the generic stack can be contributed to the UniXNU organization.
 - Other drivers stay independently maintained and are linked as submodules.
 - Every driver repository carries the `unixnu` topic.

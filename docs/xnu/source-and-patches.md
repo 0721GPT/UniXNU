@@ -1,66 +1,38 @@
 # Source and patches
 
-UniXNU builds XNU from the pinned Apple source and applies its patches in name order.
+The selected OS profile pins XNU and its ABI inputs. The iPadOS 17.7.11 profile
+uses `xnu-10063.141.1`, Darwin 23.6.0, DriverKit headers from `xnu-10063.121.3`,
+and TrustCache headers from `xnu-8796.101.5`.
 
-## Source
-
-`feeds.toml` pins the source:
-
-| Source | Tag | Purpose |
-| --- | --- | --- |
-| `xnu` | `xnu-10063.141.1` | Kernel source |
-| `libplatform` | `libplatform-316.100.10` | Platform headers |
-| `libdispatch` | `libdispatch-1477.100.9` | Dispatch headers |
-| `AvailabilityVersions` | `AvailabilityVersions-141.1` | Availability macros |
-| `libpthread` | `libpthread-519.120.4` | Source pthread component |
-| `corecrypto-2023` | commit `11fba65` | Source corecrypto component |
-| `IOStorageFamily` | commit `e45fbe3` | Public storage headers for the block drivers |
-| `edk2` | `release/202608` | EDK II base for the package and firmware |
-
-The XNU entry also carries:
-
-```toml
-darwin = "23.6.0"
-version = "10063.141.1"
-driverkit_tag = "xnu-10063.121.3"
-trustcache_tag = "xnu-8796.101.5"
-```
-
-`driverkit_tag` supplies `iokit/DriverKit` headers that the current tag omits. `trustcache_tag` supplies `EXTERNAL_HEADERS/TrustCache`.
+`feeds.toml` supplies libplatform, libdispatch, AvailabilityVersions, libpthread,
+corecrypto, IOStorageFamily, and edk2. The format 2 OS profile's explicit XNU
+revision takes priority over a recorded source lock.
 
 ## Patch application
 
-`scripts/build-xnu-4k-baseline.sh` applies patches to `.cache/xnu-work`:
+Format 2 resolves `[kernel] patch_series` in declared order. A series lists one
+patch path per line, relative to the series file or prefixed with `arch:`, `soc:`,
+`os:`, `device:`, or `component:<ID>/`. Component patches participate in the
+same resolved order. `unixnu status --json` prints that order.
 
-1. Reverse the patches that overlap earlier contexts, when they are present:
-   - `patches/xnu/zzz-boot-progress.patch`
-   - `patches/xnu/zzy-native-gpu-addon-mount.patch`
-2. Apply every `patches/xnu/*.patch` and `kits/NativePrelink/patches/*.patch` in name order.
-3. Skip a patch that is already applied.
-4. Run `prepare-xnu-source.py` to restore omitted headers.
+Kernel preparation creates `tree/.cache/xnu-work` under the selected target,
+checks each patch, applies it, and prepares missing source headers. The target
+also owns generated headers and `tree/build` outputs.
 
-The late patches carry the `zzw`, `zzy` and `zzz` prefixes so they apply last. The reverse step lets a new build start from a clean context for the two regions that earlier patches also edit.
+Format 1 selects `patches/xnu/*.patch` and `kits/XnuPrelink/patches/*.patch` in
+filename order. Its shell preparation handles the late `zzw`, `zzy`, and `zzz`
+patches and checks already-applied patches.
 
-A patch is idempotent:
+## Ownership
 
-```sh
-git -C .cache/xnu-work apply --reverse --check "$PATCH" && skip
-git -C .cache/xnu-work apply --check "$PATCH"
-git -C .cache/xnu-work apply "$PATCH"
-```
-
-`--check` stops the build before a partial application.
-
-## Patch layout
-
-| Directory | Contents |
+| Location | Contents |
 | --- | --- |
-| `patches/xnu/` | Kernel patches |
-| `patches/libpthread/` | Source pthread patches |
-| `patches/mesa/` | Turnip and Mesa build patches |
-| `kits/NativePrelink/patches/` | Prelink ABI patches |
-
-A device repository can add `patches/` modules. The build tree links them under `tree/patches/`, and the kernel script reads `$ROOT/patches/xnu/*.patch`, which includes device patches.
+| ARM64 profile | Common architecture configuration and patch series |
+| SoC repository | Hardware operations and SoC patch series |
+| OS profile | Version-specific fixes and prelink patch selection |
+| Device repository | Board-specific patch series |
+| Component repository | Patches required by that component |
+| `patches/libpthread/`, `patches/mesa/` | Library and compiler source patches |
 
 ## Add a patch
 
@@ -72,7 +44,7 @@ A device repository can add `patches/` modules. The build tree links them under 
 git -C .cache/xnu-work diff -- <paths> > patches/xnu/my-change.patch
 ```
 
-4. Run `unixnu build kernel` again.
+4. Add the patch to its profile series and run `unixnu build kernel`.
 
 A patch that adds a build option follows the pattern in `native-aes-personality.patch`:
 
@@ -122,7 +94,7 @@ The kernel script reads the variables and adds object flags, archives and link i
 ## Source tree
 
 ```
-out/<board>/tree/
+out/<device>/<os_profile>/<config>/tree/
   refer/xnu/                 pinned source
   .cache/xnu-work/           working clone
   .cache/fakeroot/           kernel SDK root
@@ -131,7 +103,7 @@ out/<board>/tree/
   build/xnu/ios-sym/         symbols
   build/xnu/ios-dst/         install headers
   patches/xnu/               linked patches
-  kits/NativePrelink/        prelink tool and patches
+  kits/XnuPrelink/        prelink tool and patches
 ```
 
 ## Updating the source

@@ -1,6 +1,6 @@
 # Build
 
-`unixnu` is the build driver. It reads a device repository, resolves modules, assembles a build tree and runs each step.
+`unixnu` resolves ARM64, SoC, OS, and device profiles, selects component dependencies, assembles a target tree, and runs each build step. Format 2 uses `out/<device>/<os_profile>/<config>/`. Format 1 uses `out/<board>/`.
 
 ## Quick start
 
@@ -24,7 +24,7 @@ git submodule update --init --recursive
 
 The device repository is remembered in `out/state.json` after the first `-D`.
 
-The boot image is `out/<board>/boot/boot.img` with `out/<board>/boot/boot.json` next to it. Options follow the subcommand.
+The boot image is `out/<device>/<os_profile>/<config>/boot/boot.img` with `out/<device>/<os_profile>/<config>/boot/boot.json` next to it. Options follow the subcommand.
 
 ## macOS runner
 
@@ -54,7 +54,7 @@ The job runs on `macos-26`. `xcode` selects `/Applications/Xcode_<version>.app` 
 
 Add the repository secret `UNIXNU_DEVICE_TOKEN` when the device repository is private.
 
-The workflow checks the inputs, the defconfig, the Xcode path and the platform seed before installing or building. It publishes only `*.log` files with secrets and signed URLs replaced, and writes a per-step summary. Kernels, payloads, userdata images and IPSW members are not uploaded.
+The workflow uses the shared resolver to read effective profiles and output paths. It checks the inputs, the defconfig, the Xcode path and the platform seed before installing or building. It publishes only `*.log` files with secrets and signed URLs replaced, and writes a per-step summary.
 
 A device archive chain that needs a bootstrap candidate, display ABI evidence or a staged kernelcache uses `pre_build`. Its commands run after checkout and before the kernel build. The workflow removes the fetched IPSW, the fetched feeds and the staged firmware cache at the end.
 
@@ -63,9 +63,9 @@ A bootstrap candidate example:
 ```sh
 ./unixnu defconfig bootstrap_defconfig -D "$DEVICE_DIR"
 ./unixnu build kernel -D "$DEVICE_DIR"
-mkdir -p out/<board>/tree/build/native-prelink
-cp out/<board>/kernel/kernel.macho \
-   out/<board>/tree/build/native-prelink/<candidate>.macho
+mkdir -p out/<device>/<os_profile>/<config>/tree/build/xnu-prelink
+cp out/<device>/<os_profile>/<config>/kernel/kernel.macho \
+   out/<device>/<os_profile>/<config>/tree/build/xnu-prelink/<candidate>.macho
 ```
 
 The candidate names and the display or kernelcache inputs come from the device repository.
@@ -96,15 +96,15 @@ A Linux kernel is not byte-identical to a Mac build, because the compilers diffe
 
 | Command | Action |
 | --- | --- |
-| `defconfig [NAME]` | Lists `configs/*_defconfig` of the device repository, or copies one to `out/<board>/.config`. |
+| `defconfig [NAME]` | Lists `configs/*_defconfig` of the device repository, or merges the selected configuration into the target `.config`. |
 | `fetch [NAME...] [--update]` | Fetches git sources and writes `unixnu.lock` in the device repository. `--update` ignores the lock. |
-| `tree` | Resolves modules, fetches the references the steps need, and assembles `out/<board>/tree`. |
+| `tree` | Resolves modules, fetches the references the steps need, and assembles `out/<device>/<os_profile>/<config>/tree`. |
 | `ipsw info` | Prints the product, build and every component of the target IPSW. |
 | `ipsw fetch [COMPONENT...]` | Extracts the named components into `out/ipsw/<build>/`. |
 | `build [kernel] [package] [firmware] [payload] [prelink]` | Runs the named steps. The default is all four steps. `prelink` repeats the prelink alone. |
 | `build userdata [--dry-run]` | Builds the raw userdata image. This step is large and runs only when named. |
 | `bootimg` | Packs BootShim, the firmware volume, the device tree and the optional payload into an Android boot image. |
-| `status` | Prints the device, configuration and the origin of every module. |
+| `status [--json]` | Prints effective profiles, component scope, revisions, overrides, and patch order. |
 | `clean` | Removes the board output and keeps fetched sources. |
 
 ## Common options
@@ -135,7 +135,7 @@ The environment variables `UNIXNU_DEVICE`, `UNIXNU_OUT`, `UNIXNU_UEFI`, `UNIXNU_
 
 ### defconfig
 
-`defconfig` copies `configs/<name>_defconfig` from the device repository to `out/<board>/.config`. It parses the file to reject a malformed line before the build starts.
+`defconfig` merges the ordered configuration fragments and the selected device defconfig into the target `.config`. The selected defconfig is applied last. It rejects malformed lines before the build starts.
 
 ### fetch
 
@@ -143,7 +143,7 @@ The environment variables `UNIXNU_DEVICE`, `UNIXNU_OUT`, `UNIXNU_UEFI`, `UNIXNU_
 
 ### tree
 
-`tree` assembles `out/<board>/tree` with the layout the scripts expect:
+`tree` assembles `out/<device>/<os_profile>/<config>/tree` with the layout the scripts expect:
 
 ```
 tree/
@@ -164,20 +164,20 @@ The image must match `[ipsw]`: product, version, build, device class, chip ID an
 
 The kernel step:
 
-1. Applies `patches/xnu` and `kits/NativePrelink/patches` to the pinned XNU source.
+1. Resolves the declared patch series and component patches, then applies them to target-local XNU sources. Format 1 uses its directory patch order.
 2. Runs `prepare-xnu-source.py` to restore omitted DriverKit headers.
 3. Runs one XNU pass for the compile records when `startup.o.json` is absent. The pass may stop at the link.
-4. Runs the archive builders in `[kernel] archives` order.
+4. Runs selected component recipes and auxiliary `[kernel] archives` commands. `component:<ID>` entries place component recipes at explicit positions; dependencies run first.
 5. Builds XNU for `ARM64`, machine `BCM2837`, configuration `DEVELOPMENT`, iOS 17, and links the archives.
-6. Prelinks the native kernel against the original kernelcache with `kits/NativePrelink`. A rebuild replaces the earlier candidate.
+6. Prelinks the native kernel against the original kernelcache with `kits/XnuPrelink`. A rebuild replaces the earlier candidate.
 
 The kernelcache comes from the IPSW unless `--kernelcache` supplies one. The LZFSE payload of the `KernelCache` IM4P is decoded with macOS `compression_tool` (`lzfse` on Linux), the arm64 slice is selected, and the result is checked against `[kernel.prelink] kernelcache_sha256`.
 
-The output is `out/<board>/kernel/kernel.macho`.
+The output is `out/<device>/<os_profile>/<config>/kernel/kernel.macho`.
 
 ### package
 
-The package step builds `package/` with EDK II. The output is `out/<board>/package/Build/Out`. It contains `UniXNU.efi`, `UniXNUDxe.efi`, `HelloPayload.efi`, `SampleDriver.efi` and `XnuTest.efi`.
+The package step builds `package/` with EDK II. The output is `out/<device>/<os_profile>/<config>/package/Build/Out`. It contains `UniXNU.efi`, `UniXNUDxe.efi`, `HelloPayload.efi`, `SampleDriver.efi` and `XnuTest.efi`.
 
 ### firmware
 
@@ -199,7 +199,7 @@ The payload step writes a FAT volume with:
 - the optional `kernel.macho.trustcache`
 - the optional `scratch-data.img`
 
-The kernel command line comes from `[payload] kernel_args`. An extra `--kernel-arg NAME=VALUE` replaces the board argument with the same name. The volume is written with mtools without mounting. The output is `out/<board>/payload/payload.img` with `payload.json`.
+The kernel command line comes from `[payload] kernel_args`. An extra `--kernel-arg NAME=VALUE` replaces the board argument with the same name. The volume is written with mtools without mounting. The output is `out/<device>/<os_profile>/<config>/payload/payload.img` with `payload.json`.
 
 `--owner-trust-cache` supplies an owner-signed bundle with the original caches and extra modules. It replaces `--trust-cache` and skips `[payload] trust_cache_sha256`.
 
@@ -207,7 +207,7 @@ The kernel command line comes from `[payload] kernel_args`. An extra `--kernel-a
 
 ### userdata
 
-The userdata step builds the raw image for the `userdata` partition. It holds the unchanged `OS` and `SystemOS` disk images of the IPSW behind the `SHNGROOT` manifest. The disk images are attached read-only with `hdiutil`. The output is `out/<board>/userdata/userdata-root.img` with `userdata-root.json`.
+The userdata step builds the raw image for the `userdata` partition. It holds the unchanged `OS` and `SystemOS` disk images of the IPSW behind the `SHNGROOT` manifest. The disk images are attached read-only with `hdiutil`. The output is `out/<device>/<os_profile>/<config>/userdata/userdata-root.img` with `userdata-root.json`.
 
 The report prints the `fastboot flash userdata` command.
 
@@ -247,14 +247,14 @@ All output goes to `out/`:
 | `out/state.json` | Remembered device repository |
 | `out/feeds/` | Fetched sources |
 | `out/ipsw/<build>/` | Extracted IPSW members |
-| `out/<board>/.config` | Selected defconfig |
-| `out/<board>/tree/` | Assembled build tree |
-| `out/<board>/logs/` | Step logs |
-| `out/<board>/kernel/kernel.macho` | Prelinked kernel |
-| `out/<board>/package/Build/Out/` | EFI binaries |
-| `out/<board>/payload/` | Payload image and report |
-| `out/<board>/boot/` | Boot image and report |
-| `out/<board>/userdata/` | Userdata image and report |
+| `out/<device>/<os_profile>/<config>/.config` | Selected defconfig |
+| `out/<device>/<os_profile>/<config>/tree/` | Assembled build tree |
+| `out/<device>/<os_profile>/<config>/logs/` | Step logs |
+| `out/<device>/<os_profile>/<config>/kernel/kernel.macho` | Prelinked kernel |
+| `out/<device>/<os_profile>/<config>/package/Build/Out/` | EFI binaries |
+| `out/<device>/<os_profile>/<config>/payload/` | Payload image and report |
+| `out/<device>/<os_profile>/<config>/boot/` | Boot image and report |
+| `out/<device>/<os_profile>/<config>/userdata/` | Userdata image and report |
 
 ## Reproducibility
 

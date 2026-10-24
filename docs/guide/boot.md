@@ -13,7 +13,7 @@ The boot image runs from RAM. The workflow starts the image and leaves the insta
 
 ```sh
 fastboot devices
-fastboot boot out/<board>/boot/boot.img
+fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
 `fastboot boot` transfers the image and starts it one time. The stock boot partition and the installed OS stay unchanged.
@@ -67,9 +67,9 @@ The default window is 256 MiB. The ADT property `/chosen/darwinboot-memory-size`
 The first boot needs a userdata image. The image supplies the OS and SystemOS volumes and the root volume UUID that the kernel matches.
 
 ```sh
-fastboot flash userdata out/<board>/userdata/userdata-root.img
+fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
 fastboot reboot bootloader
-fastboot boot out/<board>/boot/boot.img
+fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
 The userdata image is large. Build it with `unixnu build userdata` and flash it from the device repository report.
@@ -86,7 +86,7 @@ Useful logs:
 
 | Source | Location |
 | --- | --- |
-| Build driver | `out/<board>/logs/*.log` |
+| Build driver | `out/<device>/<os_profile>/<config>/logs/*.log` |
 | Boot manager | Serial console, lines with `UNIXNU:` |
 | DarwinBoot | Serial console, lines with `DARWINBOOT:` |
 | XNU | Serial console, kernel output |

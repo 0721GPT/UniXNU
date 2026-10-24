@@ -8,7 +8,7 @@ The userdata image supplies the root file system to XNU. It holds the unchanged 
 ./unixnu build userdata --ipsw /path/to/restore.ipsw
 ```
 
-The step extracts the IPSW components named in `[userdata] windows`, reads each disk image with `hdiutil`, and writes a raw image to `out/<board>/userdata/userdata-root.img`.
+The step extracts the IPSW components named in `[userdata] windows`, reads each disk image with `hdiutil`, and writes a raw image to `out/<device>/<os_profile>/<config>/userdata/userdata-root.img`.
 
 The report `userdata-root.json` records the window offsets, sizes and hashes, the partition capacity and the flash command.
 
@@ -61,7 +61,7 @@ Each window entry contains a 32-byte name, a 64-bit offset, a 64-bit size, a 32-
 ## Flash
 
 ```sh
-fastboot flash userdata out/<board>/userdata/userdata-root.img
+fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
 ```
 
 The driver prints the command in the report. The device repository can provide a wrapper script that checks the image and partition before flashing.

@@ -13,7 +13,7 @@
 
 ```sh
 fastboot devices
-fastboot boot out/<board>/boot/boot.img
+fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
 `fastboot boot` 传输镜像并启动一次。设备原有的 boot 分区和已安装系统保持不变。
@@ -67,9 +67,9 @@ DarwinBoot 把内核段复制到连续物理窗口，构造 `boot_args`，把 AD
 首次启动需要 userdata 镜像。镜像提供 OS 与 SystemOS 卷，以及内核匹配的根卷 UUID。
 
 ```sh
-fastboot flash userdata out/<board>/userdata/userdata-root.img
+fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
 fastboot reboot bootloader
-fastboot boot out/<board>/boot/boot.img
+fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
 userdata 镜像较大。用 `unixnu build userdata` 构建，并按设备仓库报告中的命令刷写。
@@ -84,7 +84,7 @@ Data 种子提供可写 Data 卷。`--skip-setup` 在种子副本中把 Setup �
 
 | 来源 | 位置 |
 | --- | --- |
-| 构建驱动 | `out/<board>/logs/*.log` |
+| 构建驱动 | `out/<device>/<os_profile>/<config>/logs/*.log` |
 | 启动管理器 | 串口，`UNIXNU:` 行 |
 | DarwinBoot | 串口，`DARWINBOOT:` 行 |
 | XNU | 串口内核输出 |

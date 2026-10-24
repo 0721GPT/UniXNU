@@ -7,7 +7,7 @@
 | `no device repository` | `-D` or `UNIXNU_DEVICE` | Pass the device repository |
 | `has no board.toml` | Device repository layout | Create `board.toml` |
 | `is an EXAMPLE device repository` | `[board] example` | Copy the sample and set a real name |
-| `no configuration` | `out/<board>/.config` | Run `unixnu defconfig NAME` |
+| `no configuration` | `out/<device>/<os_profile>/<config>/.config` | Run `unixnu defconfig NAME` |
 | `no Mu-Silicium checkout` | `--uefi` path | Pass a checkout with `Resources/Scripts/mkbootimg.py` |
 | `is not a Mu-Silicium checkout` | Path | Point `--uefi` at the root of the checkout |
 | `no edk2 tree` | `--edk2` or fetched edk2 | Run `unixnu fetch` or pass a Mu_Basecore tree |
@@ -55,7 +55,7 @@
 
 | Source | Location |
 | --- | --- |
-| Build | `out/<board>/logs/` |
+| Build | `out/<device>/<os_profile>/<config>/logs/` |
 | Boot manager | Serial console, `UNIXNU:` lines |
 | Loader | Serial console, `DARWINBOOT:` lines |
 | Kernel | Serial console |
@@ -64,9 +64,9 @@
 ## Inspect a report
 
 ```sh
-jq . out/<board>/boot/boot.json
-jq . out/<board>/payload/payload.json
-jq . out/<board>/userdata/userdata-root.json
+jq . out/<device>/<os_profile>/<config>/boot/boot.json
+jq . out/<device>/<os_profile>/<config>/payload/payload.json
+jq . out/<device>/<os_profile>/<config>/userdata/userdata-root.json
 ```
 
 The reports record the input hashes. Compare them with the files you supplied.

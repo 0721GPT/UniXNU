@@ -87,9 +87,9 @@ sheng-disable-jobs=com.apple.identityservicesd,com.apple.locationd,com.apple.Com
 负载目录包含：
 
 ```
-out/<board>/payload/data-skip-setup-<hash>.dbr
-out/<board>/payload/payload.img
-out/<board>/payload/payload.json
+out/<device>/<os_profile>/<config>/payload/data-skip-setup-<hash>.dbr
+out/<device>/<os_profile>/<config>/payload/payload.img
+out/<device>/<os_profile>/<config>/payload/payload.json
 ```
 
 `payload.json` 记录：

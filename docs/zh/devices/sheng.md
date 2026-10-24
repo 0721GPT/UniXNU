@@ -1,239 +1,69 @@
 # 小米平板 6S Pro（sheng）
 
-sheng 是搭载 SM8550 SoC 的小米平板 6S Pro。它是[支持的设备](/zh/devices/)中的一个设备移植。
+sheng 使用 SM8550 SoC 和 `ipados-17.7.11-21H461` OS 配置。
 
-| 仓库 | 内容 |
+| 仓库 | 职责 |
 | --- | --- |
-| [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | 板级文件、defconfig、设备脚本、触控驱动和 package |
-| [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | Mu-Silicium UEFI 移植 |
+| [UniXNU-sm8550-common](https://github.com/UniXNU/UniXNU-sm8550-common) | SoC 配置、DTSI、GPU 平台操作和共享补丁 |
+| [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng) | 板级 DTS、外设、组件选择、固件策略、分区和打包 |
+| [uefi-sheng](https://github.com/UniXNU/uefi-sheng) | UEFI 平台集成 |
 
-## 板级
+## 配置
 
 ```toml
+schema_version = 2
+
 [board]
 name = "sheng"
 soc = "SM8550"
-description = "Xiaomi Pad 6S Pro"
+soc_source = "sm8550"
+os_profile = "ipados-17.7.11-21H461"
 kit = "sheng"
+
+[device_tree]
+source = "device:dts/sheng.dts"
+include_dirs = ["soc:dts"]
 ```
 
-输出目录为 `out/sheng/`。
+设备 feed 固定 SoC 提交。配置按 ARM64、SoC、OS、设备顺序合并，所选
+`sheng_defconfig` 在配置片段之后应用。输出根目录为
+`out/sheng/ipados-17.7.11-21H461/sheng/`。
 
-## IPSW
+OS 配置提供 XNU 10063.141.1、iPad7,1 iPadOS 17.7.11 build 21H461、IPSW 成员固定
+哈希、预链接根组件、Apple 身份和 OS ABI 要求。`payload.adt` 提供设备根卷 UUID、
+内存请求和平台种子规则。
 
-```toml
-[ipsw]
-url = "https://updates.cdn-apple.com/2025SpringFCS/fullrestores/122-77166/DCA6CFE8-90E9-4B92-880D-3DE171798E40/iPad_Pro_HFR_17.7.11_21H461_Restore.ipsw"
-product = "iPad7,1"
-version = "17.7.11"
-build = "21H461"
-device_class = "j120ap"
-chip_id = 0x8011
-board_id = 12
-fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemTrustCache"]
-```
+## 硬件描述
 
-板级使用未修改的 iPad7,1 iPadOS 17.7.11 恢复镜像。成员哈希：
+`dts/sheng.dts` 包含 `sm8550.dtsi`，提供型号、compatible、DRAM 范围、splash
+保留区域、CPU 选择和启用的外设。共享 ADT 生成器结合 OS 配置与 payload 输入完成转换。
 
-```toml
-[ipsw.sha256]
-"044-76040-038.dmg" = "3f99b859c9728379110b66657c7b15285bcb1925ad8b5726542e2cdcf8b1028d"
-"044-76034-038.dmg" = "b4908cde41d23e6bc05e6af51a2c9eeb00cf0f863a6a18b1600c96a3fd70414f"
-```
-
-## userdata
-
-```toml
-[userdata]
-first_lba = 0x2f3840
-last_lba = 0x3d0abfa
-lba_bytes = 4096
-windows = [
-  { name = "OS", component = "OS" },
-  { name = "SystemOS", component = "Cryptex1,SystemOS" },
-]
-```
-
-LBA 来自设备上名为 `userdata` 的 GPT 条目。
-
-## 内核
-
-```toml
-[kernel]
-defconfig = "sheng_defconfig"
-
-[kernel.prelink]
-tool = "kits/NativePrelink/emit_prelink.py"
-kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
-kernelcache_sha256 = "f18b4df865405f2a287b84977d7aca745e056d656d9fc9df1662970ce2969de7"
-slide = "-0x1000000"
-early_security_init = "com.apple.driver.AppleMobileFileIntegrity=0xfffffff005ab4ae0"
-```
-
-预链接 roots：
-
-```
-com.apple.AppleFSCompression.AppleFSCompressionTypeZlib
-com.apple.driver.AppleARMPlatform
-com.apple.driver.AppleARMWatchdogTimer
-com.apple.driver.AppleAudioClockLibs
-com.apple.driver.AppleEffaceableStorage
-com.apple.driver.AppleIISController
-com.apple.driver.AppleM2ScalerCSCDriver
-com.apple.driver.AppleMobileFileIntegrity
-com.apple.driver.ApplePMGR
-com.apple.driver.IODARTFamily
-com.apple.filesystems.apfs
-com.apple.iokit.CoreAnalyticsFamily
-com.apple.iokit.IOAVFamily
-com.apple.iokit.IOAudio2Family
-com.apple.iokit.IOCECFamily
-com.apple.iokit.IOCryptoAcceleratorFamily
-com.apple.iokit.IOGPUFamily
-com.apple.iokit.IOHDCPFamily
-com.apple.iokit.IOMobileGraphicsFamily
-com.apple.iokit.IOReportFamily
-com.apple.iokit.IOSlowAdaptiveClockingFamily
-com.apple.iokit.IOStorageFamily
-com.apple.iokit.IOSurface
-com.apple.kec.Libm
-com.apple.kec.corecrypto
-com.apple.kext.AppleMatch
-com.apple.kext.CoreTrust
-com.apple.security.AppleImage4
-com.apple.security.sandbox
-com.apple.iokit.IOHIDFamily
-com.apple.iokit.IOHIDEventDriver
-```
-
-## defconfig
-
-`sheng_defconfig` 启用：
-
-```
-CONFIG_XNU_SOURCE_CORECRYPTO14=y
-CONFIG_XNU_SOURCE_PTHREAD=y
-CONFIG_XNU_ARM_DT_PLATFORM=y
-CONFIG_XNU_ARMCPU=y
-CONFIG_XNU_NATIVE_UFS=y
-CONFIG_XNU_NATIVE_AES=y
-CONFIG_XNU_NATIVE_VIRTIO_BLOCK=y
-CONFIG_XNU_NATIVE_RAM_BLOCK=y
-CONFIG_XNU_TRUST_CACHE_RUNTIME=y
-CONFIG_XNU_SOURCE_MOCKFS=y
-CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
-CONFIG_XNU_VERIFIED_ROOT_PROBE=y
-CONFIG_XNU_OWNER_ROOT_AUDIT=y
-CONFIG_XNU_OWNER_ROOT_TRUST=y
-CONFIG_XNU_SHENG_PMGR=y
-CONFIG_XNU_OWNER_CACHE_MOUNT=y
-CONFIG_XNU_OWNER_CACHE_STARTUP=y
-CONFIG_XNU_OWNER_BOOT_MANIFEST=y
-CONFIG_XNU_OWNER_DATA_MOUNT=y
-CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
-CONFIG_XNU_DT_PANIC_REGION=y
-CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=y
-CONFIG_XNU_NATIVE_ARCH_TIMER=y
-CONFIG_XNU_NATIVE_PAN=y
-CONFIG_XNU_BOOT_PROGRESS=y
-CONFIG_XNU_NATIVE_LEGACY_DISPLAY=y
-CONFIG_XNU_NATIVE_ADRENO=y
-CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
-```
-
-板级设置 scratch Data 卷 UUID：
-
-```
-CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
-```
-
-## GPU
-
-GPU 路径见 [Adreno 740 驱动](/zh/drivers/native-adreno)。板级通过 `sheng-gpu-power=9`、`sheng-gpu-metal=1` 和 `sheng-gpu-addon=1` 启用。
-
-运行时链路：Metal、NativeMetal、metal2vulkan（AIR 到 SPIR-V）、Turnip（SPIR-V 到 NIR 到 IR3）、NativeAdreno、GMU 和 CP、Adreno 740、GPU 合成到 scanout、NativeMobileDisplay。
-
-| 步骤 | 状态 |
+| 输入 | 值 |
 | --- | --- |
-| GMU 冷启动、HFI 和功耗票 | 工作 |
-| GPU context 和 CP 命令 | 工作 |
-| 原生 4 KiB SMMU context | active |
-| Metal 插件发现 | 工作 |
-| GPU 帧复制到 scanout | 工作，像素一致 |
-| render server 合成 | 工作 |
-| 每进程 Metal 设备 | 工作 |
-| GPU 合成桌面 | 工作 |
+| 交接使用的 DRAM 范围 | 基址 `0x80000000`，长度 `0x80000000` |
+| Splash 区域 | 基址 `0xb8000000`，长度 `0x2b00000` |
+| 连续内存请求 | `0x130000000` |
+| 根卷 UUID | `04769D26-2CA0-4825-B443-E2E5F88300F2` |
+| 平台种子 | 通过 `--unique-chip-id` 提供 |
 
-插件通过 `add-gpu-plugin-data.py --publish` 发布给 backboardd，CARenderServer 通过 Adreno 740 合成系统界面。`--clients` 让列入的进程获得自己的设备和驱动连接；其中最多两个还获得 GPU 窗口。驱动在设备上编译每个 UI shader 变体，并在后续启动中复用导出的 pipeline cache。
+## 组件
 
-## 固件
+设备选择 ArmDTPlatform、ArmCpu、SoftwareAES、ShengUfs、VirtioMmioBlock、RamBlock、
+Adreno740、AdrenoMetal、GopFramebuffer、ShengHidInput、ShengNovatekTouch、QcomGeniSpi、
+AppleKeyStoreState、XnuPrelink、DarwinBoot、VerifiedRoot、ShengPreflight、AirNir 和 Ath12kWifi。
+解析器补全共享 SM8550 GPU kit 等依赖。
 
-```toml
-[firmware]
-config = "sheng"
-dsc = "Platforms/Xiaomi/shengPkg/sheng.dsc"
-fd = "Build/shengPkg/{target}_CLANGPDB/FV/SILICIUM_UEFI.fd"
-preflight = ["scripts/check-sheng.py"]
-submodules = ["Common/Mu", "Common/Mu_OEM_Sample", "Silicium-ACPI", "Silicon/Silicium/OpensslPkg/Library/OpensslLib/openssl"]
-patches = ["Resources/MuPatches/Gic-Spurious.patch"]
-```
+Adreno740 和 AdrenoMetal 实现 A740/SM8550 图形栈。sheng 提供签名固件、电源策略、
+内存和显示输入。[GPU 页面](/zh/drivers/adreno740)说明运行时提交与插件发布。
+插件文件名和运行时类保持其 ABI 标识符。
 
-package 路径覆盖 Mu-Silicium 树、UniXNU package、DarwinBoot、edk2、Mu、Mu OEM、Qualcomm、Silicium 和 ACPI。
+ShengUfs 使用 SM8550 UFS 资源和 sheng 存储策略。userdata 分区为
+`first_lba = 0x2f3840`、`last_lba = 0x3d0abfa`，逻辑块大小为 4096 字节。
+OS 和 SystemOS 窗口来自所选 IPSW。`sheng-data-persist=2` 将 Data 写入 userdata
+末尾、1024 MiB 日志保留区之前的存储区域。
 
-defines：
-
-```toml
-[firmware.defines]
-ENABLE_SECUREBOOT = "1"
-DEVICE_MODEL = "sheng"
-MEMORY_PROTECTION = "TRUE"
-SHIP_MODE = "FALSE"
-BUILDID_STRING = "sheng-research"
-```
-
-## 负载
-
-```toml
-[payload]
-volume = "SHENGESP"
-size_mib = 192
-loader = "firmware"
-title = "sheng first boot: source 4K XNU to console"
-dram_size = "0x80000000"
-skip_setup_tool = "scripts/seed-data-skip-setup.py"
-panic_screen = true
-trust_cache_sha256 = [
-  "7416ca4f8377146626bb284e2133c76bee6cb4e3ee0af5d648b186235a7323a7",
-  "8900d6a93d7a59ce1a872a5c081e559f4240a218f97e12d44d22dda46644d68f",
-]
-```
-
-内核参数覆盖平台、存储、显示、输入、GPU、诊断和 owner root 路径。完整列表在板级文件中。
-
-ADT：
-
-```toml
-[payload.adt]
-tool = "scripts/make-sheng-adt.py"
-chip_id = "207"
-owned_memory_size = "0x130000000"
-root_match_volume_uuid = "04769D26-2CA0-4825-B443-E2E5F88300F2"
-cpu_regs = "0,0x100,0x200,0x300,0x400,0x500,0x600,0x700"
-packed_data_ramdisk = true
-ipad_identity = true
-unique_chip_id = "required"
-```
-
-启动镜像加入原有 ABL 需要的 splash 区域：
-
-```toml
-[[bootimg.dtb_node]]
-path = "/reserved-memory/splash_region"
-props = [
-  { name = "label", type = "s", value = "cont_splash_region" },
-  { name = "reg", type = "x", value = ["0x0", "0xb8000000", "0x0", "0x2b00000"] },
-]
-```
+Ath12kWifi 使用板级 PCIe、MSI、DMA 和网络接口。设备配置选择 208 MiB payload、
+sRGB 显示属性和 120 Hz 时序请求。
 
 ## 构建
 
@@ -242,91 +72,50 @@ git clone --recurse-submodules https://github.com/UniXNU/UniXNU
 git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng
 git clone https://github.com/UniXNU/uefi-sheng
 cd UniXNU
-
-# 已有克隆：
-git submodule update --init --recursive
-
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
 ./unixnu fetch
+./unixnu status --json
 ./unixnu ipsw fetch
 ./unixnu build kernel
 ./unixnu build package
 ./unixnu build firmware --uefi ../uefi-sheng
 ./unixnu build payload --unique-chip-id <hex> --trust-cache <bundle> --data-ramdisk <seed>
-./unixnu bootimg --uefi ../uefi-sheng --dtb <sheng.dtb>
+./unixnu bootimg --uefi ../uefi-sheng --dtb <firmware.dtb>
 ```
 
-平台种子、trust cache 和 Data 种子是设备输入。板级文件报告接受的 trust cache 哈希。
+平台种子、trust cache、Data seed 和厂商固件来自设备输入清单。
+`proprietary-files.txt` 记录固件来源与哈希，OS 配置记录接受的 trust cache 哈希。
 
-要使用平板的全部存储，用 `python3 scripts/seed-data-grow.py --auto <seed>.dbr <output>.dbr` 增长 Data 种子。使用 `sheng-data-persist=2` 时，store 写回 userdata 末尾，位于 1024 MiB 日志保留区之下。
+内核依次选择 ARM64、SoC、OS 和设备补丁 series。
+archive 计划将组件构建命令与 ABI 绑定、板级辅助脚本按顺序排列。使用
+`status --json` 检查两者。
 
 ## 启动
 
 ```sh
-fastboot boot out/sheng/boot/boot.img
+fastboot boot out/sheng/ipados-17.7.11-21H461/sheng/boot/boot.img
 ```
 
-首次启动使用 userdata 镜像：
+userdata 安装使用上述分区布局：
 
 ```sh
 ./unixnu build userdata
-fastboot flash userdata out/sheng/userdata/userdata-root.img
+fastboot flash userdata out/sheng/ipados-17.7.11-21H461/sheng/userdata/userdata-root.img
 fastboot reboot bootloader
-fastboot boot out/sheng/boot/boot.img
+fastboot boot out/sheng/ipados-17.7.11-21H461/sheng/boot/boot.img
 ```
 
-## macOS
+## 验证
 
-板级文件指向 iPadOS 恢复镜像。要在同一设备上启动 macOS，把 `[ipsw]` 指向 macOS 恢复镜像，并更新产品、版本、build、device class、chip ID、board ID 和成员哈希。把 `[userdata] windows` 设为 `OS` 和 `Cryptex1,SystemOS`。内核、负载、启动镜像和 userdata 步骤保持不变。
+运行 `unixnu status --json` 检查源码版本、配置、组件和补丁顺序。使用
+[所需输入](/zh/porting/migration#构建输入)构建所选目标。检查 DTS/ADT 输出、
+内核与预链接日志、payload 内容和固件打包结果。
 
-## 设备支持
+使用[迁移报告](/zh/porting/migration#验证报告)记录镜像版本、命令、输出和硬件观察。
+完整板级输入由设备仓库维护。
 
-| 功能 | 状态 | 说明 |
-| --- | --- | --- |
-| 触控 | ✅ | Novatek NT36532E |
-| 显示 | ✅ | |
-| UFS | ✅ | 原生 UFS 根 |
-| Wi-Fi | ❌ | |
-| 蓝牙 | ❌ | |
-| 摄像头 | ❌ | |
-| GPU | ✅ | 原生 Metal、GPU 合成、每进程设备和导出的 pipeline cache |
-| USB | ❌ | |
-| 音频 | ❌ | |
-| 传感器 | ❌ | |
-| 电池驱动 | ❌ | |
-| MiPPS | ❌ | |
-| 休眠与唤醒 | ❌ | |
-
-✅ 可用，⚠️ 部分可用，❌ 不可用。同一张表见 [UniXNU-sheng README](https://github.com/UniXNU/UniXNU-sheng#device-support)。
-
-## 观察状态
-
-| 阶段 | 状态 |
-| --- | --- |
-| 原有 ABL 加载启动镜像，BootShim 启动 UEFI 固件 | 工作 |
-| Silicium UEFI 和 UniXNU 启动 | 工作；Silicium 偶尔停住，再次启动同一镜像可继续 |
-| UniXNU 读取负载卷 | 工作 |
-| XNU 与用户态 | 原始 iPadOS 用户态从 IPSW 运行；可跳过 Setup 和 Hello，进入 SpringBoard、锁屏、主屏幕和 Settings |
-| 触控 | SpringBoard 和 backboardd 接受触控事件 |
-| UFS | 原生 UFS 根可用 |
-| 桌面渲染 | 通过原生 Metal 设备由 GPU 合成；render server 和列入的客户端使用它 |
-| GPU | 原生 Metal 设备、GPU 合成、每进程客户端和 pipeline cache 工作 |
-
-触控驱动见 [Novatek 触控驱动](/zh/drivers/native-novatek-touch)。
-
-## 设备细节
-
-- 设备树没有 splash 区域时，原有 ABL 会关闭面板。启动镜像加入 `/reserved-memory/splash_region`。
-- 平台种子位于仓库之外，用 `--unique-chip-id` 提供。
-- 原生 UFS 根路径需要 `sheng-pmgr=2`。`native-ufs-root=1` 时，负载步骤拒绝没有链接 PMGR 集成的内核。
-- trust cache 包必须是两个接受哈希之一。
-- Data 种子是负载步骤的输入。
-
-## 下一步
-
-- [移植](/zh/porting/)
-- [Adreno 740 驱动](/zh/drivers/native-adreno)
-- [Novatek 触控驱动](/zh/drivers/native-novatek-touch)
-- [无人值守测试](/zh/devices/sheng-unattended-test)
-- [调试与日志](/zh/guide/debugging)
-- [故障排查](/zh/reference/troubleshooting)
+- [SM8550 支持](/zh/porting/sm8550)
+- [Adreno740](/zh/drivers/adreno740)
+- [Novatek 触控](/zh/drivers/sheng-novatek-touch)
+- [无人值守检查](/zh/devices/sheng-unattended-test)
+- [迁移指南](/zh/porting/migration)

@@ -243,16 +243,16 @@ Provider 需要发布中断控制器或中断资源。通用 ARM64 平台上 `Ar
 | --- | --- |
 | `ArmDTPlatform` | 平台专家和设备 nub |
 | `ArmCpu` | CPU、GIC 和定时器 |
-| `NativeUfs` | 存储、SMMU 和命令队列 |
-| `NativeAES` | 带原始 ABI 的加速器子类 |
-| `NativeAdreno` | GPU 电源、GMU 固件、原生 4 KiB SMMU、ring 和 user client |
-| `NativeMetal` | Metal API 前端和到 Turnip 的 metal2vulkan 翻译 |
+| `ShengUfs` | 存储、SMMU 和命令队列 |
+| `SoftwareAES` | 带原始 ABI 的加速器子类 |
+| `Adreno740` | GPU 电源、GMU 固件、原生 4 KiB SMMU、ring 和 user client |
+| `AdrenoMetal` | Metal API 前端和到 Turnip 的 metal2vulkan 翻译 |
 
-Adreno 路径见 [Adreno 740 驱动](/zh/drivers/native-adreno)。
+Adreno 路径见 [Adreno 740 驱动](/zh/drivers/adreno740)。
 
 ## 完整示例
 
-[Novatek 触控驱动](/zh/drivers/native-novatek-touch)展示完整结构：纯处理核心、总线接口后的控制器协议、带来源的板级常量、分阶段探针和 HID 发布。
+[Novatek 触控驱动](/zh/drivers/sheng-novatek-touch)展示完整结构：纯处理核心、总线接口后的控制器协议、带来源的板级常量、分阶段探针和 HID 发布。
 
 ## 下一步
 

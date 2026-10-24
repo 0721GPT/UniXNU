@@ -1,6 +1,24 @@
 # 设备配置
 
-设备仓库有四个配置文件：`board.toml`、`configs/<name>_defconfig`、`feeds.toml` 和 `local.toml`。
+格式 2 在 `board.toml` 顶层设置 `schema_version = 2`。省略该字段时使用格式 1。
+配置归属和示例见[设备仓库规范](/zh/porting/device-repository)。
+
+## 配置字段
+
+| 表 | 键 | 含义 |
+| --- | --- | --- |
+| `board` | `soc_source` | 固定的 `kind = "soc"` 源码名称 |
+| `board` | `os_profile` | `profiles/os/` 下的目录名 |
+| `components` | `include` | 规范组件 ID，依赖按构建顺序解析 |
+| `kernel` | `config_fragments` | 有序的配置片段 |
+| `kernel` | `patch_series` | 有序的 series 文件 |
+| `device_tree` | `source` | DTS 入口，例如 `device:dts/sheng.dts` |
+| `device_tree` | `include_dirs` | DTS 包含路径，例如 `soc:dts` |
+
+配置层按 ARM64、SoC、OS、设备顺序应用。表按键合并，数组替换。
+所选 defconfig 在 `config_fragments` 之后应用。路径前缀为 `arch:`、`soc:`、`os:`
+和 `device:`。series 条目还支持 `component:<ID>/path`。
+`unixnu status --json` 显示最终配置。
 
 ## board.toml
 
@@ -185,7 +203,7 @@ package = "/path/to/package"
 commit = "0123456789abcdef"
 ```
 
-由 `unixnu fetch` 写入。构建使用锁定的 commit，锁只记录 git 源码。
+由 `unixnu fetch` 写入，记录 Git 源码版本。格式 2 中显式源码 commit 优先于 lock，包括所选 OS 的 XNU 版本。格式 1 使用 lock 优先顺序。官方别名可复用兼容名称对应的 lock 条目。
 
 ## 模块解析
 

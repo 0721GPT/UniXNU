@@ -7,7 +7,7 @@
 | `no device repository` | `-D` 或 `UNIXNU_DEVICE` | 传入设备仓库 |
 | `has no board.toml` | 设备仓库布局 | 创建 `board.toml` |
 | `is an EXAMPLE device repository` | `[board] example` | 复制示例并设置真实名称 |
-| `no configuration` | `out/<board>/.config` | 运行 `unixnu defconfig NAME` |
+| `no configuration` | `out/<device>/<os_profile>/<config>/.config` | 运行 `unixnu defconfig NAME` |
 | `no Mu-Silicium checkout` | `--uefi` 路径 | 传入含 `Resources/Scripts/mkbootimg.py` 的仓库 |
 | `is not a Mu-Silicium checkout` | 路径 | 指向仓库根目录 |
 | `no edk2 tree` | `--edk2` 或已拉取 edk2 | 运行 `unixnu fetch` 或传入 Mu_Basecore |
@@ -55,7 +55,7 @@
 
 | 来源 | 位置 |
 | --- | --- |
-| 构建 | `out/<board>/logs/` |
+| 构建 | `out/<device>/<os_profile>/<config>/logs/` |
 | 启动管理器 | 串口 `UNIXNU:` 行 |
 | 加载器 | 串口 `DARWINBOOT:` 行 |
 | 内核 | 串口 |
@@ -64,9 +64,9 @@
 ## 检查报告
 
 ```sh
-jq . out/<board>/boot/boot.json
-jq . out/<board>/payload/payload.json
-jq . out/<board>/userdata/userdata-root.json
+jq . out/<device>/<os_profile>/<config>/boot/boot.json
+jq . out/<device>/<os_profile>/<config>/payload/payload.json
+jq . out/<device>/<os_profile>/<config>/userdata/userdata-root.json
 ```
 
 报告记录输入哈希，与提供的文件比较。

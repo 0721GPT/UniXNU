@@ -41,7 +41,9 @@ args = "-v serial=3"
 
 ## ADT sidecar
 
-ADT 使用 Apple 的扁平节点编码。`[payload.adt] tool` 指定的板级脚本生成它。负载步骤传入：
+格式 2 按包含路径编译 `[device_tree] source`。共享生成器结合硬件 DTB、解析后的 OS/板级属性和 payload 输入，写出 Apple 节点编码。参见[设备树](/zh/porting/device-tree)。
+
+格式 1 使用 `[payload.adt] tool` 指定的板级脚本，传入以下参数：
 
 | 选项 | 来源 |
 | --- | --- |

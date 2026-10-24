@@ -8,7 +8,7 @@ ARM SMMUv2 native 4 KiB table kit. Builds and programs stage-1/stage-2 context t
 
 ## State
 
-Used by NativeAdreno and the storage drivers.
+Used by Adreno740 and the storage drivers.
 
 ## Build
 

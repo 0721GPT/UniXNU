@@ -1,26 +1,63 @@
 # Device repository
 
-A device repository describes one board and supplies the modules that differ from the generic tree.
+A device repository selects shared SoC and OS support and describes one board.
+Read the [component catalog](/reference/components) before adding a driver.
 
 ## Layout
 
-```
+```text
 UniXNU-<device>/
-  board.toml                  board description
-  configs/<name>_defconfig    kernel configuration
-  feeds.toml                  optional extra sources
-  local.toml                  optional local source overrides, ignored by Git
-  drivers/                    device XNU drivers
-  kits/                       device kernel libraries
-  patches/                    device patches
-  scripts/                    build and bring-up scripts
-  package/                    UniXNU kit contents
-  .gitmodules                 module submodules
-  .cache/firmware/            proprietary inputs, not tracked
-  unixnu.lock                 written by unixnu fetch
+  AGENTS.md
+  README.md
+  board.toml
+  feeds.toml
+  configs/<device>_defconfig
+  dts/<device>.dts
+  patches/xnu/series
+  proprietary-files.txt
+  package/
+  local.toml
+  unixnu.lock
 ```
 
-The directory layout matches `UniXNU`. A module in the device repository overrides the module with the same name in the base repository. Each driver has its own repository and is referenced here as a submodule under `drivers/<Name>`. A driver for this device stays independently maintained unless it serves an official device or the generic stack. Every driver repository carries the `unixnu` topic.
+`local.toml` contains local overrides. `unixnu fetch` writes source pins to
+`unixnu.lock`. Component sources come from the catalog, feeds, or local
+checkouts. `package/` appears as `kits/<board.kit>` in the assembled tree.
+
+## Profiles
+
+```toml
+schema_version = 2
+
+[board]
+name = "sheng"
+soc = "SM8550"
+soc_source = "sm8550"
+os_profile = "ipados-17.7.11-21H461"
+kit = "sheng"
+
+[components]
+include = ["ArmDTPlatform", "ArmCpu", "Adreno740", "AdrenoMetal", "ShengUfs", "ShengHidInput", "ShengNovatekTouch", "GopFramebuffer"]
+
+[device_tree]
+source = "device:dts/sheng.dts"
+include_dirs = ["soc:dts"]
+```
+
+The resolver reads these layers in order:
+
+1. `UniXNU/profiles/arch/arm64/profile.toml`
+2. The selected SoC repository's `soc.toml`
+3. `UniXNU/profiles/os/<os_profile>/profile.toml`
+4. Device `board.toml`
+
+Tables merge by key. Ordinary arrays replace the inherited array. Component
+dependencies are added in build order. Use `unixnu status --json` to inspect
+the resolved settings, sources, overrides, and patch order.
+
+Files without `schema_version` use format 1 and its module paths. Format 2
+outputs use `out/<device>/<os_profile>/<config>/`, where `<config>` is the
+defconfig name with `_defconfig` removed.
 
 ## board.toml
 
@@ -37,8 +74,10 @@ kit = "<kit>"
 
 | Key | Meaning |
 | --- | --- |
-| `name` | Output directory name under `out/` |
+| `name` | Device name in the output path |
 | `soc` | SoC identifier for reports and scripts |
+| `soc_source` | Pinned source of kind `soc` in `feeds.toml` |
+| `os_profile` | Directory name under `UniXNU/profiles/os/` |
 | `description` | Human readable description |
 | `kit` | Folder name of the device package under `kits/` |
 | `example` | Marks a sample repository. `build` and `bootimg` refuse it |
@@ -88,14 +127,14 @@ windows = [
 [kernel]
 defconfig = "<name>_defconfig"
 archives = [
-  "scripts/build-native-aes-bindings.py",
+  "scripts/build-software-aes-bindings.py",
   "scripts/build-libpthread-kernel.py",
   "scripts/build-corecrypto-14.py",
   "scripts/build-corecrypto-14.py --namespace",
 ]
 
 [kernel.prelink]
-tool = "kits/NativePrelink/emit_prelink.py"
+tool = "kits/XnuPrelink/emit_prelink.py"
 kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
 kernelcache_sha256 = "..."
 slide = "-0x1000000"
@@ -118,6 +157,22 @@ extra_args = []
 | `early_security_init` | Component identifier and address for the early initializer |
 | `roots` | Bundle identifiers kept from the original kernelcache |
 | `extra_args` | Additional arguments for the prelink tool |
+
+### Ordered configuration and patches
+
+```toml
+[kernel]
+defconfig = "sheng_defconfig"
+config_fragments = ["arch:configs/common.config", "soc:configs/sm8550.config"]
+patch_series = ["arch:patches/xnu/series", "soc:patches/xnu/series", "os:patches/xnu/series", "device:patches/xnu/series"]
+```
+
+Configuration fragments apply in list order, followed by the selected device
+defconfig. A later value replaces the earlier value for that key. Each series
+lists patches in application order, one per line; `#` starts a comment. Relative
+paths resolve from the series directory. Prefixes `arch:`, `soc:`, `os:`, and
+`device:` select their profile roots. `component:<ID>/path` selects a component
+file. The kernel build applies the resolved sequence to target-local XNU sources.
 
 ### Firmware
 
@@ -188,7 +243,6 @@ timeout = 3
 kernel_args = ["-v", "serial=3"]
 
 [payload.adt]
-tool = "scripts/make-<device>-adt.py"
 chip_id = "0"
 owned_memory_size = "0x10000000"
 root_match_volume_uuid = "00000000-0000-0000-0000-000000000000"
@@ -216,7 +270,7 @@ unique_chip_id = "required"
 
 `--owner-trust-cache` supplies an owner-signed bundle with the original caches and extra modules. It replaces `--trust-cache` and skips `trust_cache_sha256`.
 
-The `[payload.adt]` keys are passed to the ADT tool. The tool contract is device specific. The generic keys are documented in [Device tree](/porting/device-tree).
+Format 2 uses `[device_tree]` and the common ADT generator. `[payload.adt]` supplies payload inputs. The selected OS profile supplies Apple identity. Format 1 uses its declared `tool`. See [Device tree](/porting/device-tree).
 
 ## Defconfig
 
@@ -241,7 +295,15 @@ The file name is selected by `[kernel] defconfig`.
 
 ## feeds.toml
 
-A device repository can add sources:
+A device repository pins its SoC source and can add component sources:
+
+```toml
+[[source]]
+name = "sm8550"
+kind = "soc"
+git = "https://github.com/UniXNU/UniXNU-sm8550-common"
+commit = "<40-character SoC commit>"
+```
 
 ```toml
 [[source]]
@@ -254,13 +316,13 @@ commit = "..."
 local = "~/Code/device-kit"
 ```
 
-Kinds are `driver`, `kit`, `patch`, `package` and `refer`. `path` fetches only a subdirectory. `local` uses a local directory.
+Kinds are `driver`, `kit`, `patch`, `script`, `package`, `refer` and `soc`. `path` fetches only a subdirectory. `local` uses a local directory.
 
 The base `feeds.toml` supplies `xnu`, `libplatform`, `libdispatch`, `AvailabilityVersions`, `edk2`, `libpthread` and `corecrypto-2023`.
 
 ## Proprietary files
 
-The device repository keeps its proprietary inputs under `.cache/firmware`. The build tree links to that directory, so every tree and every rebuild uses the same files without copying them into the repository.
+`proprietary-files.txt` records each required firmware file, source, and hash. The device repository keeps its proprietary inputs under `.cache/firmware`. The build tree links to that directory, so every tree and every rebuild uses the same files without copying them into the repository.
 
 ## Local development
 
@@ -271,10 +333,23 @@ The first match wins:
 3. `--local DIR`
 4. a `local` key in `feeds.toml` or an entry in `local.toml`
 5. the device repository
-6. the base repository
-7. a git source in `feeds.toml`
+6. the selected SoC repository
+7. the base repository
+8. a git source in `feeds.toml`
 
-A local module is linked into `out/<board>/tree`. `unixnu status` marks it and reports that the lock does not pin it.
+Format 2 accepts source overrides in the device's `local.toml`:
+
+```toml
+[[source]]
+kind = "soc"
+name = "sm8550"
+local = "../UniXNU-sm8550-common"
+```
+
+Relative local paths resolve from the containing configuration file. `~`
+and environment variables expand before path resolution.
+
+A local module is linked into `out/<device>/<os_profile>/<config>/tree`. `unixnu status` identifies its local source path.
 
 ## Package and kits
 

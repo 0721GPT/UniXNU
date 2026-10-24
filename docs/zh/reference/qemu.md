@@ -18,9 +18,9 @@ QEMU 在没有设备时测试 UniXNU、注入路径、DarwinBoot 和内核入口
 ```sh
 python3 package/Scripts/stage-esp.py -o out/esp \
   package/UniXNUPkg/Test/Qemu/esp \
-  --put out/<board>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI \
-  --put out/<board>/package/Build/Out/HelloPayload.efi=EFI/UniXNU/Payloads/HelloPayload.efi \
-  --put out/<board>/package/Build/Out/SampleDriver.efi=EFI/UniXNU/Kits/SampleDriver.kit/SampleDriver.efi
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI \
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/HelloPayload.efi=EFI/UniXNU/Payloads/HelloPayload.efi \
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/SampleDriver.efi=EFI/UniXNU/Kits/SampleDriver.kit/SampleDriver.efi
 ```
 
 `stage-esp.py` 复制树，把 `.dts` 编译为 `.dtb`，`.dtso` 编译为 `.dtbo`，并把每个 `--put` 文件放到目标位置。

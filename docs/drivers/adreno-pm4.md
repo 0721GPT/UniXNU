@@ -1,14 +1,14 @@
 # AdrenoPM4
 
-Adreno PM4 packet encoding kit. Builds the command streams NativeAdreno submits.
+Adreno PM4 packet encoding kit. Builds the command streams Adreno740 submits.
 
 | Repository | Maintainer | Scope |
 | --- | --- | --- |
-| [AdrenoPM4](https://github.com/UniXNU/AdrenoPM4) | [UniXNU](https://github.com/UniXNU) | Adreno PM4 packet encoding kit. Builds the command streams NativeAdreno submits. |
+| [AdrenoPM4](https://github.com/UniXNU/AdrenoPM4) | [UniXNU](https://github.com/UniXNU) | Adreno PM4 packet encoding kit. Builds the command streams Adreno740 submits. |
 
 ## State
 
-Used by NativeAdreno.
+Used by Adreno740.
 
 ## Build
 

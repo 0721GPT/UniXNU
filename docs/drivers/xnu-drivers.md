@@ -243,16 +243,16 @@ A driver that fails `start()` releases its resources and returns `false`.
 | --- | --- |
 | `ArmDTPlatform` | Platform expert and device nubs |
 | `ArmCpu` | CPU, GIC and timer |
-| `NativeUfs` | Storage, SMMU and command queues |
-| `NativeAES` | Accelerator subclass with original ABI |
-| `NativeAdreno` | GPU power, GMU firmware, native 4 KiB SMMU, rings and user client |
-| `NativeMetal` | Metal API frontend and metal2vulkan translation to Turnip |
+| `ShengUfs` | Storage, SMMU and command queues |
+| `SoftwareAES` | Accelerator subclass with original ABI |
+| `Adreno740` | GPU power, GMU firmware, native 4 KiB SMMU, rings and user client |
+| `AdrenoMetal` | Metal API frontend and metal2vulkan translation to Turnip |
 
-The Adreno path is documented in [Adreno 740 driver](/drivers/native-adreno).
+The Adreno path is documented in [Adreno 740 driver](/drivers/adreno740).
 
 ## Worked example
 
-The [Novatek touch driver](/drivers/native-novatek-touch) shows the full structure: a pure processing core, a controller protocol behind a bus interface, board constants with sources, staged probing and HID publication.
+The [Novatek touch driver](/drivers/sheng-novatek-touch) shows the full structure: a pure processing core, a controller protocol behind a bus interface, board constants with sources, staged probing and HID publication.
 
 ## Next steps
 

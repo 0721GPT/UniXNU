@@ -18,9 +18,9 @@ The QEMU runner looks for the firmware in the common Homebrew and distribution p
 ```sh
 python3 package/Scripts/stage-esp.py -o out/esp \
   package/UniXNUPkg/Test/Qemu/esp \
-  --put out/<board>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI \
-  --put out/<board>/package/Build/Out/HelloPayload.efi=EFI/UniXNU/Payloads/HelloPayload.efi \
-  --put out/<board>/package/Build/Out/SampleDriver.efi=EFI/UniXNU/Kits/SampleDriver.kit/SampleDriver.efi
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI \
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/HelloPayload.efi=EFI/UniXNU/Payloads/HelloPayload.efi \
+  --put out/<device>/<os_profile>/<config>/package/Build/Out/SampleDriver.efi=EFI/UniXNU/Kits/SampleDriver.kit/SampleDriver.efi
 ```
 
 `stage-esp.py` copies the tree, compiles `.dts` to `.dtb` and `.dtso` to `.dtbo`, and places each `--put` file at its destination.
