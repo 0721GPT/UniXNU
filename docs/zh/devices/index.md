@@ -47,6 +47,7 @@
 | [小米平板 6（pipa）](/zh/devices/pipa) | SM8250 | 已读取板级和 userdata 数值，未在平板运行 | xVanTuring |
 | [Galaxy Tab A7 10.4（gta4l）](/zh/devices/gta4l) | SM6115 | 板级、ADT 和固件可构建，第二个仓库在 CI 构建内核 | NoNameBuilder、ilovemykedi |
 | [Redmi Note 10 Pro（sweet）](/zh/devices/sweet) | SM7150 | 平台和加载器 bring-up，无可启动镜像 | dipa-studio |
+| [小米 MIX 2S（polaris）](/zh/devices/polaris) | SDM845 | 平台阶段真机已验证：固件、UniXNU、DarwinBoot 与源码内核直达 BSD/IOKit；尚无根文件系统 | luuu20309 |
 | [一加 5（cheeseburger）](/zh/devices/cheeseburger) | MSM8998 | 已观察到 XNU 入口色条，MMU 和根未验证 | DinnerABC |
 | [Redmi K20 Pro / Mi 9T Pro（raphael）](/zh/devices/raphael) | SM8150 | 新仓库，内核构建未通过 | penYo22 |
 | [Galaxy Z Fold3（q2q）](/zh/devices/q2q) | SM8350 | 仅源码内核构建工具 | agcarbajo |
