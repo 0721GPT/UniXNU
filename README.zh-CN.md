@@ -19,7 +19,13 @@
 
 # UniXNU
 
-通过 UEFI 在非 Apple ARM64 硬件上运行 iOS 与 macOS。
+> **迁移通知：** 请按[迁移指南](https://unixnu.com/zh/porting/migration)更新设备仓库，接入共享 SoC 支持并统一组件名称。
+
+一个独立项目，通过 UEFI 在非 Apple ARM64 硬件上运行 iOS 与 macOS。
+
+UniXNU 为不同 SoC 和设备的移植提供共享构建工具、ARM64 支持、OS 配置和可复用组件。SoC 仓库提供公共平台支持，设备仓库提供板级配置和硬件集成。
+
+**🎉 News:** Adreno740 和 AdrenoMetal 在 sheng 上提供 GPU 加速。详见 [Adreno 740 驱动文档](https://unixnu.com/zh/drivers/adreno740)。
 
 文档：[unixnu.com](https://unixnu.com/zh/)。从[移植设备](https://unixnu.com/zh/porting/)或[构建与启动](https://unixnu.com/zh/building)开始。
 
