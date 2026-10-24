@@ -62,6 +62,7 @@ OSData *reg = OSDynamicCast(OSData, provider->getProperty("reg"));
 
 ## 下一步
 
+- [驱动仓库](/zh/drivers/repositories)
 - [UEFI 驱动](/zh/drivers/uefi-drivers)
 - [XNU 驱动](/zh/drivers/xnu-drivers)
 - [Adreno 740 驱动](/zh/drivers/native-adreno)
