@@ -20,7 +20,7 @@ UniXNU-<device>/
   unixnu.lock                 unixnu fetch 写入
 ```
 
-目录布局与 `UniXNU` 相同。设备仓库中的同名模块覆盖基础仓库模块。设备驱动和 kit 是独立仓库，以子模块形式引入。
+目录布局与 `UniXNU` 相同。设备仓库中的同名模块覆盖基础仓库模块。每个驱动单独一个仓库，在这里以 `drivers/<Name>` 子模块引用。只服务这台设备的驱动保持独立维护，除非它服务官方机型或通用栈。每个驱动仓库都带 `unixnu` topic。
 
 ## board.toml
 

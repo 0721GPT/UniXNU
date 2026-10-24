@@ -18,7 +18,7 @@ UniXNU/
   examples/device/        示例设备仓库
 ```
 
-驱动和 kit 是 UniXNU 组织下的独立公开仓库，以子模块形式引入。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
+驱动和 kit 是独立的公开仓库。每个驱动单独一个仓库。`UniXNU-<device>` 用 `drivers/` 下的子模块引用需要的驱动。克隆时使用 `--recurse-submodules`，或运行 `git submodule update --init --recursive`。
 
 ## 模块类型
 
@@ -32,6 +32,18 @@ UniXNU/
 | refer | 拉取的树 | Apple 源码或 edk2 |
 
 设备仓库可以提供任意类型，同名模块覆盖基础模块。
+
+## 驱动仓库
+
+| 规则 | 结果 |
+| --- | --- |
+| 每个驱动一个仓库 | 驱动仓库只包含一个硬件驱动及其参考 plist |
+| 设备引用 | `UniXNU-<device>` 把驱动作为子模块加入 `drivers/<Name>` |
+| 官方机型或通用栈 | 驱动可以贡献到 UniXNU 组织 |
+| 其他机型或本地实验 | 驱动由维护者独立维护，并以子模块链接 |
+| Topic | 每个驱动仓库都带 `unixnu` topic |
+
+社区机型的驱动不提交到基础仓库。设备仓库把它列为子模块，设备页记录对应仓库。
 
 ## 解析顺序
 
@@ -62,11 +74,11 @@ tree/
 
 ## 新增模块
 
-组织中的每个仓库都带有 `unixnu` topic。
+组织中的每个仓库都带有 `unixnu` topic。独立维护的驱动仓库在被设备仓库引用前也要带上它。
 
-1. 在 UniXNU 组织下创建公开仓库。
+1. 为一个驱动或一个 kit 创建公开仓库。
 2. 在仓库设置中添加 `unixnu` topic。
-3. 把它作为子模块加入 `drivers/` 或 `kits/`。
+3. 在设备仓库把它作为子模块加入 `drivers/<Name>` 或 `kits/<Name>`。通用栈的驱动加入基础仓库。
 4. 从板级文件或内核脚本引用。
 5. 在对应文档章节记录。
 

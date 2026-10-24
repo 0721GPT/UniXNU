@@ -7,14 +7,17 @@ Read the [documentation](https://unixnu.com) before changing the build driver, t
 | Repository | Changes |
 | --- | --- |
 | `UniXNU` | Build driver, UEFI boot manager, DarwinBoot, generic drivers, kits, patches and documentation |
-| `UniXNU-<device>` | Board file, defconfig, device scripts, device drivers and package |
+| `UniXNU-<device>` | Board file, defconfig, device scripts, driver submodules and package |
+| `Native<driver>` | One hardware driver and its reference plist |
 | `uefi-<device>` | Mu-Silicium UEFI port |
 
 A change that applies to one board belongs in the device repository. A change that applies to the stack belongs in this repository.
 
+Every driver lives in its own repository. `UniXNU-<device>` references the drivers it needs as submodules under `drivers/`. A driver for an official device or the generic stack can be contributed to the UniXNU organization. A driver for another device or a local experiment stays independently maintained, and the device repository references it as a submodule.
+
 ## Repository topics
 
-Every repository in the UniXNU organization carries the `unixnu` topic. Add the topic before a repository is linked from the documentation or used as a module.
+Every repository in the UniXNU organization carries the `unixnu` topic. Every independently maintained driver repository also carries the topic before a device repository references it. Add the topic before a repository is linked from the documentation or used as a module.
 
 ## Private blobs
 
@@ -66,6 +69,10 @@ Late patches use the `zzy-` and `zzz-` prefixes.
 
 ## Drivers
 
+- One hardware driver per repository.
+- `UniXNU-<device>` references each driver as a submodule under `drivers/<Name>`.
+- A driver is contributed to the UniXNU organization only when it serves an official device or the generic stack. Otherwise it stays independently maintained and is linked as a submodule.
+- Every driver repository carries the `unixnu` topic.
 - Built-in XNU drivers compile against the recorded XNU flags in `*.cpo.json`.
 - UEFI drivers use the EDK II module layout.
 - Kext bundles keep the standard bundle layout.

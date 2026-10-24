@@ -18,7 +18,7 @@ UniXNU/
   examples/device/        sample device repository
 ```
 
-Drivers and kits are independent public repositories under the UniXNU organization. They are included as submodules. Clone with `--recurse-submodules`, or run `git submodule update --init --recursive`.
+Drivers and kits are independent public repositories. Each driver has its own repository. `UniXNU-<device>` references the drivers it uses as submodules under `drivers/`. Clone with `--recurse-submodules`, or run `git submodule update --init --recursive`.
 
 ## Module kinds
 
@@ -32,6 +32,18 @@ Drivers and kits are independent public repositories under the UniXNU organizati
 | refer | fetched tree | Apple source or edk2 |
 
 A device repository can supply any kind. Its module overrides the base module with the same name.
+
+## Driver repositories
+
+| Rule | Result |
+| --- | --- |
+| One driver per repository | a driver repository contains one hardware driver and its reference plist |
+| Device reference | `UniXNU-<device>` adds the driver as a submodule under `drivers/<Name>` |
+| Official device or generic stack | the driver can be contributed to the UniXNU organization |
+| Other device or local experiment | the driver stays under its maintainer and is linked as a submodule |
+| Topic | every driver repository carries the `unixnu` topic |
+
+A driver for a community device is not sent to the base repository. The device repository names it as a submodule and the device page records the repository.
 
 ## Resolution order
 
@@ -62,11 +74,11 @@ The build scripts locate the tree from their own path. A script in `scripts/` ca
 
 ## Add a module
 
-Every repository in the organization carries the `unixnu` topic.
+Every repository in the organization carries the `unixnu` topic. Independently maintained driver repositories also carry it before a device repository references them.
 
-1. Create a public repository under the UniXNU organization.
+1. Create a public repository for one driver, or for one kit.
 2. Add the `unixnu` topic in the repository settings.
-3. Add it as a submodule under `drivers/` or `kits/`.
+3. Add it as a submodule under `drivers/<Name>` or `kits/<Name>` in the device repository. A driver for the generic stack is added to the base repository instead.
 4. Reference it from the board file or the kernel script.
 5. Document the module in the matching section.
 
