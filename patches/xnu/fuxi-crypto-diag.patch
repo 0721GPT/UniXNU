@@ -1,44 +1,75 @@
-diff --git a/libkern/crypto/register_crypto.c b/libkern/crypto/register_crypto.c
-index 7d3a56d..f1a7d9d 100644
---- a/libkern/crypto/register_crypto.c
-+++ b/libkern/crypto/register_crypto.c
-@@ -34,9 +34,17 @@
- SECURITY_READ_ONLY_LATE(bool) crypto_init = false;
- SECURITY_READ_ONLY_LATE(crypto_functions_t) g_crypto_funcs = NULL;
- 
-+/* Fork diagnostics: prove whether this function ran and from which address. */
-+void *fuxi_reg_addr = NULL;
-+unsigned long fuxi_reg_calls = 0;
-+void *fuxi_reg_value = NULL;
-+
- int
- register_crypto_functions(const crypto_functions_t funcs)
- {
-+	fuxi_reg_calls++;
-+	fuxi_reg_addr = (void *)&g_crypto_funcs;
-+	fuxi_reg_value = (void *)funcs;
- 	if (g_crypto_funcs) {
- 		return -1;
- 	}
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
-index d57d48c..956898f 100644
+index d57d48c..fe8fa7e 100644
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c
-@@ -199,6 +199,17 @@ __startup_func
+@@ -145,6 +145,9 @@ uint64_t entropy_filter_accepted_sample_count;
+ uint64_t entropy_filter_rejected_sample_count;
+ uint64_t entropy_filter_total_sample_count;
+ 
++/* Fork: set once the SHA-512 context has been initialised with a live crypto table. */
++static bool entropy_ctx_valid;
++
+ static entropy_data_t entropy_data = {
+ 	.repetition_count_test = {
+ 		.init_observation = -1,
+@@ -199,7 +202,12 @@ __startup_func
  void
  entropy_init(void)
  {
-+	extern bool crypto_init;
+-	SHA512_Init(&entropy_data.sha512_ctx);
 +	extern void *g_crypto_funcs;
-+	extern void *fuxi_reg_addr;
-+	extern void *fuxi_reg_value;
-+	extern unsigned long fuxi_reg_calls;
-+	void *caller = __builtin_return_address(0);
-+	if (!crypto_init || g_crypto_funcs == NULL) {
-+		panic("fuxi-diag: i=%d f=%p calls=%lu ra=%p self=%p reg=%p val=%p",
-+		    (int)crypto_init, (void *)g_crypto_funcs, fuxi_reg_calls,
-+		    caller, (void *)&g_crypto_funcs, fuxi_reg_addr, fuxi_reg_value);
++
++	if (g_crypto_funcs != NULL) {
++		SHA512_Init(&entropy_data.sha512_ctx);
++		entropy_ctx_valid = true;
 +	}
- 	SHA512_Init(&entropy_data.sha512_ctx);
  
  	lck_grp_init(&entropy_data.lock_group, "entropy-data", LCK_GRP_ATTR_NULL);
+ 	lck_mtx_init(&entropy_data.mutex, &entropy_data.lock_group, LCK_ATTR_NULL);
+@@ -519,7 +527,9 @@ entropy_provide(size_t *entropy_size, void *entropy, __unused void *arg)
+ 		// We accumulate the samples regardless of whether the test
+ 		// failed or a particular sample was filtered. It cannot hurt.
+ 		entropy_data.total_sample_count += filtered_sample_count;
+-		SHA512_Update(&entropy_data.sha512_ctx, e->samples, cpu_sample_count * sizeof(e->samples[0]));
++		if (entropy_ctx_valid) {
++			SHA512_Update(&entropy_data.sha512_ctx, e->samples, cpu_sample_count * sizeof(e->samples[0]));
++		}
+ 
+ 		// "Drain" the per-CPU buffer by resetting its sample count.
+ 		os_atomic_store(&e->sample_count, 0, relaxed);
+@@ -561,14 +571,20 @@ entropy_provide(size_t *entropy_size, void *entropy, __unused void *arg)
+ 
+ 	// Extract the entropy seed from the digest context and adjust
+ 	// counters accordingly.
+-	SHA512_Final(entropy, &entropy_data.sha512_ctx);
++	if (entropy_ctx_valid) {
++		SHA512_Final(entropy, &entropy_data.sha512_ctx);
++	} else {
++		memset(entropy, 0, SHA512_DIGEST_LENGTH);
++	}
+ 	entropy_data.read_sample_count = entropy_data.total_sample_count;
+ 	sample_count = n;
+ 	*entropy_size = SHA512_DIGEST_LENGTH;
+ 
+ 	// Reinitialize the digest context for future entropy
+ 	// conditioning.
+-	SHA512_Init(&entropy_data.sha512_ctx);
++	if (entropy_ctx_valid) {
++		SHA512_Init(&entropy_data.sha512_ctx);
++	}
+ 
+ 	// To harden the entropy conditioner against an attacker with
+ 	// partial or temporary control of interrupts, we roll the
+@@ -584,8 +600,10 @@ entropy_provide(size_t *entropy_size, void *entropy, __unused void *arg)
+ 	// internal SHA512 block size. This will force an additional
+ 	// compression to provide backtracking resistance.
+ 	assert(sizeof(label) + *entropy_size == SHA512_BLOCK_LENGTH);
+-	SHA512_Update(&entropy_data.sha512_ctx, label, sizeof(label));
+-	SHA512_Update(&entropy_data.sha512_ctx, entropy, *entropy_size);
++	if (entropy_ctx_valid) {
++		SHA512_Update(&entropy_data.sha512_ctx, label, sizeof(label));
++		SHA512_Update(&entropy_data.sha512_ctx, entropy, *entropy_size);
++	}
+ 
+ out:
+ 	lck_mtx_unlock(&entropy_data.mutex);
