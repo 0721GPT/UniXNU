@@ -72,6 +72,26 @@ cp out/<board>/kernel/kernel.macho \
 
 workflow 运行 kernel、userdata 和 payload。package、firmware 和 boot image 步骤可以在任意系统运行，不在 workflow 中。公开仓库使用免费的 macOS runner 配额，私有仓库消耗 Actions 分钟。
 
+## Linux 主机
+
+一次性安装工具链后，内核步骤可以在 Linux 上运行（见[构建环境](/zh/guide/requirements#linux)）：
+
+```sh
+sudo scripts/linux/setup-toolchain.py
+./unixnu defconfig <name> -D ../UniXNU-<device>
+./unixnu fetch
+./unixnu build kernel
+```
+
+驱动按主机选择 Linux 路径。它设置工具链环境，`build-xnu-4k-baseline.sh` 运行 `scripts/linux/prepare-xnu.py`：
+
+- `source`，在 xnu 补丁之后：改写少数依赖 Apple clang 或 BSD 工具的 xnu 源码（SHA 与 AES 汇编宏、mawk 下的系统调用表生成脚本、`kextsymboltool` 写入 `/dev/null`），并把 `TargetConditionals.h` 装入 fakeroot。
+- `libs`，在头文件之后：用 compiler-rt 构建 `libcc_kext.a`。Mac 上这个库来自 Apple clang。
+
+`build-firehose.sh` 不经 Xcode 编译 `libfirehose_kernel`，`build-corecrypto-14.py` 用 `scripts/pbxproj.py` 代替 `plutil` 读取 corecrypto 工程，kernelcache 用 `lzfse` 解码。
+
+由于编译器不同，Linux 内核与 Mac 构建并非逐字节相同。用相同源码和配置构建时，两个内核的全局符号、目标文件、`kalloc_type` 签名、预链接绑定和 kext 都相同，代码段大小相差几个百分点。
+
 ## 命令
 
 | 命令 | 作用 |
@@ -151,7 +171,7 @@ IPSW 按成员读取，远程 IPSW 不会整体下载。zip 目录和需要的�
 5. 为 `ARM64`、机型 `BCM2837`、配置 `DEVELOPMENT`、iOS 17 构建 XNU，并链接静态库。
 6. 用 `kits/NativePrelink` 把原生内核与原始 kernelcache 预链接。重建会替换上一轮的结果。
 
-kernelcache 来自 IPSW，除非 `--kernelcache` 指定文件。`KernelCache` IM4P 的 LZFSE 负载由 macOS `compression_tool` 解码，选出 arm64 切片，并按 `[kernel.prelink] kernelcache_sha256` 校验。
+kernelcache 来自 IPSW，除非 `--kernelcache` 指定文件。`KernelCache` IM4P 的 LZFSE 负载由 macOS `compression_tool`（Linux 上为 `lzfse`）解码，选出 arm64 切片，并按 `[kernel.prelink] kernelcache_sha256` 校验。
 
 输出为 `out/<board>/kernel/kernel.macho`。
 

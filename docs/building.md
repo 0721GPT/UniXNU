@@ -72,6 +72,26 @@ The candidate names and the display or kernelcache inputs come from the device r
 
 The workflow runs kernel, userdata and payload. Package, firmware and boot image steps run on any OS and stay outside the workflow. Public repositories use the free macOS runner quota. Private repositories consume Actions minutes.
 
+## Linux host
+
+The kernel step runs on Linux after a one-time toolchain install (see [Requirements](/guide/requirements#linux)):
+
+```sh
+sudo scripts/linux/setup-toolchain.py
+./unixnu defconfig <name> -D ../UniXNU-<device>
+./unixnu fetch
+./unixnu build kernel
+```
+
+The driver selects the Linux path from the host. It sets the toolchain environment, and `build-xnu-4k-baseline.sh` runs `scripts/linux/prepare-xnu.py`:
+
+- `source`, after the xnu patches: rewrites the few xnu sources that assume Apple's clang or BSD tools (the SHA and AES assembler macros, the syscall table generator under mawk, `kextsymboltool` writing to `/dev/null`) and installs a `TargetConditionals.h` into the fakeroot.
+- `libs`, after the headers: builds `libcc_kext.a`, which a Mac takes from Apple clang, from compiler-rt.
+
+`build-firehose.sh` compiles `libfirehose_kernel` without Xcode, `build-corecrypto-14.py` reads the corecrypto project with `scripts/pbxproj.py` instead of `plutil`, and the kernelcache is decoded with `lzfse`.
+
+A Linux kernel is not byte-identical to a Mac build, because the compilers differ. Built from the same sources and configuration, the two kernels have the same global symbols, the same objects, the same `kalloc_type` signatures, and the same prelink bindings and kexts. The code segments differ in size by a few percent.
+
 ## Commands
 
 | Command | Action |
@@ -151,7 +171,7 @@ The kernel step:
 5. Builds XNU for `ARM64`, machine `BCM2837`, configuration `DEVELOPMENT`, iOS 17, and links the archives.
 6. Prelinks the native kernel against the original kernelcache with `kits/NativePrelink`. A rebuild replaces the earlier candidate.
 
-The kernelcache comes from the IPSW unless `--kernelcache` supplies one. The LZFSE payload of the `KernelCache` IM4P is decoded with macOS `compression_tool`, the arm64 slice is selected, and the result is checked against `[kernel.prelink] kernelcache_sha256`.
+The kernelcache comes from the IPSW unless `--kernelcache` supplies one. The LZFSE payload of the `KernelCache` IM4P is decoded with macOS `compression_tool` (`lzfse` on Linux), the arm64 slice is selected, and the result is checked against `[kernel.prelink] kernelcache_sha256`.
 
 The output is `out/<board>/kernel/kernel.macho`.
 
