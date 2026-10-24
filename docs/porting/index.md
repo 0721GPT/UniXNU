@@ -2,7 +2,8 @@
 
 UniXNU runs iOS or macOS on ARM64 devices through UEFI. Follow the eight steps
 below to collect inputs, select shared support, adapt drivers and build images.
-Each step states its expected result.
+Each step states its expected result. New and migrated repositories use the
+same [completion and publication requirements](/porting/device-repository#completion).
 
 - **Add a device:** start at step 1.
 - **Build an existing device:** check its inputs and current support in [Devices](/devices/), then follow [Building](/building).
@@ -53,7 +54,10 @@ new board's codename. Run from the UniXNU repository:
 
 ```sh
 DEVICE=myboard
-cp -R examples/device "../UniXNU-$DEVICE"
+DEVICE_DIR="../UniXNU-$DEVICE"
+cp -R examples/device "$DEVICE_DIR"
+mv "$DEVICE_DIR/configs/example_defconfig" "$DEVICE_DIR/configs/${DEVICE}_defconfig"
+mv "$DEVICE_DIR/dts/board.dts" "$DEVICE_DIR/dts/${DEVICE}.dts"
 ```
 
 Complete these files using the [device repository reference](/porting/device-repository):
@@ -62,10 +66,16 @@ Complete these files using the [device repository reference](/porting/device-rep
    and firmware paths. Review the complete component and archive selections.
 2. `feeds.toml`: set the SoC repository URL and commit. For another SoC, also
    change `board.soc`, `board.soc_source` and the DTS include.
-3. Rename `configs/example_defconfig` and `dts/board.dts`; update their references.
+3. Set `kernel.defconfig` to `<device>_defconfig` and `device_tree.source` to
+   `device:dts/<device>.dts` to match the renamed files. Review all configuration
+   fragments and patch series for the selected SoC and OS.
 4. Fill the RAM range, enabled CPUs, peripherals and reservations in the DTS.
 5. List required firmware files and their sources in `proprietary-files.txt`.
 6. Complete `porting.toml`, the root README and `AGENTS.md` for the board.
+   Match the record identity to `board.toml`, cover every selected component and
+   dependency, and set ownership paths to the actual board files.
+   Keep the copied `.github/workflows/porting-record.yml`, `.gitignore` and
+   `local.toml.example`; review them with the [completion checklist](/porting/device-repository#completion).
 7. Remove `board.example = true` after the required placeholders are filled.
    The build commands reject repositories marked as examples.
 
@@ -140,19 +150,20 @@ Set up [QR log export](/porting/log-capture#firmware-setup) during firmware inte
 and save the firmware log before kernel handoff. After storage verification, follow
 the same guide through persistent capture, a manual cycle and automated tests.
 
-## 8. Publish the port
+## 8. Complete and publish the repository
 
-Validate the record from the main checkout:
+Follow [repository completion](/porting/device-repository#completion) in order:
+check the tracked files, resolve sources, validate the record, and publish the
+reviewed commit. This is also the final procedure for migrated repositories.
 
-```sh
-python3 scripts/porting-record.py check --device "../UniXNU-$DEVICE"
-```
+Add the **`unixnu` GitHub topic** using the [publication commands](/porting/device-repository#publish).
+Enable the record workflow and publish the device revision and bilingual pages
+through [porting records](/porting/records) and
+[documentation contribution](/contributing/documentation).
 
-Publish the device repository and pin its revision in `devices.toml` when adding
-it to the central site. Follow [records](/porting/records) and
-[documentation contribution](/contributing/documentation). Link the new device
-page from [Devices](/devices/) in both languages. Keep the detailed guide in the
-main repository and link it from the device README.
+**Result:** the repository meets the common format 2 requirements and is
+discoverable through the `unixnu` topic. Its record identifies completed and
+pending work with source, host and device evidence.
 
 ## Related documentation
 

@@ -1,6 +1,6 @@
 # 移植设备
 
-UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步骤准备输入、选择共享支持、适配驱动并构建镜像，每一步都写明完成结果。
+UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步骤准备输入、选择共享支持、适配驱动并构建镜像，每一步都写明完成结果。新建与迁移后的仓库使用相同的[完成与发布要求](/zh/porting/device-repository#completion)。
 
 - **新增设备：** 从步骤 1 开始。
 - **构建已有设备：** 在[设备列表](/zh/devices/)确认输入和当前支持范围，再按[构建指南](/zh/building)操作。
@@ -44,17 +44,24 @@ UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步�
 
 ```sh
 DEVICE=myboard
-cp -R examples/device "../UniXNU-$DEVICE"
+DEVICE_DIR="../UniXNU-$DEVICE"
+cp -R examples/device "$DEVICE_DIR"
+mv "$DEVICE_DIR/configs/example_defconfig" "$DEVICE_DIR/configs/${DEVICE}_defconfig"
+mv "$DEVICE_DIR/dts/board.dts" "$DEVICE_DIR/dts/${DEVICE}.dts"
 ```
 
 按[设备仓库参考](/zh/porting/device-repository)完成以下文件：
 
 1. `board.toml`：设置设备名、kit、SoC 来源、OS profile、DTS 入口和固件路径，核对完整组件和归档选择。
 2. `feeds.toml`：填写 SoC 仓库 URL 和提交。更换 SoC 时同步修改 `board.soc`、`board.soc_source` 和 DTS include。
-3. 重命名 `configs/example_defconfig` 与 `dts/board.dts`，更新引用。
+3. 将 `kernel.defconfig` 设为 `<device>_defconfig`，`device_tree.source` 设为
+   `device:dts/<device>.dts`，与重命名后的文件一致。核对所选 SoC 和 OS 的配置片段与补丁序列。
 4. 在 DTS 中填写 RAM、启用的 CPU、外设和保留区。
 5. 在 `proprietary-files.txt` 中列出固件文件及来源。
-6. 为该设备填写 `porting.toml`、根目录 README 和 `AGENTS.md`。
+6. 为该设备填写 `porting.toml`、根目录 README 和 `AGENTS.md`。记录身份与 `board.toml`
+   一致，覆盖所选组件及依赖，归属路径指向实际板级文件。保留复制的
+   `.github/workflows/porting-record.yml`、`.gitignore` 和 `local.toml.example`，
+   按[完成清单](/zh/porting/device-repository#completion)检查。
 7. 填好必要占位符后移除 `board.example = true`。构建命令会拒绝标记为示例的仓库。
 
 数组会替换继承值。覆盖组件、归档、配置片段和补丁序列时，保留完整的必需列表。
@@ -118,17 +125,17 @@ Wi-Fi，再处理 DSP、音频和电源。每篇指南列出源码位置、板�
 在固件阶段先按[日志抓取步骤](/zh/porting/log-capture#firmware-setup)集成二维码导出，
 在内核交接前保存固件日志。存储验证完成后，继续该页的持久化抓取、手动循环和自动测试步骤。
 
-## 8. 发布移植
+## 8. 完成并发布仓库
 
-从主仓库验证记录：
+依次完成[仓库收尾步骤](/zh/porting/device-repository#completion)：核对受版本控制的文件、
+解析源码、检查记录、发布审核后的提交。迁移后的仓库也使用这套收尾步骤。
 
-```sh
-python3 scripts/porting-record.py check --device "../UniXNU-$DEVICE"
-```
+按[发布命令](/zh/porting/device-repository#publish)添加 **`unixnu` GitHub topic**，
+启用记录工作流，再按[移植记录](/zh/porting/records)和
+[文档贡献](/zh/contributing/documentation)发布设备固定版本与中英文页面。
 
-发布设备仓库后，在接入中央站点时将提交固定到 `devices.toml`。
-按[记录指南](/zh/porting/records)和[文档贡献](/zh/contributing/documentation)操作，
-在两种语言的[设备列表](/zh/devices/)中加入页面链接。详细指南放在主仓库，设备 README 链接到对应指南。
+**结果：** 仓库满足统一的格式 2 要求，并可通过 `unixnu` topic 查找。
+记录依据源码、主机和设备证据说明已完成与待完成工作。
 
 ## 相关文档
 

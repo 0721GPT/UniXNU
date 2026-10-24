@@ -4,7 +4,7 @@
 
 格式 2 让多个设备复用 SoC 支持、OS profile 和组件构建配方。共享 SoC 仓库保存控制器资源和平台操作，设备仓库负责板级连接、固件选择和设备策略。公共修复集中维护，其他设备需要提供的输入也有明确位置。组件目录列出实现的硬件范围和 ABI 要求；按设备、OS profile 和配置划分的输出目录保存各自的补丁后内核与生成文件。
 
-本指南将已有设备仓库转换为格式 2。完成后，设备具有固定版本的 SoC 源码、板级 DTS、完整组件选择，以及可重复执行的内核、固件和 payload 构建命令。新设备从[移植设备](/zh/porting/)开始。已有格式 2 设备可按下列检查复核配置。
+本指南将已有设备仓库转换为格式 2。完成后，设备具有固定版本的 SoC 源码、板级 DTS、完整组件选择，以及可重复执行的内核、固件和 payload 构建命令。新设备从[移植设备](/zh/porting/)开始。已有格式 2 设备可按下列检查复核配置。两条流程均按相同的[仓库要求和发布步骤](/zh/porting/device-repository#completion)完成，包括添加 `unixnu` GitHub topic。
 
 ## 开始前
 
@@ -308,14 +308,14 @@ mcopy -i "$OUTPUT_DIR/payload/payload.img" \
 
 ## 9. 更新适配记录、CI 和文档
 
-缺少 `porting.toml` 或 `.github/workflows/porting-record.yml` 时，从模板补充；已有文件直接更新。填写设备身份、所选组件、源码版本及各部分的配置、操作和证据。按[适配记录指南](/zh/porting/records)完成后运行：
+缺少 `porting.toml` 或 `.github/workflows/porting-record.yml` 时，从模板补充；已有文件直接更新。合并模板的 `.gitignore` 规则，并添加说明本机覆盖路径的 `local.toml.example`。填写设备身份、所选组件、源码版本及各部分的配置、操作和证据。按[适配记录指南](/zh/porting/records)完成后运行：
 
 ```sh
 python3 scripts/porting-record.py check --device "$DEVICE_DIR"
 npm --prefix docs run build
 ```
 
-更新设备 README 和根目录 `AGENTS.md` 中的当前命令与必读文档，同时更新受影响的中英文站点页面、组件引用、CI 路径和固件说明。发布设备改动后，在 UniXNU 的 `devices.toml` 中固定对应提交，供文档站读取记录。
+更新设备 README 和根目录 `AGENTS.md` 中的当前命令与必读文档，同时更新受影响的中英文站点页面、组件引用、CI 路径和固件说明。完成统一的[仓库清单](/zh/porting/device-repository#completion)，再按[发布步骤](/zh/porting/device-repository#publish)推送设备提交、添加 **`unixnu` GitHub topic**、检查 CI 并固定站点记录版本。将步骤 6 的解析配置与清单及步骤 1 的输入记录核对。完成后的仓库与新建仓库使用相同的布局、源码固定方式、构建接口、记录和发布步骤。
 
 向其他维护者或 agent 交接时，使用以下报告：
 

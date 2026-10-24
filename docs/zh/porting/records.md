@@ -97,6 +97,9 @@ python3 scripts/porting-record.py check --device ../UniXNU-sheng --base origin/m
 
 ## 发布与复用
 
+按[仓库发布步骤](/zh/porting/device-repository#publish)添加 `unixnu` GitHub topic，
+完成发布后再登记固定版本。
+
 `npm run build` 获取注册设备固定版本的 `porting.toml` 和 `board.toml`，检查后生成
 设备页。中英文页面使用同一份记录，记录正文使用简洁英语。站点源码和部署保留在 UniXNU。
 

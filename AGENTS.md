@@ -56,6 +56,10 @@ in that order. Tables merge by key; ordinary arrays replace. List every required
 component, configuration fragment, and patch series in the effective arrays.
 The selected defconfig follows the configuration fragments.
 
+New ports and migrations use the completion checklist and publication steps in
+`docs/porting/device-repository.md`. Keep the template and both workflows aligned.
+Published device repositories carry the `unixnu` GitHub topic.
+
 Pin SoC and component sources. Inspect `unixnu status --json` before building.
 Place generated sources, patched XNU, and outputs in the resolved target tree.
 

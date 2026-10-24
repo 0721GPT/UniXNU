@@ -11,6 +11,7 @@ Read the [component catalog](/reference/components) before adding a driver.
 UniXNU-<device>/
   AGENTS.md
   README.md
+  .gitignore
   board.toml
   porting.toml
   .github/workflows/porting-record.yml
@@ -20,13 +21,107 @@ UniXNU-<device>/
   patches/xnu/series
   proprietary-files.txt
   package/
-  local.toml
+  local.toml.example
   unixnu.lock
 ```
 
 `local.toml` contains local overrides. `unixnu fetch` writes source pins to
 `unixnu.lock`. Component sources come from the catalog, feeds, or local
 checkouts. `package/` appears as `kits/<board.kit>` in the assembled tree.
+Copy `local.toml.example` to the ignored `local.toml` for machine-specific
+overrides. Commit `unixnu.lock` after fetching the selected sources.
+
+## Complete the repository {#completion}
+
+New ports and migrated ports follow the same requirements below. Hardware
+values, component selections and verification levels describe the target board.
+The [new-port workflow](/porting/) and [migration guide](/porting/migration)
+both finish here.
+
+### 1. Complete the tracked files
+
+Use the layout above. For an existing repository, add missing template files
+and update existing files in place. Review these groups:
+
+| Files | Required result |
+| --- | --- |
+| `board.toml`, `porting.toml` | Format 2 board configuration; matching device name, SoC and OS profile; completed hardware inputs; `board.example` absent or false |
+| `feeds.toml`, `unixnu.lock`, `.gitmodules` when used | Reviewed source URLs and commits for the SoC, components and submodules; local overrides recorded separately |
+| `configs/`, `patches/xnu/series` | Existing defconfig selected by `kernel.defconfig`; complete ordered configuration and patch lists; every referenced file present |
+| `dts/` | Board DTS selected by `device_tree.source`, with the chosen SoC include, board resources and reservations |
+| `package/`, board code and build recipes | Selected components and board services have build recipes, startup integration and required OS ABI inputs |
+| `proprietary-files.txt`, firmware configuration | Required firmware sources and hashes, DSC/FDF integration, partition geometry and image inputs |
+| `porting.toml`, `.github/workflows/porting-record.yml` | Every selected component and dependency covered by an area; actual source, host and device results; record check enabled |
+| `README.md`, `AGENTS.md` | Board scope, prerequisites, build commands and links to the common guides and device record |
+| `.gitignore`, `local.toml.example` | Local override file and generated output directories ignored; example paths documented |
+
+Use the [component catalog](/reference/components) for shared implementations
+and [driver adaptation](/porting/drivers) for board interfaces. Fill the template's
+`REQUIRED_` values and zero RAM range from hardware sources. Record pending
+implementation and verification in the corresponding `porting.toml` areas.
+
+### 2. Resolve and verify
+
+Run from the main UniXNU checkout. Set the device path and its actual defconfig:
+
+```sh
+DEVICE_DIR=../UniXNU-myboard
+DEFCONFIG=myboard_defconfig
+./unixnu defconfig "$DEFCONFIG" -D "$DEVICE_DIR"
+./unixnu fetch -D "$DEVICE_DIR"
+./unixnu status --json -D "$DEVICE_DIR"
+./unixnu tree -D "$DEVICE_DIR"
+python3 scripts/porting-record.py check --device "$DEVICE_DIR"
+```
+
+Inspect the resolved ARM64, SoC, OS and device profiles, component revisions,
+overrides and patch order. The output path is
+`out/<device>/<os_profile>/<config>/`, and the device package appears under
+`tree/kits/<board.kit>/`. The record checker reports the number of structured
+areas checked. Resolve each reported error before publication.
+
+Compile the [board DTS](/porting/device-tree), then follow
+[Building](/building) for kernel, package, firmware, payload and boot image.
+Record each command, revision, output and result. Record hardware checkpoints
+separately using [bring-up](/porting/bring-up) and [log capture](/porting/log-capture).
+Assign each area its supported [completion level](/porting/records#completion-levels).
+
+### 3. Publish and label the repository {#publish}
+
+1. Review the device diff and commit the completed files and source pins. For
+   a new repository, initialize Git with `git -C "$DEVICE_DIR" init -b main`
+   before committing. Keep local paths in the ignored `local.toml`.
+2. Publish the commit to your GitHub repository. With authenticated GitHub CLI,
+   create a new public repository from the committed directory:
+
+   ```sh
+   REPOSITORY=YOUR_OWNER/UniXNU-myboard
+   gh repo create "$REPOSITORY" --public --source "$DEVICE_DIR" --remote origin --push
+   ```
+
+   For an existing repository, push the reviewed branch to its configured remote.
+   Set `REPOSITORY` to that repository's `OWNER/NAME` for the following commands.
+3. Add the **`unixnu` GitHub topic** and verify it:
+
+   ```sh
+   gh repo edit "$REPOSITORY" --add-topic unixnu
+   gh repo view "$REPOSITORY" --json repositoryTopics --jq '.repositoryTopics[].name'
+   ```
+
+   The output must include `unixnu`. In GitHub's web interface, use the repository's
+   **About** settings to edit **Topics**. The topic makes ports discoverable at
+   [github.com/topics/unixnu](https://github.com/topics/unixnu).
+4. Confirm the porting-record workflow passes on the published commit. Official
+   device branches require its `Porting record` check.
+5. To publish the device on the central site, pin that commit in `devices.toml`,
+   add the English and Chinese device pages, and link them from [Devices](/devices/).
+   Follow [record publication](/porting/records#publishing-and-reuse) and
+   [documentation contribution](/contributing/documentation), then run
+   `npm --prefix docs run build` from UniXNU. Confirm the rendered record uses
+   the published revision.
+
+**Result:** a published device repository with pinned sources, reproducible
+commands, a checked porting record, CI, common-guide links and the `unixnu` topic.
 
 ## Profiles
 

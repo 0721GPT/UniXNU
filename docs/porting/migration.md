@@ -14,7 +14,9 @@ Follow this guide to convert an existing device repository to format 2. The
 result is a pinned SoC source, a board DTS, a complete component selection and
 repeatable kernel, firmware and payload commands. A new port starts with
 [Port a device](/porting/). An existing format 2 port can use the checks below
-to review its configuration.
+to review its configuration. Both workflows finish with the same
+[repository requirements and publication steps](/porting/device-repository#completion),
+including the `unixnu` GitHub topic.
 
 ## Before you start
 
@@ -391,7 +393,8 @@ steps and their required inputs explicit.
 ## 9. Update the porting record, CI and documentation
 
 Add `porting.toml` and `.github/workflows/porting-record.yml` from the template
-when absent; update existing copies in place. Fill the board identity, selected
+when absent; update existing copies in place. Merge the template `.gitignore`
+rules and add `local.toml.example` with documented local overrides. Fill the board identity, selected
 components, source revisions, configuration, procedure and evidence for each
 area. Follow [porting records](/porting/records), then run:
 
@@ -402,8 +405,13 @@ npm --prefix docs run build
 
 Update the device README and root `AGENTS.md` with the current commands and
 required reading. Update affected English and Chinese site pages, component
-references, CI paths and firmware instructions. Publish device changes, then
-pin their commit in UniXNU's `devices.toml` so the site renders that record.
+references, CI paths and firmware instructions. Complete the shared
+[repository checklist](/porting/device-repository#completion), then follow
+[publication](/porting/device-repository#publish) to push the device commit,
+add the **`unixnu` GitHub topic**, check CI and pin the site record.
+Compare the resolved configuration from step 6 with these requirements and
+the inventory from step 1. The completed repository uses the same layout,
+source pinning, build interfaces, records and publication steps as a new port.
 
 Use this report when handing the migration to another maintainer or agent:
 

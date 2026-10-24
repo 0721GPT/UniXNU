@@ -51,7 +51,11 @@ before building the firmware and boot image.
 
 Record commands, revisions, output paths, results, and unresolved inputs.
 Report hardware boot, storage, display, input, and GPU results separately.
-Update the device revision in UniXNU's devices.toml for publication and keep this README concise.
+Finish both new ports and migrations with the same
+[repository checklist](https://unixnu.com/porting/device-repository#completion).
+Follow [publication](https://unixnu.com/porting/device-repository#publish), add
+the `unixnu` GitHub topic, and update the device revision in UniXNU's
+`devices.toml`. Keep this README concise.
 
 ## Porting record
 

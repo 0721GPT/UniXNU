@@ -104,6 +104,9 @@ facts, evidence quality, component reuse and the stated completion level.
 
 ## Publishing and reuse
 
+Complete the [repository publication steps](/porting/device-repository#publish),
+including the `unixnu` GitHub topic, before registering the published revision.
+
 `npm run build` fetches each registered device's pinned `porting.toml` and
 `board.toml`, checks them and renders the device page. English and Chinese
 pages consume the same record. The record body uses concise English. Site

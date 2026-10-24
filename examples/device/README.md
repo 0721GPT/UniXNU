@@ -8,12 +8,13 @@ hardware inputs before building.
 1. Copy this directory to `UniXNU-<device>` and read `AGENTS.md`.
 2. Set the board name, description, firmware paths, and complete component selection. Add the shared `UniXNURamDiskDxe` and filesystem dependencies to the firmware DSC and FDF using the [firmware integration guide](https://unixnu.com/porting/uefi-firmware#required-integration).
 3. Pin a reviewed SoC commit in `feeds.toml`.
-4. Fill the DTS model, compatible values, memory map, CPU selection, and peripherals.
+4. Rename `configs/example_defconfig` and `dts/board.dts` for the board, then update `kernel.defconfig` and `device_tree.source`. Fill the DTS model, compatible values, memory map, CPU selection, and peripherals.
 5. List firmware sources and hashes in `proprietary-files.txt`.
 6. Set partition geometry and payload inputs from the device's records.
-7. Complete each area in `porting.toml`, including ownership paths, findings and completion criteria.
+7. Match the identity in `porting.toml` to `board.toml`. Cover every selected component and dependency, with board-specific ownership paths, findings and completion criteria.
 8. Enable the template CI workflow and require its `Porting record` check on the official device branch.
-9. Set `example = false`, select the defconfig, fetch, and inspect `status --json`.
+9. Set `example = false`, select the defconfig, fetch, and inspect `status --json`. Commit the generated `unixnu.lock`; keep local overrides in the ignored `local.toml`.
+10. Complete the shared [repository checklist](https://unixnu.com/porting/device-repository#completion), build and record results, then follow [publication](https://unixnu.com/porting/device-repository#publish). Add the **`unixnu` GitHub topic** and verify it appears in the repository topics.
 
 The zero memory range and `REQUIRED_` values identify inputs to complete.
 `patches/xnu/series` lists board patches in application order. `package/` contains
