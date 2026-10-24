@@ -205,6 +205,14 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: bash -euo pipefail -c "$PRE_BUILD"
 
+      # Fork addition: the target kernelcache has an external PC-relative encoding and
+      # upstream emit_prelink.py aborts on it. Overwrite the submodule copy before the
+      # kernel step, which assembles the tree and runs the prelink.
+      - name: Patch the prelink emitter
+        run: |
+          cp Resources/local-kits/emit_prelink.py kits/NativePrelink/emit_prelink.py
+          grep -c external_pc_relative kits/NativePrelink/emit_prelink.py
+
       - name: Build kernel
         id: kernel
         env:
