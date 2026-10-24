@@ -71,57 +71,42 @@
 
 ## 设备树节点
 
-### 设备节点
+格式 2 按[设备树指南](/zh/porting/device-tree)编辑硬件 DTS，SoC DTSI 声明控制器资源。
+使用 SM8550 UFS host 的板级源码启用已有节点：
 
-```c
-ufshc {
-  name = "ufshc";
-  compatible = "qcom,sm8550-ufshc";
-  reg = <0x03ff0000 0x3000>;
-  interrupts = <0 0x100 4>;
-  status = "okay";
-}
+```text
+&ufs {
+    status = "okay";
+};
 ```
 
-平台专家发布带这些属性的 nub，驱动从 provider 读取 `reg` 和 `interrupts`。
-
-### 总线节点
-
-```c
-arm-io {
-  name = "arm-io";
-  device_type = "arm-io";
-  #address-cells = <2>;
-  #size-cells = <2>;
-  ranges = <0 0x17000000 0x08000000>;
-  intc {
-    name = "intc";
-    compatible = "arm,gic-v3";
-    reg = <0x0 0x10000 0x0 0x10000>;
-  };
-}
-```
-
-子节点 `reg` 是 `ranges` 窗口内的偏移，平台专家解析物理地址。
+包含的 SoC 节点声明 `reg = <0 0x1d84000 0 0x3000>` 和 `unixnu,adt-name = "ufshc"`。
+父节点使用两个地址 cell、两个大小 cell 与恒等 `ranges`。
+转换器将物理范围导出到 `/arm-io/ufshc`，编码为小端 u64 地址及 u64 大小。
+按 [UFS 适配](/zh/porting/ufs)在消费端驱动配置时钟、电源和 DMA。
 
 ## 读取属性
 
 ```cpp
 OSData *data = OSDynamicCast(OSData, provider->getProperty("reg"));
-if (data == nullptr) {
+if (data == nullptr || data->getLength() != 2 * sizeof(uint64_t)) {
   return false;
 }
-
-const uint32_t *cells = (const uint32_t *)data->getBytesNoCopy();
-uint32_t count = data->getLength() / sizeof(uint32_t);
+uint64_t range[2];
+memcpy(range, data->getBytesNoCopy(), sizeof(range));
+uint64_t physicalAddress = range[0];
+uint64_t length = range[1];
 ```
 
-cell 数量来自父节点。`#address-cells = <2>` 和 `#size-cells = <2>` 的节点每个范围使用四个 cell。
+此例在小端 ARM64 上读取一个格式 2 ADT 范围。驱动使用多个范围时，应验证并读取每个地址/大小对。
 
 字符串属性：
 
 ```cpp
 OSData *compatible = OSDynamicCast(OSData, provider->getProperty("compatible"));
+if (compatible == nullptr || compatible->getLength() == 0) {
+  return false;
+}
 const char *value = (const char *)compatible->getBytesNoCopy();
 ```
 

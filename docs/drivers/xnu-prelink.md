@@ -1,5 +1,7 @@
 # XnuPrelink
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 Kernel prelink emitter and ABI tooling.
 
 [Source repository](https://github.com/UniXNU/XnuPrelink).

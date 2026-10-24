@@ -2,6 +2,21 @@
 
 The kernel step builds Apple's XNU source with UniXNU patches, then prelinks the result against the original kernelcache.
 
+
+## Procedure
+
+1. Complete [host setup](/guide/requirements) and select the device with
+   `./unixnu defconfig <name> -D /path/to/device`.
+2. Run `./unixnu fetch` and `./unixnu status --json`. Check the OS revision,
+   archives and patch order. Supply the original kernelcache, firmware and any
+   device-specific ABI candidates from [build inputs](/porting/migration#build-inputs).
+3. Run `./unixnu build kernel`. Read the first failed step's log under the output
+   `logs/` directory if it stops. The final output is `kernel/kernel.macho`.
+4. Use `./unixnu build prelink` when only the prelink inputs changed and the
+   native kernel already exists. Rebuild the kernel for source or archive changes.
+5. Continue with [package, firmware and payload](/building#build-artifacts).
+
+
 ## Source and tree
 
 | Path | Contents |
@@ -15,7 +30,7 @@ The kernel step builds Apple's XNU source with UniXNU patches, then prelinks the
 | `out/<device>/<os_profile>/<config>/tree/.cache/firmware` | Device proprietary inputs, linked from the device repository |
 | `out/<device>/<os_profile>/<config>/kernel/kernel.macho` | Prelinked kernel |
 
-The source version comes from `feeds.toml`:
+Format 2 selects XNU version fields from the OS profile. The source feed supplies the checkout; format 1 uses its version fields directly. A source entry has this form:
 
 ```toml
 [[source]]
@@ -83,10 +98,10 @@ Each `CONFIG_XNU_<NAME>` line becomes `XNU_<NAME>` in the kernel build environme
 [kernel]
 defconfig = "sheng_defconfig"
 archives = [
-  "scripts/build-software-aes-bindings.py",
-  "scripts/build-libpthread-kernel.py",
-  "scripts/build-corecrypto-14.py",
-  "scripts/build-corecrypto-14.py --namespace",
+  "build-software-aes-bindings.py",
+  "build-libpthread-kernel.py",
+  "build-corecrypto-14.py",
+  "build-corecrypto-14.py --namespace",
 ]
 ```
 

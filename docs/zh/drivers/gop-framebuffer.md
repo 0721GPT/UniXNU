@@ -1,5 +1,7 @@
 # GopFramebuffer
 
+先按[适配流程](/zh/porting/display)准备板级输入、修改源码、接入构建并逐步验证。
+
 使用固件 GOP 交接的 framebuffer 呈现。
 
 [源码仓库](https://github.com/UniXNU/GopFramebuffer).

@@ -55,12 +55,14 @@ Leave the root `compatible` strings as the board's own. An Apple board name can 
 
 ## Apply
 
-1. Edit the board ADT tool or set `ipad_identity`.
-2. Rebuild the payload.
-3. Clear the cached answers.
-4. Boot and check the device name, lock hint, swipe up and keyboard layout.
+1. In format 2, set typed `[adt.product]` and `[adt.buttons]` values in the board
+   or OS profile using [device-tree types](/porting/device-tree#os-properties).
+   Format 1 uses the selected board ADT tool and its `ipad_identity` option.
+2. Run `./unixnu payload`, then `./unixnu bootimg` from the main checkout.
+3. Clear the cached answers in the Data volume using the paths below.
+4. Boot the new image and check the device name, lock hint, swipe-up gesture and keyboard layout.
 
-A Python ADT tool can write the nodes directly:
+A format 1 Python ADT tool can write the nodes directly:
 
 ```python
 node('buttons', [

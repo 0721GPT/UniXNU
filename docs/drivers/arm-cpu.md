@@ -1,5 +1,7 @@
 # ArmCpu
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 ARM64 CPU, GIC and timer driver. Publishes the CPUs, interrupt controller and architectural timer.
 
 | Repository | Maintainer | Scope |
@@ -8,8 +10,8 @@ ARM64 CPU, GIC and timer driver. Publishes the CPUs, interrupt controller and ar
 
 ## State
 
-Generic driver used by every ARM64 port.
+The catalog targets ARM GICv3 and the ARM generic timer with the selected XNU ABI.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+The selected kernel recipe builds `build/armcpu/libArmCpu.a` through `component:ArmCpu`. Enable its kernel configuration and verify the GIC/timer/PSCI resources using the platform adaptation procedure.

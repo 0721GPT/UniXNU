@@ -1,6 +1,6 @@
 # 启动镜像
 
-启动镜像从内存运行。流程启动镜像，并保持已安装的 boot 分区不变。
+先按[构建指南](/zh/building)完成启动镜像组装。以下流程从 RAM 启动镜像，依次检查菜单、加载器和内核。
 
 使用 `./unixnu build firmware --uefi ../uefi-<device>` 构建固件。Mu-Silicium initrd 负载需要在固件中加入 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 支持，并在 `./unixnu bootimg` 前构建负载。[固件集成指南](/zh/porting/uefi-firmware#required-integration)列出了必需的 DSC/FDF 条目和菜单检查步骤。
 
@@ -20,7 +20,7 @@ fastboot devices
 fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
-`fastboot boot` 传输镜像并启动一次。设备原有的 boot 分区和已安装系统保持不变。
+`fastboot boot` 传输镜像并启动一次。运行后的 payload 遵循已配置的存储和安装策略。
 
 启动镜像包含：
 
@@ -70,6 +70,8 @@ DarwinBoot 把内核段复制到连续物理窗口，构造 `boot_args`，把 AD
 
 首次启动需要 userdata 镜像。镜像提供 OS 与 SystemOS 卷，以及内核匹配的根卷 UUID。
 
+刷写 `userdata` 会覆盖该分区。执行前确认目标设备、分区布局和报告中的镜像路径，并保存需要保留的分区数据。
+
 ```sh
 fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
 fastboot reboot bootloader
@@ -95,27 +97,22 @@ Data 种子提供可写 Data 卷。`--skip-setup` 在种子副本中把 Setup �
 
 ## 恢复
 
-镜像从内存运行。复位设备即可回到原有 bootloader 和已安装系统。
+使用设备硬件复位方式返回 bootloader。fastboot 响应后，以下命令可重启 bootloader：
 
 ```sh
 fastboot reboot bootloader
 ```
 
-固件在菜单前停住时，复位设备并再次启动同一镜像。固件停住后设备仍在 bootloader，第二次 `fastboot boot` 使用同一镜像。
+固件在菜单前停止响应时，保存最后输出，复位进入 bootloader 并用 `fastboot devices` 确认连接。再次尝试前按[启动验证](/zh/porting/bring-up)检查固件输入。
 
 ## macOS
 
-启动流程由 IPSW 驱动。macOS 恢复镜像按相同成员布局提供 `KernelCache`、`DeviceTree`、`OS`、`Cryptex1,SystemOS`、`StaticTrustCache` 和 `Cryptex1,SystemTrustCache`。
+macOS 移植需要匹配其 XNU 版本、kernelcache、预链接 roots、私有驱动 ABI、trust cache 和根卷布局的 OS profile。
+按[内核准备](/zh/guide/build-kernel)与[预链接](/zh/concepts/prelink)确认这些输入。
+仓库提供的 `ipados-17.7.11-21H461` profile 描述名称所示的 iPadOS 构建。
 
-启动 macOS：
-
-1. 把板级文件的 `[ipsw]` 指向 macOS IPSW，并填入该镜像的产品、版本、build、device class、chip ID 和 board ID。
-2. 在 `[ipsw.sha256]` 中固定成员哈希。
-3. 把 `[userdata] windows` 设为 `OS` 和 `Cryptex1,SystemOS`。
-4. 构建内核、负载、启动镜像和 userdata 镜像。
-5. 刷写 userdata 镜像并启动启动镜像。
-
-设备树和平台驱动提供硬件描述，用户态来自 macOS 磁盘镜像。
+将完成的 OS profile 设为 `board.os_profile`，检查 `status --json`，再重复构建和启动验证流程。
+macOS 结果须关联该 profile 与目标设备。
 
 ## 下一步
 

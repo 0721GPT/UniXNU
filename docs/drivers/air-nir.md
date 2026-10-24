@@ -1,5 +1,7 @@
 # AirNir
 
+Start with the [adaptation procedure](/porting/gpu) for board inputs, source changes, build integration and verification order.
+
 Offline AIR to NIR to IR3 compiler kit. Qualifies the shader path without a GPU submission.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ Offline tooling. The runtime Metal path uses metal2vulkan and Turnip.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+Use the kit README for its offline compiler build and supported inputs. For device graphics integration, follow [GPU adaptation](/porting/gpu) and the runtime compiler steps on [Adreno740](/drivers/adreno740).

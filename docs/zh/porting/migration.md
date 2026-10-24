@@ -165,7 +165,7 @@ git clone https://github.com/UniXNU/uefi-sheng ../uefi-sheng
 检查 `/tmp/sheng-resolved.json` 的配置根目录、组件范围、源码版本、模块来源、补丁
 顺序和输出路径。[sheng 页面](/zh/devices/sheng)列出板级输入和硬件检查点。
 
-## 构建输入
+## 构建输入 {#build-inputs}
 
 sheng 的 archive 和镜像步骤需要：
 

@@ -12,4 +12,4 @@ Used by the QEMU port.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+Select the QEMU platform component and its kernel configuration. Its recipe builds `build/armvirt-platform/libArmVirtPlatform.a`. Follow [QEMU testing](/reference/qemu) for the virtual hardware and entry fixture.

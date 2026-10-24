@@ -1,5 +1,7 @@
 # DarwinBoot
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 UEFI 启动加载器。安装 loader 协议，把内核、ADT、trust cache 和 ramdisk 交给 XNU。
 
 | 仓库 | 维护者 | 范围 |
@@ -12,4 +14,4 @@ UEFI 启动加载器。安装 loader 协议，把内核、ADT、trust cache 和 
 
 ## 构建
 
-通过 `unixnu build kernel` 链接进 XNU；kit 或工具仓库用自己的脚本构建。
+在目标固件 DSC/FDF 中加入 DarwinBoot INF，从 UniXNU 执行 `./unixnu build firmware`。按[固件集成](/zh/porting/uefi-firmware#required-integration)操作，选择 XNU 启动项前确认加载器协议。

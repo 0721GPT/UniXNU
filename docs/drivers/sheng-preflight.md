@@ -1,5 +1,7 @@
 # ShengPreflight
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 UEFI preflight checks for sheng. Validates the firmware volume, memory map and boot inputs before a build.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ sheng only.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+The device selects preflight scripts in `[firmware] preflight`. `./unixnu build firmware` invokes them before building the FD. Use the target board's preflight implementation and firmware inputs.

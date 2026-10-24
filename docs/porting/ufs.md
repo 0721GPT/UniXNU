@@ -116,3 +116,7 @@ results at their corresponding [completion levels](/porting/records#completion-l
 ./unixnu build kernel -D ../UniXNU-sheng
 python3 scripts/porting-record.py check --device ../UniXNU-sheng
 ```
+
+## Next step
+
+[Adapt display and brightness](/porting/display) after the root path is ready. The [driver checklist](/porting/drivers) covers the remaining subsystems.

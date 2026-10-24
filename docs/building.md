@@ -6,44 +6,114 @@
 Build the device firmware with `./unixnu build firmware --uefi ../uefi-<device>` before packing the boot image. Its DSC and FDF must include UniXNU, UniXNUDxe, DarwinBoot and the payload volume driver. For the Mu-Silicium FDT initrd path, use the shared `UniXNURamDiskDxe` with DiskIoDxe and FAT support. Follow [firmware integration](/porting/uefi-firmware#required-integration).
 :::
 
-## Saved build inputs
+## 1. Prepare the host and repositories {#quick-start}
 
-Copy `unixnu.example.toml` to `unixnu.local.toml` and fill in the paths and platform seed using the [local build configuration](/reference/configuration#local-build-inputs). Then run:
-
-```sh
-./unixnu defconfig <device>_defconfig
-./unixnu kernel
-./unixnu firmware
-./unixnu payload
-./unixnu bootimg
-```
-
-After changing boot arguments, run `./unixnu payload` and `./unixnu bootimg`, then boot the new image. The [boot argument guide](/xnu/boot-arguments#apply-arguments) shows how to inspect the packed configuration.
-
-## Quick start
+Read [Requirements](/guide/requirements), then choose a port from
+[Devices](/devices/). New ports follow [Port a device](/porting/) first.
+Obtain the port's device and UEFI repositories, including their submodules.
+For example, sheng uses:
 
 ```sh
 git clone --recurse-submodules https://github.com/UniXNU/UniXNU
 git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng
-git clone https://github.com/UniXNU/uefi-sheng
+git clone --recurse-submodules https://github.com/UniXNU/uefi-sheng
 cd UniXNU
-
-# For an existing clone:
-git submodule update --init --recursive
-
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
 ./unixnu fetch
-./unixnu ipsw fetch
-./unixnu build kernel
-./unixnu build package
-./unixnu build firmware --uefi ../uefi-sheng
-./unixnu build payload --unique-chip-id <hex> --trust-cache <file> --data-ramdisk <seed>
-./unixnu bootimg --uefi ../uefi-sheng --dtb /path/to/device.dtb
+./unixnu status --json
 ```
 
-The device repository is remembered in `out/state.json` after the first `-D`.
+Use your port's repository and defconfig names. `status` reports the effective
+profiles, revisions, patch order and output directory. `-D` is remembered in
+`out/state.json`. Run subsequent commands from the main UniXNU checkout.
 
-The boot image is `out/<device>/<os_profile>/<config>/boot/boot.img` with `out/<device>/<os_profile>/<config>/boot/boot.json` next to it. Options follow the subcommand.
+**Expected result:** the intended device/configuration and resolved source paths.
+
+## 2. Save and obtain build inputs {#saved-build-inputs}
+
+```sh
+cp unixnu.example.toml unixnu.local.toml
+```
+
+Fill the local file using [local build configuration](/reference/configuration#local-build-inputs).
+Set the device and UEFI paths, firmware DTB, platform identity and required
+kernelcache, trust-cache and Data seed inputs. Use the board's inventory;
+[sheng build inputs](/porting/migration#build-inputs) lists its additional SDK,
+firmware and ABI requirements.
+
+```sh
+./unixnu ipsw info
+./unixnu ipsw fetch
+./unixnu tree
+```
+
+`ipsw info` must show the OS build selected by the profile. `ipsw fetch` extracts
+the configured members into `out/ipsw/<build>/`. Device firmware, Data seeds and
+ABI audit inputs have their own preparation steps. Check those before building
+a recipe that consumes them.
+
+## 3. Build the kernel, package and firmware {#build-artifacts}
+
+```sh
+./unixnu build kernel
+./unixnu build package
+./unixnu build firmware
+```
+
+Run each command after the preceding one succeeds. [Kernel preparation](/guide/build-kernel)
+explains archive/ABI requirements and prelink. [Firmware integration](/porting/uefi-firmware#required-integration)
+explains the required DSC/FDF modules.
+
+| Step | Expected output |
+| --- | --- |
+| Kernel | `<output>/kernel/kernel.macho` and build/prelink logs |
+| Package | `<output>/package/Build/Out/AARCH64-DEBUG/UniXNU.efi` for the default target |
+| Firmware | The FD path selected by `[firmware] fd` inside the UEFI checkout |
+
+`<output>` is the directory printed by `status`. `--target RELEASE` changes the
+package directory to `AARCH64-RELEASE` and selects the release firmware path.
+
+## 4. Prepare root and payload
+
+For a port using the userdata root layout, follow [Userdata](/guide/userdata).
+The command requires macOS image tools and the target partition geometry:
+
+```sh
+./unixnu build userdata --dry-run
+./unixnu build userdata
+```
+
+Inspect `<output>/userdata/userdata-root.json` for size, windows and the flash
+command. Set the root UUID from the selected volume. For the writable Data volume,
+prepare the seed described by the device; [Skip Setup](/guide/skip-setup) is an
+optional transformation of that seed.
+
+```sh
+./unixnu build payload
+```
+
+This uses the local trust-cache, identity and Data seed inputs. Inspect
+`<output>/payload/payload.json` and the printed command line. The generated FAT
+volume contains `unixnu.toml`, the kernel and its ADT/selected sidecars. See
+[Payload](/concepts/payload) for their layout.
+
+**Expected result:** root and Data inputs match the device policy, and the payload
+contains the intended boot entry and arguments.
+
+## 5. Pack and boot
+
+```sh
+./unixnu bootimg
+```
+
+Inspect `<output>/boot/boot.json`: the firmware, DTB and payload must be the
+intended files, and `ramdisk_bytes` must be nonzero for a configured payload boot.
+Follow [Boot the image](/guide/boot) for flashing conditions and the one-time boot
+command. Follow [bring-up](/porting/bring-up) on a new port.
+
+After changing boot arguments, run `./unixnu payload` and `./unixnu bootimg`.
+Follow [apply arguments](/xnu/boot-arguments#apply-arguments) to inspect the packed
+configuration. After changing kernel code, also rebuild the kernel first.
 
 ## macOS runner
 
@@ -89,7 +159,7 @@ cp out/<device>/<os_profile>/<config>/kernel/kernel.macho \
 
 The candidate names and the display or kernelcache inputs come from the device repository.
 
-The workflow runs kernel, userdata and payload. Package, firmware and boot image steps run on any OS and stay outside the workflow. Public repositories use the free macOS runner quota. Private repositories consume Actions minutes.
+The workflow runs kernel, userdata and payload. Package, firmware and boot image commands run locally on supported macOS or Linux hosts. Check the workflow and account runner settings before using hosted builds.
 
 ## Linux host
 
@@ -112,22 +182,22 @@ The driver selects the Linux path from the host. It sets the toolchain environme
 
 `build-firehose.sh` compiles `libfirehose_kernel` without Xcode, `build-corecrypto-14.py` reads the corecrypto project with `scripts/pbxproj.py` instead of `plutil`, and the kernelcache is decoded with `lzfse`.
 
-A Linux kernel is not byte-identical to a Mac build, because the compilers differ. Built from the same sources and configuration, the two kernels have the same global symbols, the same objects, the same `kalloc_type` signatures, and the same prelink bindings and kexts. The code segments differ in size by a few percent.
+The Linux path uses the same selected profiles, archive recipes and prelink checks. Record the host toolchain with the build result; device recipes may require additional SDK or image tools.
 
 ## Commands
 
 | Command | Action |
 | --- | --- |
 | `defconfig [NAME]` | Lists `configs/*_defconfig` of the device repository, or merges the selected configuration into the target `.config`. |
-| `fetch [NAME...] [--update]` | Fetches git sources and writes `unixnu.lock` in the device repository. `--update` ignores the lock. |
+| `fetch [NAME...] [--update]` | Fetches git sources and writes `unixnu.lock` in the device repository. `--update` refreshes unpinned refs; explicit format 2 commits remain selected. |
 | `tree` | Resolves modules, fetches the references the steps need, and assembles `out/<device>/<os_profile>/<config>/tree`. |
 | `ipsw info` | Prints the product, build and every component of the target IPSW. |
 | `ipsw fetch [COMPONENT...]` | Extracts the named components into `out/ipsw/<build>/`. |
-| `build [kernel] [package] [firmware] [payload] [prelink]` | Runs the named steps. The default is all four steps. `prelink` repeats the prelink alone. |
+| `build [kernel] [package] [firmware] [payload] [prelink]` | Runs the named steps. The default selects kernel, package, payload and firmware. `prelink` repeats the prelink alone. |
 | `build userdata [--dry-run]` | Builds the raw userdata image. This step is large and runs only when named. |
 | `bootimg` | Packs BootShim, the firmware volume, the device tree and the optional payload into an Android boot image. |
 | `status [--json]` | Prints effective profiles, component scope, revisions, overrides, and patch order. |
-| `clean` | Removes the board output and keeps fetched sources. |
+| `clean` | Removes target `tree`, `logs`, `kernel`, `package`, `boot` and `edk2-conf`. |
 
 ## Common options
 
@@ -161,7 +231,7 @@ The environment variables `UNIXNU_DEVICE`, `UNIXNU_OUT`, `UNIXNU_UEFI`, `UNIXNU_
 
 ### fetch
 
-`fetch` resolves every module and fetches the git sources. It uses a shallow, blobless clone with a cone sparse checkout. One clone exists per repository and ref. The commit of each source is written to `unixnu.lock` in the device repository. A later build uses the locked commit.
+`fetch` resolves every module and fetches the git sources. It uses a shallow, blobless clone with a cone sparse checkout. Format 2 caches each repository and selected revision. The resolved commits are written to `unixnu.lock`; explicit source commits take priority over recorded locks.
 
 ### tree
 

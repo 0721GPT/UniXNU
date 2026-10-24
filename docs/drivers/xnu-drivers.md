@@ -1,5 +1,7 @@
 # XNU drivers
 
+Follow [driver discovery and adaptation](/porting/drivers) first. This page implements a new built-in driver after its hardware interface and OS ABI are identified. Run source/build examples from the assembled target tree.
+
 An XNU driver in UniXNU is a C++ IOKit class compiled into the kernel. The kernel links the driver as a static archive and starts it through a personality in `KernelConfigTables.cpp`.
 
 ## Source layout
@@ -26,28 +28,28 @@ class MyDriver : public IOService {
 public:
   bool start(IOService *provider) override;
   void stop(IOService *provider) override;
-  bool probe(IOService *provider, SInt32 *score) override;
+  IOService *probe(IOService *provider, SInt32 *score) override;
 };
 
 OSDefineMetaClassAndStructors(MyDriver, IOService)
 
-bool MyDriver::probe(IOService *provider, SInt32 *score)
+IOService *MyDriver::probe(IOService *provider, SInt32 *score)
 {
-  if (!super::probe(provider, score)) {
-    return false;
+  IOService *matched = IOService::probe(provider, score);
+  if (matched != nullptr && score != nullptr) {
+    *score = 1000;
   }
-  *score = 1000;
-  return true;
+  return matched;
 }
 
 bool MyDriver::start(IOService *provider)
 {
-  if (!super::start(provider)) {
+  if (!IOService::start(provider)) {
     return false;
   }
 
   OSData *reg = OSDynamicCast(OSData, provider->getProperty("reg"));
-  if (reg == nullptr || reg->getLength() != 4 * sizeof(uint32_t)) {
+  if (reg == nullptr || reg->getLength() != 2 * sizeof(uint64_t)) {
     IOLog("MyDriver: provider has no usable reg property\n");
     return false;
   }
@@ -60,7 +62,7 @@ bool MyDriver::start(IOService *provider)
 void MyDriver::stop(IOService *provider)
 {
   IOLog("MyDriver: stopped\n");
-  super::stop(provider);
+  IOService::stop(provider);
 }
 ```
 
@@ -80,26 +82,26 @@ A build script reads that record, replaces the source path and the output path, 
 import json, subprocess
 from pathlib import Path
 
-record = json.loads(Path(
-  "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json"
-).read_text())
-
+root = Path.cwd()  # assembled target tree
+out = root / "build/my-driver"
+out.mkdir(parents=True, exist_ok=True)
+record_path = root / "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json"
+record = json.loads(record_path.read_text().strip().rstrip(","))
 command = []
 i = 0
 while i < len(record["arguments"]):
-  value = record["arguments"][i]
-  if value == record["file"]:
-    command.append("drivers/MyDriver/MyDriver.cpp")
-  elif value == "-o":
-    command += ["-o", "build/my-driver/MyDriver.o"]
+    value = record["arguments"][i]
+    if value == record["file"]:
+        command.append(str(root / "drivers/MyDriver/MyDriver.cpp"))
+    elif value == "-o":
+        command += ["-o", str(out / "MyDriver.o")]
+        i += 1
+    elif value in ("-MF", "-MJ"):
+        i += 1
+    elif value not in ("-MD", "-MP"):
+        command.append(value)
     i += 1
-  elif value == "-Xclang" and record["arguments"][i + 1].startswith("-W"):
-    i += 1
-  elif not value.startswith("-W"):
-    command.append(value)
-  i += 1
-
-command += ["-Wall", "-Wextra", "-Werror", "-I", "build/my-driver"]
+command += ["-Wall", "-Wextra", "-Werror", "-I", str(root / "drivers/MyDriver")]
 subprocess.run(command, cwd=record["directory"], check=True)
 ```
 
@@ -173,14 +175,13 @@ The ADT node becomes an `IOPlatformDevice` nub when the platform expert matches 
 
 | Property | Encoding | Use |
 | --- | --- | --- |
-| `reg` | 32-bit or 64-bit cells | Register window |
+| `reg` | Format 2: little-endian u64 address/size pairs | Register window |
 | `interrupts` | 32-bit cells | Interrupt numbers |
 | `compatible` | string list | Driver match |
 | `name` | string | Node name |
 | `clock-frequency` | 32-bit | Input clock |
-| `power-domains` | phandles | Power dependencies |
 
-`provider->getProperty("reg")` returns an `OSData`. The number of address and size cells comes from the parent node.
+`provider->getProperty("reg")` returns an `OSData`. For format 2, the converter resolves FDT parent cells and `ranges` before encoding each ADT register range as a little-endian u64 address/size pair.
 
 ## Memory
 
@@ -202,7 +203,7 @@ IOInterruptEventSource *source = IOInterruptEventSource::interruptEventSource(
   this, OSMemberFunctionCast(IOInterruptEventSource::Action,
   this, &MyDriver::handleInterrupt), provider, 0);
 
-if (source == nullptr || !workLoop->addEventSource(source)) {
+if (source == nullptr || workLoop->addEventSource(source) != kIOReturnSuccess) {
   return false;
 }
 source->enable();
@@ -212,7 +213,7 @@ The provider must publish an interrupt controller or an interrupt resource. `Arm
 
 ## Device tree resources
 
-The platform expert publishes one nub per `arm-io` child. A driver that serves a device below the `arm-io` range takes its physical addresses from board constants.
+The platform expert publishes one nub per `arm-io` child. Format 2 supplies translated physical resource ranges. Read them from the provider when the driver supports those bindings; adapt source constants for implementations that use them.
 
 A driver that matches `/product` or `/buttons` uses `IOPlatformExpertDevice` as the provider.
 

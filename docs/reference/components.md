@@ -4,6 +4,21 @@
 canonical IDs through `[components] include`. The resolver adds dependencies
 and orders their build commands before their consumers.
 
+
+## Find and select an implementation
+
+1. Find the capability in the [driver adaptation checklist](/porting/drivers).
+2. Search `components.toml` for its ID, then read the implementation and its board dependencies.
+3. Compare hardware and OS ABI inputs; use the linked adaptation procedure to fill missing board hooks.
+4. Select it in the device profile, add the required archive/integration step and inspect the result:
+
+```sh
+./unixnu status --json
+```
+
+Continue with [Building](/building) after the dependencies and source revisions match the intended port.
+
+
 ## Fields
 
 | Field | Meaning |

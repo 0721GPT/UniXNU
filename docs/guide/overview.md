@@ -17,7 +17,7 @@ Changing boot arguments requires rebuilding the payload and boot image. Follow [
 
 | Task | Reading path |
 | --- | --- |
-| Add a device | [Porting workflow](/porting/) → [device repository](/porting/device-repository) → [bring-up order](/porting/bring-up) → [porting record](/porting/records) |
+| Add a device | [Porting workflow](/porting/) → [device repository](/porting/device-repository) → [driver adaptation](/porting/drivers) → [bring-up order](/porting/bring-up) → [porting record](/porting/records) |
 | Migrate a device repository | [Migration guide](/porting/migration) → [configuration reference](/reference/configuration) |
 | Select or develop a driver | [Component catalog](/reference/components) → [driver layers](/drivers/overview) → [driver repositories and component pages](/drivers/repositories) |
 | Modify XNU | [Source and patches](/xnu/source-and-patches) → [patch reference](/xnu/patch-reference) → [4 KiB page tables](/xnu/four-k-page-tables) |

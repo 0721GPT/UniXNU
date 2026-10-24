@@ -1,5 +1,7 @@
 # 设备仓库
 
+先完成[移植设备的第 1 至 4 步](/zh/porting/)，再用本页查阅字段，随后继续[硬件与驱动适配](/zh/porting/drivers)。
+
 设备仓库选择共享 SoC 与 OS 支持，并描述一块板。添加驱动前阅读[组件目录](/zh/reference/components)。
 
 ## 布局
@@ -149,10 +151,10 @@ windows = [
 [kernel]
 defconfig = "<name>_defconfig"
 archives = [
-  "scripts/build-software-aes-bindings.py",
-  "scripts/build-libpthread-kernel.py",
-  "scripts/build-corecrypto-14.py",
-  "scripts/build-corecrypto-14.py --namespace",
+  "build-software-aes-bindings.py",
+  "build-libpthread-kernel.py",
+  "build-corecrypto-14.py",
+  "build-corecrypto-14.py --namespace",
 ]
 
 [kernel.prelink]
@@ -251,7 +253,7 @@ kernel_args = ["-v", "serial=3"]
 [payload.adt]
 chip_id = "0"
 owned_memory_size = "0x10000000"
-root_match_volume_uuid = "00000000-0000-0000-0000-000000000000"
+root_match_volume_uuid = "REQUIRED_ROOT_VOLUME_UUID"
 cpu_regs = "0,0x100"
 psci_method = "smc"
 packed_data_ramdisk = true
@@ -378,7 +380,7 @@ bundle = "<name>.kext"
 entry = "<entry id>"
 ```
 
-`[match]` 的键全部需要满足。同一个键内任意值匹配。不匹配的 kit 会被跳过并计入菜单摘要。
+`[match]` 中每个已提供的键都需要满足，同一个键内任意值匹配。不匹配的 kit 会被跳过并计入菜单摘要。
 
 ## 下一步
 

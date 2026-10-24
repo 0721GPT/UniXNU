@@ -35,6 +35,8 @@ Save paths and boot arguments in [`unixnu.local.toml`](https://unixnu.com/refere
 
 ## Documentation
 
+Follow [Port a device](https://unixnu.com/porting/) in order, including the [driver adaptation checklist](https://unixnu.com/porting/drivers) for platform, storage, display, brightness, input, GPU, Wi-Fi, audio and power.
+
 Linux setup supports apt, dnf, pacman and zypper, plus environments with dependencies installed separately. See [Linux requirements](https://unixnu.com/guide/requirements#linux).
 
 The documentation is at [unixnu.com](https://unixnu.com). Its sources, navigation, translations, assets, configuration, and deployment workflow are maintained in this repository. It covers the boot chain, the build driver, device porting, driver development, the 4 KiB XNU page patches, boot arguments and per-device notes.

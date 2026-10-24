@@ -1,5 +1,7 @@
 # Skip Setup
 
+需要 macOS 镜像工具、匹配的 packed Data seed 和设备 `skip_setup_tool`，按[构建指南](/zh/building)准备。执行下方 payload 命令后，再运行 `./unixnu bootimg` 并启动新打包的镜像。
+
 全新的 Data 种子首次启动会进入 Setup。负载可以在写镜像前把 Setup 标记为完成，让设备直接进入 SpringBoard。
 
 ## 命令
@@ -61,7 +63,7 @@ BUILD, VERSION = '21H461', '17.7.11'
 
 ## 设备树
 
-使用 `--ipad-identity` 时，ADT 会加入四个 `/chosen` 属性：
+提供的格式 2 OS profile 设置以下带类型的 `/chosen` 属性，格式 1 ADT 工具通过 `--ipad-identity` 选择它们：
 
 | 属性 | 值 |
 | --- | --- |

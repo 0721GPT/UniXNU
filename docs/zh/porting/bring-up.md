@@ -4,6 +4,8 @@ bring-up 按阶段推进。每个阶段都有可见结果和日志行，一次�
 
 重复构建时，在 [unixnu.local.toml](/zh/reference/configuration#local-build-inputs) 保存路径。修改启动参数后，按[参数应用流程](/zh/xnu/boot-arguments#apply-arguments)重新构建负载和启动镜像。画面停在加载器交接阶段时，按[绿条诊断](/zh/guide/debugging#green-bar)检查。
 
+启用外设前完成对应[适配流程](/zh/porting/drivers)，按[构建指南](/zh/building)生成镜像，再依次检查以下阶段。失败后先保存镜像和最后日志，再修改输入。
+
 ## 阶段 1：UEFI
 
 目标：固件进入 UEFI shell、启动菜单或 UniXNU。
@@ -20,7 +22,7 @@ bring-up 按阶段推进。每个阶段都有可见结果和日志行，一次�
 fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
-固件停住后设备仍在 bootloader，再次启动同一镜像。
+固件停止响应时，复位进入设备 bootloader，用 `fastboot devices` 确认连接，重试前保存最后的固件输出。
 
 ## 阶段 2：UniXNU
 
@@ -109,22 +111,17 @@ fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 
 ## 先在 QEMU 验证
 
-QEMU fixture 在没有设备时测试 UniXNU、DarwinBoot 和内核入口：
+按 [QEMU 测试](/zh/reference/qemu)准备 ESP 并运行菜单/payload fixture。
+XNU 入口 fixture 需要一起放入 ARM64 内核、ADT sidecar 和 DarwinBoot。
+运行前检查选定启动项及预期检查点。
 
 ```sh
-python3 scripts/qemu-entry/make-dt.py --armvirt --armcpu --smp 2 \
-  --owned-memory-size 0x20000000 --output build/qemu.dtb
-
-python3 package/Scripts/stage-esp.py -o out/esp \
-  package/UniXNUPkg/Test/Qemu/esp \
-  --put out/<device>/<os_profile>/<config>/package/Build/Out/UniXNU.efi=EFI/BOOT/BOOTAA64.EFI
-
-python3 package/Scripts/qemu-run.py out/esp \
-  --log out/qemu.log --screenshot out/qemu.png \
-  --expect "UNIXNU: menu: shown" --expect "DARWINBOOT:"
+JOBS=8 bash package/Scripts/smoke.sh
 ```
 
-QEMU 运行器启动 AArch64 `virt` 机器和 AAVMF，抓取串口日志，并可以向模拟键盘发送按键。
+安装 QEMU 前置工具后从主仓库运行。该命令检查 UEFI package 场景，将日志和截图写入
+`package/Build/Smoke/`。内核工作按 [QEMU 指南](/zh/reference/qemu)的 XNU 入口步骤操作。
+外设结果在目标设备上记录。
 
 ## 失败隔离
 

@@ -3,6 +3,21 @@
 UniXNU 根目录的 `components.toml` 记录维护中的组件。配置通过 `[components] include`
 选择规范 ID。解析器补全依赖，并在使用者之前运行依赖组件的构建命令。
 
+
+## 查找并选择实现
+
+1. 在[驱动适配清单](/zh/porting/drivers)中找到目标能力。
+2. 在 `components.toml` 中搜索组件 ID，阅读实现和板级依赖。
+3. 对照硬件和 OS ABI 输入，按对应适配流程补齐板级接口。
+4. 在设备 profile 中选择组件，加入归档或集成步骤，再检查结果：
+
+```sh
+./unixnu status --json
+```
+
+依赖和源码版本符合目标移植后，继续[构建](/zh/building)。
+
+
 ## 字段
 
 | 字段 | 含义 |

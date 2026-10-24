@@ -1,5 +1,7 @@
 # ArmDTPlatform
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 ARM device-tree platform expert. Publishes CPU nubs and every `arm-io` child from the ADT.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ Generic driver. Requires `/cpus`, `/arm-io`, `/defaults`, `/options` and the NVR
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+The selected kernel recipe builds `build/armdt-platform/libArmDTPlatform.a` through `component:ArmDTPlatform`. Enable its personality and supply the required ADT nodes before checking provider publication.

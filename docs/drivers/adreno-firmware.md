@@ -1,5 +1,7 @@
 # AdrenoFirmware
 
+Start with the [adaptation procedure](/porting/gpu) for board inputs, source changes, build integration and verification order.
+
 Adreno GMU firmware and HFI kit. Loads the GMU firmware and speaks the HFI protocol.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ Used by Adreno740.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+The board GPU archive recipe compiles the firmware/HFI kit and embeds the pinned local firmware images. Follow [GPU adaptation](/porting/gpu) for extraction paths, board votes and startup checkpoints.

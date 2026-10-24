@@ -47,7 +47,7 @@ ADT 身份和用户态镜像属于同一设备系列。iPadOS 根使用 pad 身�
 
 恢复镜像见[构建环境](/zh/guide/requirements#目标-ipsw)。
 
-在 UniXNU 板级文件中，`[payload.adt] ipad_identity = true` 把 `--ipad-identity` 传给板级 ADT 工具，由工具写入 iPad 身份。目标为 iPhone 时，在 ADT 工具中写入 phone 值，或增加一个选择身份的板级选项。
+格式 1 的 UniXNU 板级文件中，`[payload.adt] ipad_identity = true` 把 `--ipad-identity` 传给板级 ADT 工具，由工具写入 iPad 身份。目标为 iPhone 时，在 ADT 工具中写入 phone 值，或增加一个选择身份的板级选项。
 
 身份向用户态描述硬件。已安装的系统仍来自 IPSW，iPadOS 根保持 iPadOS，iOS 根保持 iOS。
 
@@ -55,12 +55,13 @@ ADT 身份和用户态镜像属于同一设备系列。iPadOS 根使用 pad 身�
 
 ## 应用
 
-1. 修改板级 ADT 工具，或设置 `ipad_identity`。
-2. 重新构建负载。
-3. 清除缓存的答案。
-4. 启动后检查设备名、锁屏提示、上滑手势和键盘布局。
+1. 格式 2 按[设备树属性类型](/zh/porting/device-tree)在设备或 OS profile 中设置
+   `[adt.product]` 与 `[adt.buttons]`。格式 1 使用所选板级 ADT 工具及其 `ipad_identity` 选项。
+2. 从主仓库执行 `./unixnu payload` 和 `./unixnu bootimg`。
+3. 按下文路径清理 Data 卷中的缓存答案。
+4. 启动新镜像，检查设备名称、锁屏提示、上滑手势和键盘布局。
 
-Python ADT 工具可以直接写入节点：
+格式 1 的 Python ADT 工具可直接写入节点：
 
 ```python
 node('buttons', [

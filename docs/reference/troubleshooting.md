@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | `no device repository` | `-D` or `UNIXNU_DEVICE` | Pass the device repository |
 | `has no board.toml` | Device repository layout | Create `board.toml` |
-| `is an EXAMPLE device repository` | `[board] example` | Copy the sample and set a real name |
+| `is an EXAMPLE device repository` | `[board] example` | Complete the template inputs and remove `board.example = true` |
 | `no configuration` | `out/<device>/<os_profile>/<config>/.config` | Run `unixnu defconfig NAME` |
 | `no Mu-Silicium checkout` | `--uefi` path | Pass a checkout with `Resources/Scripts/mkbootimg.py` |
 | `is not a Mu-Silicium checkout` | Path | Point `--uefi` at the root of the checkout |
@@ -43,18 +43,18 @@
 | --- | --- | --- |
 | `fastboot` does not see the device | Driver, cable, bootloader mode | Install the USB driver and reboot to bootloader |
 | Image starts and resets | Boot image header, base and size | Check the Mu-Silicium config and BootShim flags |
-| Firmware stalls | Random Silicium stall | Start the same image again |
+| Firmware stalls | Last firmware log and initialized resources | Capture the output, reset to bootloader and follow [bring-up](/porting/bring-up) |
 | No display | GOP driver | Use `console = "text"` or a serial console |
 | No menu | Configuration path | Place `unixnu.toml` at `\EFI\UniXNU\unixnu.toml` |
 | No boot entry | Payload volume | Check `boot.json` for a nonzero `ramdisk_bytes`, the FD for UniXNURamDiskDxe/DiskIoDxe/FAT, the FDT initrd range, and `EFI/UniXNU/unixnu.toml`. Follow [payload discovery](/porting/uefi-firmware#payload-discovery). |
 | Driver failed | First failure reason in the menu | Fix the driver path or its dependencies |
-| `no loader protocol installed` | DarwinBoot in the firmware volume | Add DarwinBoot to the FDS or the payload |
+| `no loader protocol installed` | DarwinBoot in the firmware volume | Add DarwinBoot to the FDF or the payload |
 | `loader revision 1 cannot accept kexts` | Loader revision | Use a revision 2 loader or remove the kexts |
 | `boot refused: ...; firmware retained` | DarwinBoot log | Check the kernel, ADT, trust cache and placeholders |
 | Kernel panics at entry | Page tables, kernel window, boot arguments | Use the QEMU fixture and the boot progress log |
 | Panic names a provider | Device tree node or driver archive | Add the node or enable the driver |
 | No root device | Userdata image, UUID, capacity | Flash the image, check the UUID and window offsets |
-| Data store window refused | Seed size, `sheng-log-reserve`, root image | Grow the seed to fit userdata or adjust `sheng-log-reserve` |
+| Data store window refused | Seed size, `sheng-log-reserve`, root image | Recalculate root, Data and log allocations; select a seed size that fits |
 | Display assertion in userland | Display provider and boot arguments | Check the display driver and the focus arguments |
 
 ## Logs

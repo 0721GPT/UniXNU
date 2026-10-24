@@ -1,5 +1,7 @@
 # kext 包
 
+随项目提供的 DarwinBoot 启动预链接内核，驱动集成路径见[内置 XNU 驱动](/zh/drivers/xnu-drivers)。本页说明为实现 revision 2 并接受 kext 请求的加载器准备 bundle。准备前先选择并确认该加载器。
+
 kext 包是标准 macOS 或 iOS 内核扩展目录。UniXNU 暂存包文件，并通过 `UNIXNU_LOADER_PROTOCOL` 交给 XNU 加载器。
 
 ## 包布局

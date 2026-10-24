@@ -1,5 +1,7 @@
 # SoftwareAES
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 通过 XNU AES 辅助函数和 IOAESAccelerator ABI 提供软件 AES-CBC。
 
 [源码仓库](https://github.com/UniXNU/SoftwareAES).

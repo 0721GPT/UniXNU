@@ -36,17 +36,32 @@ patches and checks already-applied patches.
 
 ## Add a patch
 
-1. Build the kernel once so `.cache/xnu-work` exists.
-2. Edit the source in `.cache/xnu-work`.
-3. Generate the patch:
+1. Build the selected kernel once to prepare the target's `tree/.cache/xnu-work`.
+   Set `XNU_WORK` to that directory and `DEVICE_DIR` to the device repository.
+2. Copy the files you will edit into a temporary Git directory, preserving their
+   XNU-relative paths. Stage this baseline before editing. For `start.s`:
 
 ```sh
-git -C .cache/xnu-work diff -- <paths> > patches/xnu/my-change.patch
+PATCH_WORK=$(mktemp -d)
+git -C "$PATCH_WORK" init
+mkdir -p "$PATCH_WORK/osfmk/arm64"
+cp "$XNU_WORK/osfmk/arm64/start.s" "$PATCH_WORK/osfmk/arm64/start.s"
+git -C "$PATCH_WORK" add osfmk/arm64/start.s
 ```
 
-4. Add the patch to its profile series and run `unixnu build kernel`.
+3. Edit the temporary copy, then export its changes:
 
-A patch that adds a build option follows the pattern in `native-aes-personality.patch`:
+```sh
+git -C "$PATCH_WORK" diff -- osfmk/arm64/start.s > "$DEVICE_DIR/patches/xnu/my-change.patch"
+```
+
+4. Review the patch, add `my-change.patch` to the device series and run
+   `./unixnu build kernel` from UniXNU. Put shared changes in the owning SoC,
+   architecture, OS or component series instead, at the position matching the baseline.
+5. Inspect the resolved patch order with `./unixnu status --json` and record the
+   build result. Kernel preparation reconstructs its working source when patch inputs change.
+
+A patch that adds a build option follows this personality pattern:
 
 ```c
 #if defined(XNU_MY_OPTION) && XNU_MY_OPTION

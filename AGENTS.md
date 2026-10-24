@@ -114,3 +114,11 @@ Read [boot arguments](https://unixnu.com/xnu/boot-arguments#apply-arguments)
 before changing the command line. Rebuild the payload and boot image after
 argument changes. Use the [green-bar diagnosis](https://unixnu.com/guide/debugging#green-bar)
 for stalls at loader handoff. Record the last confirmed stage and relevant logs.
+
+## Hardware adaptation
+
+Follow [Port a device](https://unixnu.com/porting/) in order. Read the
+[driver adaptation checklist](https://unixnu.com/porting/drivers) before selecting
+components. Follow each subsystem guide for board inputs, implementation paths,
+archive integration and expected results. Include board-package services such as
+brightness, buttons, Wi-Fi, DSP, battery and CPU frequency in the porting record.

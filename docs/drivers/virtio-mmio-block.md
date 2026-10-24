@@ -1,5 +1,7 @@
 # VirtioMmioBlock
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 VirtIO 1.2 MMIO block transport using split queues.
 
 [Source repository](https://github.com/UniXNU/VirtioMmioBlock).

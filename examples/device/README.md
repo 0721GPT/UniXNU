@@ -1,5 +1,7 @@
 # Device template
 
+Follow [Port a device](https://unixnu.com/porting/) from input collection through publication. Complete the [driver adaptation checklist](https://unixnu.com/porting/drivers) before selecting board-dependent components.
+
 This template selects shared SM8550 and iPadOS 17.7.11 support. Complete the
 hardware inputs before building.
 

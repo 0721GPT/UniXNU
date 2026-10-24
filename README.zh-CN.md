@@ -35,6 +35,8 @@ UniXNU 为不同 SoC 和设备的移植提供共享构建工具、ARM64 支持�
 
 ## 文档
 
+按[设备移植流程](https://unixnu.com/zh/porting/)逐步操作，并完成[驱动适配清单](https://unixnu.com/zh/porting/drivers)中的平台、存储、显示、亮度、输入、GPU、Wi-Fi、音频和电源适配。
+
 Linux 安装脚本支持 apt、dnf、pacman、zypper，以及单独准备依赖的环境。详见 [Linux 要求](https://unixnu.com/zh/guide/requirements#linux)。
 
 文档位于 [unixnu.com](https://unixnu.com)，源码、导航、翻译、资源、配置和部署工作流由本仓库维护。文档覆盖启动链、构建驱动、设备移植、驱动开发、XNU 4 KiB 页补丁、启动参数和设备说明。

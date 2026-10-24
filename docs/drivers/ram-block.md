@@ -1,5 +1,7 @@
 # RamBlock
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 Sparse RAM-backed block storage with optional persistent backing callbacks.
 
 [Source repository](https://github.com/UniXNU/RamBlock).

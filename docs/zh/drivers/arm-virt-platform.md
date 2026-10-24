@@ -12,4 +12,4 @@ QEMU 移植使用它。
 
 ## 构建
 
-通过 `unixnu build kernel` 链接进 XNU；kit 或工具仓库用自己的脚本构建。
+选择 QEMU 平台组件及内核配置，配方生成 `build/armvirt-platform/libArmVirtPlatform.a`。虚拟硬件和入口 fixture 见 [QEMU 测试](/zh/reference/qemu)。

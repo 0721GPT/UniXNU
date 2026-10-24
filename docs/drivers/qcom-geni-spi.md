@@ -1,5 +1,7 @@
 # QcomGeniSpi
 
+Start with the [adaptation procedure](/porting/input) for board inputs, source changes, build integration and verification order.
+
 Qualcomm GENI serial-engine SPI controller operations.
 
 [Source repository](https://github.com/UniXNU/QcomGeniSpi).

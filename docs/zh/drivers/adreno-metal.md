@@ -1,5 +1,7 @@
 # AdrenoMetal
 
+先按[适配流程](/zh/porting/gpu)准备板级输入、修改源码、接入构建并逐步验证。
+
 AdrenoMetal 通过 metal2vulkan 和 Turnip 提供 Metal 前端。它通过 `MTLAddDevice`
 发布设备，翻译 AIR，并向内核 GPU 接口提交任务。
 

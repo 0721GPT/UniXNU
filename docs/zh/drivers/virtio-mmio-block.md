@@ -1,5 +1,7 @@
 # VirtioMmioBlock
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 使用 split queue 的 VirtIO 1.2 MMIO 块传输。
 
 [源码仓库](https://github.com/UniXNU/VirtioMmioBlock).

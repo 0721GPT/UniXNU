@@ -1,5 +1,7 @@
 # Device repository
 
+Complete [steps 1 through 4 of Port a device](/porting/) before using this field reference. Then continue with [hardware and driver adaptation](/porting/drivers).
+
 A device repository selects shared SoC and OS support and describes one board.
 Read the [component catalog](/reference/components) before adding a driver.
 
@@ -129,10 +131,10 @@ windows = [
 [kernel]
 defconfig = "<name>_defconfig"
 archives = [
-  "scripts/build-software-aes-bindings.py",
-  "scripts/build-libpthread-kernel.py",
-  "scripts/build-corecrypto-14.py",
-  "scripts/build-corecrypto-14.py --namespace",
+  "build-software-aes-bindings.py",
+  "build-libpthread-kernel.py",
+  "build-corecrypto-14.py",
+  "build-corecrypto-14.py --namespace",
 ]
 
 [kernel.prelink]
@@ -247,7 +249,7 @@ kernel_args = ["-v", "serial=3"]
 [payload.adt]
 chip_id = "0"
 owned_memory_size = "0x10000000"
-root_match_volume_uuid = "00000000-0000-0000-0000-000000000000"
+root_match_volume_uuid = "REQUIRED_ROOT_VOLUME_UUID"
 cpu_regs = "0,0x100"
 psci_method = "smc"
 packed_data_ramdisk = true
@@ -385,7 +387,7 @@ bundle = "<name>.kext"
 entry = "<entry id>"
 ```
 
-The `[match]` keys are all required. Within one key, any listed value matches. A kit that does not match is skipped and counted in the menu summary.
+Every supplied `[match]` key must match. Within one key, any listed value matches. A kit that does not match is skipped and counted in the menu summary.
 
 ## Next steps
 

@@ -1,5 +1,7 @@
 # Skip Setup
 
+Requires macOS image tools, a matching packed Data seed and the board's `skip_setup_tool`. Prepare them through [Building](/building). After the payload command below, run `./unixnu bootimg` and boot the newly packed image.
+
 A fresh Data seed starts the Setup app on first boot. The payload can mark Setup as done before the image is written, so the device boots to SpringBoard.
 
 ## Command
@@ -61,7 +63,7 @@ Update both values when the board targets a different iOS build. `LastSystemVers
 
 ## Device tree
 
-The ADT adds four `/chosen` properties with `--ipad-identity`:
+The supplied format 2 OS profile sets these typed `/chosen` properties. Format 1 ADT tools select them through `--ipad-identity`:
 
 | Property | Value |
 | --- | --- |

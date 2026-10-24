@@ -1,5 +1,7 @@
 # AdrenoPM4
 
+Start with the [adaptation procedure](/porting/gpu) for board inputs, source changes, build integration and verification order.
+
 Adreno PM4 packet encoding kit. Builds the command streams Adreno740 submits.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ Used by Adreno740.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+The board GPU archive recipe compiles `AdrenoPM4.c` with the selected GPU driver. Follow [GPU adaptation](/porting/gpu) to match packet support and command submission before enabling the frontend.

@@ -1,5 +1,7 @@
 # XnuPrelink
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 内核预链接生成器与 ABI 工具。
 
 [源码仓库](https://github.com/UniXNU/XnuPrelink).

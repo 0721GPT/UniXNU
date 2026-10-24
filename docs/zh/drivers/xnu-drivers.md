@@ -1,5 +1,7 @@
 # XNU 驱动
 
+先按[驱动查找与适配](/zh/porting/drivers)确定硬件接口和 OS ABI，再用本页实现新的内置驱动。源码和构建示例在组装后的目标构建树执行。
+
 UniXNU 的 XNU 驱动是编译进内核的 C++ IOKit 类。内核把驱动作为静态库链接，并通过 `KernelConfigTables.cpp` 中的 personality 启动它。
 
 ## 源码布局
@@ -26,28 +28,28 @@ class MyDriver : public IOService {
 public:
   bool start(IOService *provider) override;
   void stop(IOService *provider) override;
-  bool probe(IOService *provider, SInt32 *score) override;
+  IOService *probe(IOService *provider, SInt32 *score) override;
 };
 
 OSDefineMetaClassAndStructors(MyDriver, IOService)
 
-bool MyDriver::probe(IOService *provider, SInt32 *score)
+IOService *MyDriver::probe(IOService *provider, SInt32 *score)
 {
-  if (!super::probe(provider, score)) {
-    return false;
+  IOService *matched = IOService::probe(provider, score);
+  if (matched != nullptr && score != nullptr) {
+    *score = 1000;
   }
-  *score = 1000;
-  return true;
+  return matched;
 }
 
 bool MyDriver::start(IOService *provider)
 {
-  if (!super::start(provider)) {
+  if (!IOService::start(provider)) {
     return false;
   }
 
   OSData *reg = OSDynamicCast(OSData, provider->getProperty("reg"));
-  if (reg == nullptr || reg->getLength() != 4 * sizeof(uint32_t)) {
+  if (reg == nullptr || reg->getLength() != 2 * sizeof(uint64_t)) {
     IOLog("MyDriver: provider has no usable reg property\n");
     return false;
   }
@@ -60,7 +62,7 @@ bool MyDriver::start(IOService *provider)
 void MyDriver::stop(IOService *provider)
 {
   IOLog("MyDriver: stopped\n");
-  super::stop(provider);
+  IOService::stop(provider);
 }
 ```
 
@@ -80,26 +82,26 @@ build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.c
 import json, subprocess
 from pathlib import Path
 
-record = json.loads(Path(
-  "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json"
-).read_text())
-
+root = Path.cwd()  # assembled target tree
+out = root / "build/my-driver"
+out.mkdir(parents=True, exist_ok=True)
+record_path = root / "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json"
+record = json.loads(record_path.read_text().strip().rstrip(","))
 command = []
 i = 0
 while i < len(record["arguments"]):
-  value = record["arguments"][i]
-  if value == record["file"]:
-    command.append("drivers/MyDriver/MyDriver.cpp")
-  elif value == "-o":
-    command += ["-o", "build/my-driver/MyDriver.o"]
+    value = record["arguments"][i]
+    if value == record["file"]:
+        command.append(str(root / "drivers/MyDriver/MyDriver.cpp"))
+    elif value == "-o":
+        command += ["-o", str(out / "MyDriver.o")]
+        i += 1
+    elif value in ("-MF", "-MJ"):
+        i += 1
+    elif value not in ("-MD", "-MP"):
+        command.append(value)
     i += 1
-  elif value == "-Xclang" and record["arguments"][i + 1].startswith("-W"):
-    i += 1
-  elif not value.startswith("-W"):
-    command.append(value)
-  i += 1
-
-command += ["-Wall", "-Wextra", "-Werror", "-I", "build/my-driver"]
+command += ["-Wall", "-Wextra", "-Werror", "-I", str(root / "drivers/MyDriver")]
 subprocess.run(command, cwd=record["directory"], check=True)
 ```
 
@@ -173,14 +175,13 @@ ADT 节点在平台专家匹配后成为 `IOPlatformDevice` nub。常用属性�
 
 | 属性 | 编码 | 用途 |
 | --- | --- | --- |
-| `reg` | 32 位或 64 位 cell | 寄存器窗口 |
+| `reg` | 格式 2：小端 u64 地址/大小对 | 寄存器窗口 |
 | `interrupts` | 32 位 cell | 中断号 |
 | `compatible` | 字符串列表 | 驱动匹配 |
 | `name` | 字符串 | 节点名 |
 | `clock-frequency` | 32 位 | 输入时钟 |
-| `power-domains` | phandle | 电源依赖 |
 
-`provider->getProperty("reg")` 返回 `OSData`，地址和大小 cell 数量来自父节点。
+`provider->getProperty("reg")` 返回 `OSData`，格式 2 转换器先解析 FDT 父节点的 cell 和 `ranges`，再把各 ADT 寄存器范围编码为小端 u64 地址/大小对。
 
 ## 内存
 
@@ -202,7 +203,7 @@ IOInterruptEventSource *source = IOInterruptEventSource::interruptEventSource(
   this, OSMemberFunctionCast(IOInterruptEventSource::Action,
   this, &MyDriver::handleInterrupt), provider, 0);
 
-if (source == nullptr || !workLoop->addEventSource(source)) {
+if (source == nullptr || workLoop->addEventSource(source) != kIOReturnSuccess) {
   return false;
 }
 source->enable();
@@ -212,7 +213,7 @@ Provider 需要发布中断控制器或中断资源。通用 ARM64 平台上 `Ar
 
 ## 设备树资源
 
-平台专家为每个 `arm-io` 子节点发布 nub。服务 `arm-io` 范围以下设备的驱动从板级常量取得物理地址。
+平台专家为每个 `arm-io` 子节点发布 nub。格式 2 提供转换后的物理资源范围。支持对应绑定的驱动从 provider 读取，使用源码常量的实现需要同步适配常量。
 
 匹配 `/product` 或 `/buttons` 的驱动使用 `IOPlatformExpertDevice` 作为 provider。
 

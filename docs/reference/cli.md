@@ -16,7 +16,7 @@ Options follow the command. The driver reads a device repository from `-D`, `UNI
 unixnu defconfig [NAME]
 ```
 
-Lists `configs/*_defconfig` in the device repository. With a name, copies the file to `out/<device>/<os_profile>/<config>/.config` and parses it.
+Lists `configs/*_defconfig` in the device repository. With a name, merges the ordered profile fragments and the selected file into `out/<device>/<os_profile>/<config>/.config` and parses it.
 
 ### fetch
 
@@ -24,7 +24,7 @@ Lists `configs/*_defconfig` in the device repository. With a name, copies the fi
 unixnu fetch [NAME...] [--update]
 ```
 
-Updates the module submodules of this repository and the device repository, then fetches git sources. With names, fetches only those sources. `--update` ignores `unixnu.lock` and moves to the newest ref. Writes the commits to `unixnu.lock` in the device repository.
+Updates the module submodules of this repository and the device repository, then fetches git sources. With names, fetches only those sources. `--update` ignores the recorded lock when resolving refs. Explicit format 2 source commits retain priority. Writes the commits to `unixnu.lock` in the device repository.
 
 ### tree
 
@@ -49,7 +49,7 @@ unixnu ipsw fetch [COMPONENT...]
 unixnu build [kernel] [package] [firmware] [payload] [prelink] [userdata]
 ```
 
-Runs the named steps in this order: kernel, prelink, package, payload, firmware. With no step, runs kernel, package, firmware and payload. `userdata` runs alone; `all` covers the other four.
+Runs userdata first when selected, then kernel (including prelink), package, payload and firmware. A standalone `prelink` runs when kernel is not selected. The default and `all` select kernel, package, payload and firmware. Use separate commands in [Building](/building) to inspect each artifact.
 
 `build prelink` repeats the prelink without rebuilding XNU.
 

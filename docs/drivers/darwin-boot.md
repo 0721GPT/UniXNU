@@ -1,5 +1,7 @@
 # DarwinBoot
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 UEFI bootloader. Installs the loader protocol and hands the kernel, ADT, trust cache and ramdisk to XNU.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ Not a driver. Used by every XNU boot path.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+Include the DarwinBoot INF in the target firmware DSC/FDF, then run `./unixnu build firmware` from UniXNU. Follow [firmware integration](/porting/uefi-firmware#required-integration) and verify the loader protocol before selecting an XNU entry.

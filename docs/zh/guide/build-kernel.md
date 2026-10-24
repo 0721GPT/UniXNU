@@ -2,6 +2,18 @@
 
 内核步骤从 Apple XNU 源码构建，并打上 UniXNU 补丁，然后与原始 kernelcache 预链接。
 
+
+## 操作流程
+
+1. 完成[主机准备](/zh/guide/requirements)，用 `./unixnu defconfig <name> -D /path/to/device` 选择设备。
+2. 执行 `./unixnu fetch` 和 `./unixnu status --json`，检查 OS 版本、归档和补丁顺序。
+   按[构建输入](/zh/porting/migration#build-inputs)准备原始 kernelcache、固件和设备所需 ABI 候选内核。
+3. 执行 `./unixnu build kernel`。停止时读取输出目录 `logs/` 内首个失败步骤的日志。
+   最终输出为 `kernel/kernel.macho`。
+4. 仅预链接输入变化且已有原生内核时使用 `./unixnu build prelink`；源码或归档变化时重建内核。
+5. 继续[构建 package、固件和 payload](/zh/building)。
+
+
 ## 源码与构建树
 
 | 路径 | 内容 |
@@ -15,7 +27,7 @@
 | `out/<device>/<os_profile>/<config>/tree/.cache/firmware` | 设备专有输入，链接自设备仓库 |
 | `out/<device>/<os_profile>/<config>/kernel/kernel.macho` | 预链接内核 |
 
-源码版本来自 `feeds.toml`：
+格式 2 从 OS profile 选择 XNU 版本字段，source feed 提供检出来源；格式 1 直接使用 feed 的版本字段。source 条目如下：
 
 ```toml
 [[source]]
@@ -83,10 +95,10 @@ DEPLOYMENT_TARGET_FLAGS="-miphoneos-version-min=17.0 -DXNU_TARGET_OS_IOS"
 [kernel]
 defconfig = "sheng_defconfig"
 archives = [
-  "scripts/build-software-aes-bindings.py",
-  "scripts/build-libpthread-kernel.py",
-  "scripts/build-corecrypto-14.py",
-  "scripts/build-corecrypto-14.py --namespace",
+  "build-software-aes-bindings.py",
+  "build-libpthread-kernel.py",
+  "build-corecrypto-14.py",
+  "build-corecrypto-14.py --namespace",
 ]
 ```
 

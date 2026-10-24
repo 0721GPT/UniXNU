@@ -1,5 +1,7 @@
 # Novatek NT36532E touch driver
 
+Start with the [adaptation procedure](/porting/input) for board inputs, source changes, build integration and verification order.
+
 ShengNovatekTouch is an independent UniXNU module, included by UniXNU-sheng. It is a complete touch driver for the Novatek NT36532E controller and a worked example for new touch drivers.
 
 | Repository | Path | Contents |
@@ -131,7 +133,7 @@ The writer increments the sequence before and after the update, so the reader de
 
 1. Keep the pure processing layer separate from the bus.
 2. Put every board constant in a header with its source.
-3. Write host tests for the pure helpers before the hardware probe.
+3. Run the existing host checks for the reused processing and clock helpers.
 4. Add a staged boot argument so each hardware step is observable.
 5. Publish contacts through a sequence counter and a fixed size snapshot.
 6. Keep the driver off by default until a boot log shows each stage.

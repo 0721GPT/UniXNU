@@ -1,5 +1,7 @@
 # ShengPreflight
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 sheng 的 UEFI 预检。构建前校验固件卷、内存图和启动输入。
 
 | 仓库 | 维护者 | 范围 |
@@ -12,4 +14,4 @@ sheng 的 UEFI 预检。构建前校验固件卷、内存图和启动输入。
 
 ## 构建
 
-通过 `unixnu build kernel` 链接进 XNU；kit 或工具仓库用自己的脚本构建。
+设备在 `[firmware] preflight` 选择预检脚本，`./unixnu build firmware` 在构建 FD 前调用它们。使用目标设备的预检实现和固件输入。

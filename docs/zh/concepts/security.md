@@ -9,7 +9,7 @@ UniXNU 保留原始 Apple 安全组件，并提供它们检查的输入。源码
 | trust cache 包 | `--trust-cache FILE` |
 | trust cache 哈希 | `[payload] trust_cache_sha256` |
 | 平台种子 | `--unique-chip-id HEX` |
-| 设备树身份 | `[payload.adt] ipad_identity` 和板级脚本 |
+| 设备树身份 | 格式 2 的带类型 `[adt]` 表；格式 1 的板级脚本 |
 | PMGR 集成 | 需要时使用 `XNU_SHENG_PMGR` |
 | 根策略 | `XNU_VERIFIED_ROOT_PROBE`、`XNU_OWNER_ROOT_AUDIT`、`XNU_OWNER_ROOT_TRUST` |
 

@@ -1,5 +1,7 @@
 # Kext bundles
 
+The shipped DarwinBoot starts prelinked kernels. Its driver integration path is [built-in XNU drivers](/drivers/xnu-drivers). This page describes bundle staging for a loader that implements revision 2 and accepts kext requests. Select and verify that loader before preparing bundles.
+
 A kext bundle is a standard macOS or iOS kernel extension directory. UniXNU stages the bundle files and passes them to an XNU loader through `UNIXNU_LOADER_PROTOCOL`.
 
 ## Bundle layout

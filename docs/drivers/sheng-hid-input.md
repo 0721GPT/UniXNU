@@ -1,5 +1,7 @@
 # ShengHidInput
 
+Start with the [adaptation procedure](/porting/input) for board inputs, source changes, build integration and verification order.
+
 sheng touch and button integration with IOHIDFamily.
 
 [Source repository](https://github.com/UniXNU/ShengHidInput).

@@ -1,6 +1,6 @@
 # Boot the image
 
-The boot image runs from RAM. The workflow starts the image and leaves the installed boot partition unchanged.
+Follow [Building](/building) through boot-image assembly first. The procedure below starts the image from RAM and checks the menu, loader and kernel in order.
 
 Build the firmware with `./unixnu build firmware --uefi ../uefi-<device>` and include `UniXNURamDiskDxe` plus DiskIoDxe and FAT support for a Mu-Silicium initrd payload. Build the payload before `./unixnu bootimg`. The [firmware integration guide](/porting/uefi-firmware#required-integration) lists the required DSC/FDF entries and menu checks.
 
@@ -20,7 +20,7 @@ fastboot devices
 fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img
 ```
 
-`fastboot boot` transfers the image and starts it one time. The stock boot partition and the installed OS stay unchanged.
+`fastboot boot` transfers the image and starts it once. The running payload follows its configured storage and installation policy.
 
 The boot image contains:
 
@@ -70,6 +70,8 @@ The default window is 256 MiB. The ADT property `/chosen/darwinboot-memory-size`
 
 The first boot needs a userdata image. The image supplies the OS and SystemOS volumes and the root volume UUID that the kernel matches.
 
+Flashing `userdata` overwrites that partition. Confirm the target device, its partition geometry and the report's image path, and save any data needed from that partition before running the command.
+
 ```sh
 fastboot flash userdata out/<device>/<os_profile>/<config>/userdata/userdata-root.img
 fastboot reboot bootloader
@@ -97,27 +99,24 @@ Useful logs:
 
 ## Recovery
 
-The image runs from RAM. Reset the device to return to the stock bootloader and the installed OS.
+Use the device's hardware reset sequence to return to its bootloader. Once fastboot responds, the following command restarts that bootloader:
 
 ```sh
 fastboot reboot bootloader
 ```
 
-If the firmware stalls before the menu, reset the device and start the same image again. A firmware stall leaves the device in the bootloader; a second `fastboot boot` uses the same image.
+If firmware stalls before the menu, capture the last output, reset into the bootloader and confirm `fastboot devices`. Check the firmware inputs using [bring-up](/porting/bring-up) before another attempt.
 
 ## macOS
 
-The boot pipeline is driven by the IPSW. A macOS restore image provides `KernelCache`, `DeviceTree`, `OS`, `Cryptex1,SystemOS`, `StaticTrustCache` and `Cryptex1,SystemTrustCache` in the same member layout.
+A macOS port needs an OS profile matching its XNU version, kernelcache, prelink
+roots, private driver ABIs, trust caches and root layout. Qualify those inputs
+with [kernel preparation](/guide/build-kernel) and [prelink](/concepts/prelink).
+The supplied `ipados-17.7.11-21H461` profile describes its named iPadOS build.
 
-To boot macOS:
-
-1. Point `[ipsw]` in the board file at a macOS IPSW and set the product, version, build, device class, chip ID and board ID of that image.
-2. Pin the member hashes in `[ipsw.sha256]`.
-3. Set `[userdata] windows` to `OS` and `Cryptex1,SystemOS`.
-4. Build the kernel, payload, boot image and userdata image.
-5. Flash the userdata image and start the boot image.
-
-The device tree and the platform drivers supply the hardware description. The userland comes from the macOS disk images.
+Select the completed OS profile in `board.os_profile`, inspect `status --json`,
+then repeat the build and bring-up sequence. Record macOS results against that
+profile and the target device.
 
 ## Next steps
 

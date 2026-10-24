@@ -1,5 +1,7 @@
 # Ath12kWifi
 
+Start with the [adaptation procedure](/porting/network) for board inputs, source changes, build integration and verification order.
+
 Ath12kWifi implements an ath12k-based Wi-Fi stack with PCI, MHI, QRTR, and
 board-supplied interfaces. The source includes QCC2072, QCN9274, and WCN7850
 hardware definitions.

@@ -1,5 +1,7 @@
 # GopFramebuffer
 
+Start with the [adaptation procedure](/porting/display) for board inputs, source changes, build integration and verification order.
+
 Framebuffer presentation using the firmware GOP handoff.
 
 [Source repository](https://github.com/UniXNU/GopFramebuffer).

@@ -1,5 +1,7 @@
 # VerifiedRoot
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 Verified root trust tooling. Builds and checks owner-signed root policies.
 
 | Repository | Maintainer | Scope |
@@ -12,4 +14,4 @@ Used by the owner root chain.
 
 ## Build
 
-Linked into XNU by `unixnu build kernel`, or built by its own script when the repository is a kit or tool.
+Build the owner policy and the consuming storage archive using the selected board recipe. Check the image and trust inputs using [integrity and boot policy](/concepts/security), then follow [block integration](/porting/platform#block-and-os-services).

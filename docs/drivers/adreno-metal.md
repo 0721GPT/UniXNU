@@ -1,5 +1,7 @@
 # AdrenoMetal
 
+Start with the [adaptation procedure](/porting/gpu) for board inputs, source changes, build integration and verification order.
+
 AdrenoMetal provides the Metal frontend through metal2vulkan and Turnip. It
 publishes a device through `MTLAddDevice`, translates AIR, and submits work to
 the kernel GPU interface.

@@ -31,17 +31,30 @@ series 文件，或使用 `arch:`、`soc:`、`os:`、`device:`、`component:<ID>
 
 ## 新增补丁
 
-1. 准备所选目标并进入其 `tree/` 目录。
-2. 编辑 `.cache/xnu-work` 中的源码。
-3. 生成补丁：
+1. 先构建选定内核，生成目标的 `tree/.cache/xnu-work`。
+   将 `XNU_WORK` 设为该目录，`DEVICE_DIR` 设为设备仓库。
+2. 将待修改文件按 XNU 相对路径复制到临时 Git 目录，编辑前暂存基线。例如修改 `start.s`：
 
 ```sh
-git -C .cache/xnu-work diff -- <paths> > patches/xnu/my-change.patch
+PATCH_WORK=$(mktemp -d)
+git -C "$PATCH_WORK" init
+mkdir -p "$PATCH_WORK/osfmk/arm64"
+cp "$XNU_WORK/osfmk/arm64/start.s" "$PATCH_WORK/osfmk/arm64/start.s"
+git -C "$PATCH_WORK" add osfmk/arm64/start.s
 ```
 
-4. 将补丁加入所属配置的 series，再运行 `unixnu build kernel`。
+3. 编辑临时副本，再导出修改：
 
-新增构建选项的补丁参考 `native-aes-personality.patch`：
+```sh
+git -C "$PATCH_WORK" diff -- osfmk/arm64/start.s > "$DEVICE_DIR/patches/xnu/my-change.patch"
+```
+
+4. 检查补丁，把 `my-change.patch` 加入设备 series，从 UniXNU 执行 `./unixnu build kernel`。
+   共享修改放入所属 SoC、架构、OS 或组件 series，位置应与编辑基线一致。
+5. 用 `./unixnu status --json` 检查补丁顺序并记录构建结果。
+   补丁输入变化时，内核准备步骤会重新生成工作源码。
+
+新增构建选项可使用以下 personality 模式：
 
 ```c
 #if defined(XNU_MY_OPTION) && XNU_MY_OPTION

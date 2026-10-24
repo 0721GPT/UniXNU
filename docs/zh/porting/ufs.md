@@ -96,7 +96,7 @@ root_match_volume_uuid = "04769D26-2CA0-4825-B443-E2E5F88300F2"
 | 持久化 | 写入位于分配的 Data 区域，经过规定重启/复位序列后保留 |
 
 每个阶段更新存储记录。源码、主机和设备结果使用对应的
-[完成等级](/zh/porting/records#完成等级)。
+[完成等级](/zh/porting/records#completion-levels)。
 
 ```sh
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
@@ -104,3 +104,7 @@ root_match_volume_uuid = "04769D26-2CA0-4825-B443-E2E5F88300F2"
 ./unixnu build kernel -D ../UniXNU-sheng
 python3 scripts/porting-record.py check --device ../UniXNU-sheng
 ```
+
+## 下一步
+
+根卷路径就绪后[适配显示与亮度](/zh/porting/display)，其他子系统见[驱动清单](/zh/porting/drivers)。

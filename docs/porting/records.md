@@ -118,3 +118,5 @@ points to the same required reading.
 - [UFS porting](/porting/ufs)
 - [Device repository](/porting/device-repository)
 - [Bring-up order](/porting/bring-up)
+
+Use the [driver adaptation checklist](/porting/drivers) to fill the procedure and completion criteria for display, brightness, input, GPU, Wi-Fi, DSP, audio and power.

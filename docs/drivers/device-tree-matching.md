@@ -71,57 +71,44 @@ This dictionary is stored in `/chosen/root-matching`.
 
 ## Device tree nodes
 
-### Device node
+For format 2, edit the hardware DTS described in [Device tree](/porting/device-tree).
+The SoC DTSI declares controller resources. A board using the SM8550 UFS host
+enables its existing node:
 
-```c
-ufshc {
-  name = "ufshc";
-  compatible = "qcom,sm8550-ufshc";
-  reg = <0x03ff0000 0x3000>;
-  interrupts = <0 0x100 4>;
-  status = "okay";
-}
+```text
+&ufs {
+    status = "okay";
+};
 ```
 
-The platform expert publishes a nub with these properties. The driver reads `reg` and `interrupts` from the provider.
-
-### Bus node
-
-```c
-arm-io {
-  name = "arm-io";
-  device_type = "arm-io";
-  #address-cells = <2>;
-  #size-cells = <2>;
-  ranges = <0 0x17000000 0x08000000>;
-  intc {
-    name = "intc";
-    compatible = "arm,gic-v3";
-    reg = <0x0 0x10000 0x0 0x10000>;
-  };
-}
-```
-
-A child `reg` is an offset inside the `ranges` window. The platform expert resolves the physical address.
+The included SoC node declares `reg = <0 0x1d84000 0 0x3000>` and
+`unixnu,adt-name = "ufshc"`. Its parent uses two address cells, two size cells and
+identity `ranges`. The converter exports the physical range to `/arm-io/ufshc`
+as a little-endian u64 address followed by a u64 size. Configure clocks, power
+and DMA in the consuming driver as required by [UFS adaptation](/porting/ufs).
 
 ## Reading properties
 
 ```cpp
 OSData *data = OSDynamicCast(OSData, provider->getProperty("reg"));
-if (data == nullptr) {
+if (data == nullptr || data->getLength() != 2 * sizeof(uint64_t)) {
   return false;
 }
-
-const uint32_t *cells = (const uint32_t *)data->getBytesNoCopy();
-uint32_t count = data->getLength() / sizeof(uint32_t);
+uint64_t range[2];
+memcpy(range, data->getBytesNoCopy(), sizeof(range));
+uint64_t physicalAddress = range[0];
+uint64_t length = range[1];
 ```
 
-The number of cells comes from the parent node. A node under `#address-cells = <2>` and `#size-cells = <2>` uses four cells per range.
+This example consumes one format 2 ADT range on little-endian ARM64. A driver with multiple ranges validates and reads every address/size pair.
 
 A string property:
 
 ```cpp
 OSData *compatible = OSDynamicCast(OSData, provider->getProperty("compatible"));
+if (compatible == nullptr || compatible->getLength() == 0) {
+  return false;
+}
 const char *value = (const char *)compatible->getBytesNoCopy();
 ```
 

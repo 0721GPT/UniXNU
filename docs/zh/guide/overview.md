@@ -17,7 +17,7 @@ UniXNU 在 ARM64 设备上从 UEFI 环境启动 iOS 或 macOS。整个栈分为�
 
 | 任务 | 阅读路径 |
 | --- | --- |
-| 新增设备 | [移植流程](/zh/porting/) → [设备仓库](/zh/porting/device-repository) → [bring-up 顺序](/zh/porting/bring-up) → [适配记录](/zh/porting/records) |
+| 新增设备 | [移植流程](/zh/porting/) → [设备仓库](/zh/porting/device-repository) → [驱动适配](/zh/porting/drivers) → [bring-up 顺序](/zh/porting/bring-up) → [适配记录](/zh/porting/records) |
 | 迁移设备仓库 | [迁移指南](/zh/porting/migration) → [配置参考](/zh/reference/configuration) |
 | 选择或开发驱动 | [组件目录](/zh/reference/components) → [驱动分层](/zh/drivers/overview) → [驱动仓库和组件页面](/zh/drivers/repositories) |
 | 修改 XNU | [源码与补丁](/zh/xnu/source-and-patches) → [补丁参考](/zh/xnu/patch-reference) → [4 KiB 页表](/zh/xnu/four-k-page-tables) |

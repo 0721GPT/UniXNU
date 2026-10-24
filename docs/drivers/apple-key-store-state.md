@@ -1,5 +1,7 @@
 # AppleKeyStoreState
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 AppleKeyStore state queries and state hooks for the selected userland ABI.
 
 [Source repository](https://github.com/UniXNU/AppleKeyStoreState).

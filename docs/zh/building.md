@@ -6,44 +6,101 @@
 打包启动镜像前，运行 `./unixnu build firmware --uefi ../uefi-<device>` 构建设备固件。DSC 和 FDF 必须包含 UniXNU、UniXNUDxe、DarwinBoot 和负载卷驱动。Mu-Silicium 的 FDT initrd 路径使用共享的 `UniXNURamDiskDxe`，并需要 DiskIoDxe 和 FAT 支持。步骤见[固件集成](/zh/porting/uefi-firmware#required-integration)。
 :::
 
-## 保存构建参数
+## 1. 准备主机和仓库 {#quick-start}
 
-将 `unixnu.example.toml` 复制为 `unixnu.local.toml`，按[本地构建配置](/zh/reference/configuration#local-build-inputs)填写路径和平台种子，然后运行：
-
-```sh
-./unixnu defconfig <device>_defconfig
-./unixnu kernel
-./unixnu firmware
-./unixnu payload
-./unixnu bootimg
-```
-
-修改启动参数后，运行 `./unixnu payload` 和 `./unixnu bootimg`，再启动新镜像。[启动参数指南](/zh/xnu/boot-arguments#apply-arguments)说明如何检查已打包的配置。
-
-## 快速开始
+阅读[前置条件](/zh/guide/requirements)，从[设备列表](/zh/devices/)选择移植。
+新设备先按[移植流程](/zh/porting/)操作。获取设备和 UEFI 仓库及其 submodule。
+例如 sheng 使用：
 
 ```sh
 git clone --recurse-submodules https://github.com/UniXNU/UniXNU
 git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng
-git clone https://github.com/UniXNU/uefi-sheng
+git clone --recurse-submodules https://github.com/UniXNU/uefi-sheng
 cd UniXNU
-
-# 已有克隆：
-git submodule update --init --recursive
-
 ./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
 ./unixnu fetch
-./unixnu ipsw fetch
-./unixnu build kernel
-./unixnu build package
-./unixnu build firmware --uefi ../uefi-sheng
-./unixnu build payload --unique-chip-id <hex> --trust-cache <file> --data-ramdisk <seed>
-./unixnu bootimg --uefi ../uefi-sheng --dtb /path/to/device.dtb
+./unixnu status --json
 ```
 
-第一次使用 `-D` 后，设备仓库会记录在 `out/state.json` 中。
+替换为目标仓库和 defconfig 名称。`status` 显示最终 profile、版本、补丁顺序和输出目录。
+`-D` 记录在 `out/state.json`，后续命令均在 UniXNU 主仓库执行。
 
-启动镜像位于 `out/<device>/<os_profile>/<config>/boot/boot.img`，旁边的 `boot.json` 是报告。选项写在子命令之后。
+**预期结果：** 设备/配置选择正确，源码路径已解析。
+
+## 2. 保存并获取构建输入 {#saved-build-inputs}
+
+```sh
+cp unixnu.example.toml unixnu.local.toml
+```
+
+按[本地构建配置](/zh/reference/configuration#local-build-inputs)填写设备和 UEFI 路径、
+固件 DTB、平台身份及所需 kernelcache、trust-cache 和 Data seed。
+遵循设备输入清单；[sheng 构建输入](/zh/porting/migration#build-inputs)列出其 SDK、固件和 ABI 要求。
+
+```sh
+./unixnu ipsw info
+./unixnu ipsw fetch
+./unixnu tree
+```
+
+`ipsw info` 应显示 profile 选定的 OS 构建，`ipsw fetch` 将配置的成员提取到 `out/ipsw/<build>/`。
+设备固件、Data seed 和 ABI 审计输入各有准备步骤，在执行消费它们的配方前逐项确认。
+
+## 3. 构建内核、package 和固件 {#build-artifacts}
+
+```sh
+./unixnu build kernel
+./unixnu build package
+./unixnu build firmware
+```
+
+前一条成功后再执行下一条。[内核准备](/zh/guide/build-kernel)说明归档、ABI 和预链接要求，
+[固件集成](/zh/porting/uefi-firmware#required-integration)说明必需的 DSC/FDF 模块。
+
+| 步骤 | 预期输出 |
+| --- | --- |
+| 内核 | `<output>/kernel/kernel.macho` 和构建/预链接日志 |
+| Package | 默认目标为 `<output>/package/Build/Out/AARCH64-DEBUG/UniXNU.efi` |
+| 固件 | UEFI 仓库内由 `[firmware] fd` 选择的 FD 路径 |
+
+`<output>` 是 `status` 显示的目录。`--target RELEASE` 使用 `AARCH64-RELEASE` package
+目录并选择 release 固件路径。
+
+## 4. 准备根卷和 payload
+
+采用 userdata 根卷布局的设备按 [Userdata](/zh/guide/userdata)操作。
+命令需要 macOS 镜像工具和目标分区布局：
+
+```sh
+./unixnu build userdata --dry-run
+./unixnu build userdata
+```
+
+检查 `<output>/userdata/userdata-root.json` 中的大小、窗口和刷写命令，从选定卷取得根卷 UUID。
+可写 Data 卷使用设备说明中的 seed；[跳过 Setup](/zh/guide/skip-setup)是可选的 seed 转换。
+
+```sh
+./unixnu build payload
+```
+
+命令使用本地配置中的 trust-cache、身份和 Data seed。
+检查 `<output>/payload/payload.json` 及打印的命令行。生成的 FAT 卷包含 `unixnu.toml`、
+内核、ADT 和所选 sidecar，布局见 [Payload](/zh/concepts/payload)。
+
+**预期结果：** 根卷和 Data 输入匹配设备策略，payload 包含预期启动项与参数。
+
+## 5. 打包并启动
+
+```sh
+./unixnu bootimg
+```
+
+检查 `<output>/boot/boot.json`，确认固件、DTB 和 payload 来源正确。
+通过配置的 payload 启动时，`ramdisk_bytes` 应大于零。
+按[启动镜像](/zh/guide/boot)确认刷写条件并单次启动；新设备按[启动验证](/zh/porting/bring-up)检查。
+
+修改启动参数后执行 `./unixnu payload` 和 `./unixnu bootimg`，按
+[参数应用](/zh/xnu/boot-arguments#apply-arguments)检查打包后的配置。修改内核代码时先重建内核。
 
 ## macOS runner
 
@@ -91,7 +148,7 @@ cp out/<device>/<os_profile>/<config>/kernel/kernel.macho \
 
 候选名称以及显示和 kernelcache 输入由设备仓库决定。
 
-workflow 运行 kernel、userdata 和 payload。package、firmware 和 boot image 步骤可以在任意系统运行，不在 workflow 中。公开仓库使用免费的 macOS runner 配额，私有仓库消耗 Actions 分钟。
+workflow 运行 kernel、userdata 和 payload。package、firmware 和 boot image 命令在受支持的 macOS 或 Linux 主机上执行。使用托管构建前检查 workflow 和账户 runner 配置。
 
 ## Linux 主机
 
@@ -114,14 +171,14 @@ sudo scripts/linux/setup-toolchain.py
 
 `build-firehose.sh` 不经 Xcode 编译 `libfirehose_kernel`，`build-corecrypto-14.py` 用 `scripts/pbxproj.py` 代替 `plutil` 读取 corecrypto 工程，kernelcache 用 `lzfse` 解码。
 
-由于编译器不同，Linux 内核与 Mac 构建并非逐字节相同。用相同源码和配置构建时，两个内核的全局符号、目标文件、`kalloc_type` 签名、预链接绑定和 kext 都相同，代码段大小相差几个百分点。
+Linux 路径使用相同的选定 profile、归档配方和预链接检查。随构建结果记录主机工具链；设备配方可能还需要 SDK 或镜像工具。
 
 ## 命令
 
 | 命令 | 作用 |
 | --- | --- |
 | `defconfig [NAME]` | 列出设备仓库的 `configs/*_defconfig`，或将选中配置合并到目标 `.config`。 |
-| `fetch [NAME...] [--update]` | 拉取 git 源码并把 commit 写入设备仓库的 `unixnu.lock`。`--update` 忽略锁文件。 |
+| `fetch [NAME...] [--update]` | 拉取 git 源码并把 commit 写入设备仓库的 `unixnu.lock`。`--update` 更新未显式固定的 ref，格式 2 中明确指定的 commit 保持优先。 |
 | `tree` | 解析模块、拉取步骤需要的参考源码，并组装 `out/<device>/<os_profile>/<config>/tree`。 |
 | `ipsw info` | 打印目标 IPSW 的产品、build 和全部组件。 |
 | `ipsw fetch [COMPONENT...]` | 把指定组件解压到 `out/ipsw/<build>/`。 |
@@ -129,7 +186,7 @@ sudo scripts/linux/setup-toolchain.py
 | `build userdata [--dry-run]` | 构建 userdata 原始镜像。该步骤较大，只在显式指定时执行。 |
 | `bootimg` | 把 BootShim、固件卷、设备树和可选负载打包为 Android 启动镜像。 |
 | `status` | 打印设备、配置和每个模块的来源。 |
-| `clean` | 删除板级输出，保留已拉取源码。 |
+| `clean` | 删除目标目录中的 `tree`、`logs`、`kernel`、`package`、`boot` 和 `edk2-conf`。 |
 
 ## 常用选项
 
@@ -163,7 +220,7 @@ sudo scripts/linux/setup-toolchain.py
 
 ### fetch
 
-`fetch` 解析模块并拉取 git 源码。它使用浅克隆、blobless 过滤和 cone sparse checkout，每个仓库与 ref 一个克隆。每个源码的 commit 写入设备仓库的 `unixnu.lock`，后续构建使用锁定的 commit。
+`fetch` 解析模块并拉取 git 源码。它使用浅克隆、blobless 过滤和 cone sparse checkout，格式 2 按仓库和选定版本缓存。解析后的 commit 写入设备仓库的 `unixnu.lock`，显式 source commit 优先于已有锁记录。
 
 ### tree
 

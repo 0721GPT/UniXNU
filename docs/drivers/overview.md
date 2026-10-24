@@ -1,5 +1,7 @@
 # Driver layers
 
+To adapt hardware, follow the [driver checklist](/porting/drivers). It covers component drivers and board-package services in dependency order.
+
 UniXNU has three driver layers. Each layer runs in a different environment and has a different build and load path.
 
 | Layer | Runs in | Built as | Loaded by |

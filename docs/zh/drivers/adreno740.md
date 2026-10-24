@@ -1,5 +1,7 @@
 # Adreno740
 
+先按[适配流程](/zh/porting/gpu)准备板级输入、修改源码、接入构建并逐步验证。
+
 Adreno740 实现 SM8550 使用的 A740 内核 GPU 接口，管理命令提交、内存、fence 和 GPU 初始化。SoC 配置提供共享 GPU、GMU 和 SMMU 操作。各设备提供签名固件、电源策略、保留内存调整和显示集成。
 
 已有硬件记录的设备为 sheng。其图形栈使用 4 KiB SMMU 翻译、GMU 固件、CP ring、fence 和 GPU 到 scanout 的合成。

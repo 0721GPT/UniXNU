@@ -1,5 +1,7 @@
 # RamBlock
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 稀疏 RAM 块存储，以及可选的持久存储回调。
 
 [源码仓库](https://github.com/UniXNU/RamBlock).

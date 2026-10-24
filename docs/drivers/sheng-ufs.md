@@ -1,5 +1,7 @@
 # ShengUfs
 
+Start with the [adaptation procedure](/porting/ufs) for board inputs, source changes, build integration and verification order.
+
 ShengUfs provides the sheng UFS storage path for SM8550. It owns the host
 controller, SMMU mappings, command queues, and root reads. Its board integration
 includes clock resources and the persistent Data and log regions.

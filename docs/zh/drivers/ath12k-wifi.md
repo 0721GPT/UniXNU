@@ -1,5 +1,7 @@
 # Ath12kWifi
 
+先按[适配流程](/zh/porting/network)准备板级输入、修改源码、接入构建并逐步验证。
+
 Ath12kWifi 实现基于 ath12k 的 Wi-Fi 栈，包含 PCI、MHI、QRTR 和板级接口。
 源码包含 QCC2072、QCN9274 和 WCN7850 硬件定义。
 

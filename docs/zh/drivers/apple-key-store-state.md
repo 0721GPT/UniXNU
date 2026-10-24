@@ -1,5 +1,7 @@
 # AppleKeyStoreState
 
+先按[适配流程](/zh/porting/platform)准备板级输入、修改源码、接入构建并逐步验证。
+
 为所选用户态 ABI 提供 AppleKeyStore 状态查询和状态接口。
 
 [源码仓库](https://github.com/UniXNU/AppleKeyStoreState).

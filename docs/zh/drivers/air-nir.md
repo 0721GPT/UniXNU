@@ -1,5 +1,7 @@
 # AirNir
 
+先按[适配流程](/zh/porting/gpu)准备板级输入、修改源码、接入构建并逐步验证。
+
 离线 AIR 到 NIR 到 IR3 编译器 kit。在没有 GPU 提交的情况下验证 shader 路径。
 
 | 仓库 | 维护者 | 范围 |
@@ -12,4 +14,4 @@
 
 ## 构建
 
-通过 `unixnu build kernel` 链接进 XNU；kit 或工具仓库用自己的脚本构建。
+离线编译器构建和输入格式见 kit README。设备图形集成按 [GPU 适配](/zh/porting/gpu)和 [Adreno740](/zh/drivers/adreno740)中的运行时编译步骤操作。

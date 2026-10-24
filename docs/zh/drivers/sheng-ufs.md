@@ -1,5 +1,7 @@
 # ShengUfs
 
+先按[适配流程](/zh/porting/ufs)准备板级输入、修改源码、接入构建并逐步验证。
+
 ShengUfs 为 SM8550 上的 sheng 提供 UFS 存储路径，管理主机控制器、SMMU 映射、
 命令队列和根卷读取。板级集成包含时钟资源、持久 Data 区域和日志区域。
 

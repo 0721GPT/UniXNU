@@ -9,7 +9,7 @@ UniXNU keeps the original Apple security components and supplies the inputs they
 | Trust cache bundle | `--trust-cache FILE` |
 | Trust cache pins | `[payload] trust_cache_sha256` |
 | Platform seed | `--unique-chip-id HEX` |
-| Device tree identity | `[payload.adt] ipad_identity` and the board script |
+| Device tree identity | Format 2 typed `[adt]` tables; format 1 board script |
 | PMGR integration | `XNU_SHENG_PMGR` on boards that need it |
 | Root policy | `XNU_VERIFIED_ROOT_PROBE`, `XNU_OWNER_ROOT_AUDIT`, `XNU_OWNER_ROOT_TRUST` |
 

@@ -43,18 +43,18 @@
 | --- | --- | --- |
 | `fastboot` 看不到设备 | 驱动、线缆、bootloader 模式 | 安装 USB 驱动并重启到 bootloader |
 | 镜像启动后复位 | 启动镜像 header、基址和大小 | 检查 Mu-Silicium 配置和 BootShim 参数 |
-| 固件停住 | Silicium 随机停顿 | 再次启动同一镜像 |
+| 固件停止响应 | 最后固件日志与已初始化资源 | 保存输出，复位进入 bootloader，再按[启动验证](/zh/porting/bring-up)检查 |
 | 无显示 | GOP 驱动 | 使用 `console = "text"` 或串口 |
 | 无菜单 | 配置路径 | 把 `unixnu.toml` 放到 `\EFI\UniXNU\unixnu.toml` |
 | 无启动项 | 负载卷 | 检查 `boot.json` 的 `ramdisk_bytes` 是否大于零、FD 中的 UniXNURamDiskDxe/DiskIoDxe/FAT、FDT initrd 范围和 `EFI/UniXNU/unixnu.toml`，步骤见[负载发现](/zh/porting/uefi-firmware#payload-discovery)。 |
 | 驱动失败 | 菜单中的第一条失败原因 | 修正驱动路径或依赖 |
-| `no loader protocol installed` | 固件卷中的 DarwinBoot | 把 DarwinBoot 加入 FDS 或负载 |
+| `no loader protocol installed` | 固件卷中的 DarwinBoot | 把 DarwinBoot 加入 FDF 或负载 |
 | `loader revision 1 cannot accept kexts` | 加载器 revision | 使用 revision 2 或移除 kext |
 | `boot refused: ...; firmware retained` | DarwinBoot 日志 | 检查内核、ADT、trust cache 和占位符 |
 | 内核入口 panic | 页表、内核窗口、启动参数 | 用 QEMU fixture 和启动进度日志 |
 | panic 给出 provider | 设备树节点或驱动静态库 | 加入节点或启用驱动 |
 | 无根设备 | userdata 镜像、UUID、容量 | 刷写镜像，检查 UUID 和窗口偏移 |
-| Data store 窗口被拒绝 | 种子大小、`sheng-log-reserve`、根镜像 | 增长种子使其适配 userdata，或调整 `sheng-log-reserve` |
+| Data store 窗口被拒绝 | 种子大小、`sheng-log-reserve`、根镜像 | 重新计算根卷、Data 和日志分配，选择可容纳的 seed 大小 |
 | 用户态显示断言 | 显示 provider 和启动参数 | 检查显示驱动和 focus 参数 |
 
 ## 日志

@@ -1,5 +1,7 @@
 # Adreno740
 
+Start with the [adaptation procedure](/porting/gpu) for board inputs, source changes, build integration and verification order.
+
 Adreno740 implements the A740 kernel GPU interface used by SM8550. It manages command submission, memory, fences, and GPU initialization. The SoC profile supplies shared GPU, GMU, and SMMU operations. Each board supplies signed firmware, power policy, reserved-memory adjustments, and display integration.
 
 The recorded hardware target is sheng. Its stack uses 4 KiB SMMU translation, GMU firmware, a CP ring, fences, and GPU compositing into scanout.

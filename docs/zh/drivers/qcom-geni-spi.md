@@ -1,5 +1,7 @@
 # QcomGeniSpi
 
+先按[适配流程](/zh/porting/input)准备板级输入、修改源码、接入构建并逐步验证。
+
 高通 GENI 串行引擎 SPI 控制器操作。
 
 [源码仓库](https://github.com/UniXNU/QcomGeniSpi).

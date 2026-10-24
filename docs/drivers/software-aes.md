@@ -1,5 +1,7 @@
 # SoftwareAES
 
+Start with the [adaptation procedure](/porting/platform) for board inputs, source changes, build integration and verification order.
+
 Software AES-CBC through XNU AES helpers and the IOAESAccelerator ABI.
 
 [Source repository](https://github.com/UniXNU/SoftwareAES).

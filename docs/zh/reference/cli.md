@@ -24,7 +24,7 @@ unixnu defconfig [NAME]
 unixnu fetch [NAME...] [--update]
 ```
 
-更新本仓库和设备仓库的模块子模块，然后拉取 git 源码。指定名称时只拉取这些源码。`--update` 忽略 `unixnu.lock` 并移到最新 ref。commit 写入设备仓库的 `unixnu.lock`。
+更新本仓库和设备仓库的模块子模块，然后拉取 git 源码。指定名称时只拉取这些源码。`--update` 解析 ref 时忽略已有锁记录，格式 2 中显式指定的 source commit 优先。commit 写入设备仓库的 `unixnu.lock`。
 
 ### tree
 
@@ -49,7 +49,7 @@ unixnu ipsw fetch [COMPONENT...]
 unixnu build [kernel] [package] [firmware] [payload] [prelink] [userdata]
 ```
 
-按 kernel、prelink、package、payload、firmware 顺序执行指定步骤。未指定时执行 kernel、package、firmware 和 payload。`userdata` 单独执行，`all` 覆盖其他四个步骤。
+选择 userdata 时先执行该步骤，然后按 kernel（含预链接）、package、payload、firmware 顺序执行。未选 kernel 时可单独执行 prelink。默认和 `all` 选择 kernel、package、payload、firmware；按[构建指南](/zh/building)分开执行可逐项检查产物。
 
 `build prelink` 只重做预链接。
 

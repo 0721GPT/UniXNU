@@ -50,7 +50,7 @@
 `CLK_OFF`，探测过程需要一起检查使能位和门控位，并引用实现或寄存器记录。
 原因未查明时，记录现象和下一项测量。
 
-## 完成等级
+## 完成等级 {#completion-levels}
 
 | 状态 | 必需证据 |
 | --- | --- |
@@ -106,3 +106,5 @@ npx vitepress build
 - [UFS 移植](/zh/porting/ufs)
 - [设备仓库](/zh/porting/device-repository)
 - [Bring-up 顺序](/zh/porting/bring-up)
+
+按[驱动适配清单](/zh/porting/drivers)填写显示、亮度、输入、GPU、Wi-Fi、DSP、音频和电源的操作流程与完成条件。
