@@ -15,6 +15,7 @@ OPTIONAL_STEPS = ('userdata',)   # large; built only when named
 
 def common():
     p = argparse.ArgumentParser(add_help=False)
+    p.add_argument('--config', metavar='FILE', help='local build inputs (default: unixnu.local.toml in the UniXNU checkout)')
     p.add_argument('-D', '--device', metavar='DIR', help='device repository (remembered; or UNIXNU_DEVICE)')
     p.add_argument('--out', metavar='DIR', help='output root (default: out/ here, or UNIXNU_OUT)')
     p.add_argument('-j', '--jobs', type=int, help='parallel jobs')
@@ -36,7 +37,7 @@ def common():
     p.add_argument('--unique-chip-id', metavar='HEX', help='platform seed for the device tree; or UNIXNU_UNIQUE_CHIP_ID')
     p.add_argument('--ipsw', metavar='PATH_OR_URL', help='the target IPSW: a local file or an https URL (default: url of board.toml [ipsw]); or UNIXNU_IPSW')
     p.add_argument('--dry-run', action='store_true', help='userdata: check sizes and pins, write nothing')
-    p.add_argument('--target', default='DEBUG', choices=('DEBUG', 'RELEASE'), help='EDK II build target')
+    p.add_argument('--target', choices=('DEBUG', 'RELEASE'), help='EDK II build target')
     return p
 
 
@@ -52,6 +53,9 @@ def parser():
     sub.add_parser('tree', parents=[c], help='assemble the build tree')
     b = sub.add_parser('build', parents=[c], help='build kernel, package and firmware')
     b.add_argument('steps', nargs='*', choices=STEPS + OPTIONAL_STEPS + ('all', 'prelink'), default=['all'])
+    for step in STEPS + OPTIONAL_STEPS + ('prelink',):
+        shortcut = sub.add_parser(step, parents=[c], help=f'alias for build {step}')
+        shortcut.set_defaults(steps=[step])
     i = sub.add_parser('bootimg', parents=[c], help='pack the boot image from the firmware volume and a device tree')
     i.add_argument('--fd', metavar='FILE', help='firmware volume with UniXNU, DarwinBoot and payload filesystem support (default: build firmware output under --uefi)')
     i.add_argument('--dtb', metavar='FILE', help='compiled device tree; or UNIXNU_DTB')
@@ -218,6 +222,7 @@ def cmd_status(ctx):
     if ctx.args.json:
         print(json.dumps({'schema_version': ctx.schema_version, 'device': str(ctx.device), 'name': ctx.name,
                           'output': str(ctx.work), 'configuration': ctx.config_name,
+                          'build_config': ctx.args.build_config,
                           'config_path': str(ctx.config_path), 'configured': ctx.config_path.is_file(),
                           'profiles': {key: str(value) for key, value in ctx.profile_roots.items()},
                           'configuration_sources': [str(path) for path in ctx.profile_files],
@@ -226,6 +231,8 @@ def cmd_status(ctx):
         return
     print(f'device   {ctx.device} ({ctx.name})' + ('  [EXAMPLE]' if ctx.example else ''))
     print(f'output   {ctx.work}')
+    if ctx.args.build_config:
+        print(f'inputs   {ctx.args.build_config}')
     print(f'config   {ctx.config_path if ctx.config_path.is_file() else "none (run defconfig)"}')
     if ctx.schema_version == 2:
         for name, path in ctx.profile_roots.items():
@@ -268,6 +275,8 @@ def main(argv=None):
         print('unixnu: developed and tested on macOS and Linux only; the kernel step needs Xcode or the Linux toolchain, '
               'and --skip-setup needs hdiutil', file=sys.stderr)
     args = parser().parse_args(argv)
+    if args.command in STEPS + OPTIONAL_STEPS + ('prelink',):
+        args.command = 'build'
     try:
         ctx = Context(args)
         {'defconfig': cmd_defconfig, 'fetch': cmd_fetch, 'tree': lambda c: prepare(c), 'build': cmd_build,

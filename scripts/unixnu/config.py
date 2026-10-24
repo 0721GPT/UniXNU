@@ -29,6 +29,56 @@ def load_toml(path):
         raise Error(f'{path}: {error}') from None
 
 
+BUILD_PATHS = {'device', 'out', 'uefi', 'edk2', 'kernelcache', 'kernel',
+               'trust_cache', 'owner_trust_cache', 'data_ramdisk', 'gpu_addon',
+               'dtb', 'fd', 'ramdisk', 'output'}
+BUILD_ENV = {'device': 'UNIXNU_DEVICE', 'out': 'UNIXNU_OUT', 'uefi': 'UNIXNU_UEFI',
+             'edk2': 'UNIXNU_EDK2', 'kernelcache': 'UNIXNU_KERNELCACHE',
+             'dtb': 'UNIXNU_DTB', 'ipsw': 'UNIXNU_IPSW',
+             'unique_chip_id': 'UNIXNU_UNIQUE_CHIP_ID', 'jobs': 'JOBS'}
+
+
+def load_build_options(args):
+    """Apply local build inputs below explicit flags and environment variables."""
+    explicit = getattr(args, 'config', None)
+    path = expand(explicit) if explicit else ROOT / 'unixnu.local.toml'
+    args.build_config = None
+    if not explicit and not path.is_file():
+        args.target = args.target or 'DEBUG'
+        return
+    document = load_toml(path)
+    if set(document) - {'build'} or not isinstance(document.get('build'), dict):
+        raise Error(f'{path}: expected a [build] table')
+    options = document['build']
+    allowed = BUILD_PATHS | {'ipsw', 'unique_chip_id', 'jobs', 'target', 'kernel_args'}
+    for key, value in options.items():
+        if key not in allowed:
+            raise Error(f'{path}: unknown build option {key}')
+        if key == 'kernel_args':
+            if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+                raise Error(f'{path}: kernel_args must be an array of strings')
+            extra = getattr(args, 'kernel_arg', None) or []
+            names = {item.split('=', 1)[0] for item in extra}
+            args.kernel_arg = [item for item in value if item.split('=', 1)[0] not in names] + extra
+            continue
+        if key == 'jobs':
+            if type(value) is not int or value < 1:
+                raise Error(f'{path}: jobs must be a positive integer')
+        elif not isinstance(value, str) or not value:
+            raise Error(f'{path}: {key} must be a nonempty string')
+        if key == 'target' and value not in ('DEBUG', 'RELEASE'):
+            raise Error(f'{path}: target must be DEBUG or RELEASE')
+        if getattr(args, key, None) is not None or os.environ.get(BUILD_ENV.get(key, '')):
+            continue
+        if key in BUILD_PATHS or (key == 'ipsw' and '://' not in value):
+            if not (key == 'ramdisk' and value == 'none'):
+                local = Path(os.path.expandvars(value)).expanduser()
+                value = str((path.parent / local).resolve())
+        setattr(args, key, value)
+    args.target = args.target or 'DEBUG'
+    args.build_config = str(path)
+
+
 def parse_config(text):
     """Parse a defconfig: CONFIG_X=y, =n, ="text", =123 and "# CONFIG_X is not set"."""
     values = {}
@@ -62,6 +112,7 @@ class Context:
 
     def __init__(self, args):
         self.root = ROOT
+        load_build_options(args)
         self.args = args
         self.out_root = expand(args.out or os.environ.get('UNIXNU_OUT') or ROOT / 'out')
         self.state_path = self.out_root / 'state.json'

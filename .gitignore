@@ -49,3 +49,4 @@ __pycache__/
 *.key
 .env
 local.toml
+unixnu.local.toml

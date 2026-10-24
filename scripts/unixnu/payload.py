@@ -95,6 +95,7 @@ def build(ctx, kernel=None):
     names = {item.split('=', 1)[0] for item in extra}
     arguments = [item for item in spec.get('kernel_args', []) if item.split('=', 1)[0] not in names] + extra
     line = check_args(arguments)
+    log(f'kernel args: {line}')
     check_native_root(kernel, arguments)
     owner_trust = getattr(args, 'owner_trust_cache', None)
     trust = expand(owner_trust or args.trust_cache) if (owner_trust or getattr(args, 'trust_cache', None)) else None
@@ -212,4 +213,5 @@ def build(ctx, kernel=None):
     report.write_text(json.dumps(data_report, indent=2) + '\n')
     shutil.rmtree(stage)
     log(f'payload: {image} ({image.stat().st_size >> 20} MiB)')
+    log('next: run ./unixnu bootimg to pack this payload into the boot image')
     return image
