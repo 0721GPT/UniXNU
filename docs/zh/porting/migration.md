@@ -1,47 +1,105 @@
-# 设备迁移
+# 迁移设备适配
 
-先读根目录 `AGENTS.md`、[设备仓库规范](/zh/porting/device-repository)、
-[组件目录](/zh/reference/components)和[设备树规范](/zh/porting/device-tree)。
-以下命令从 UniXNU 检出目录运行，带目录参数的命令使用指定目录。
+## 为什么迁移
 
-迁移固件时，把 `UniXNURamDiskDxe` 及其文件系统依赖加入设备 DSC 和 FDF，再运行 `./unixnu build firmware --uefi ../uefi-<device>`。组装启动镜像前，完成[必需的固件集成](/zh/porting/uefi-firmware#required-integration)。
+格式 2 让多个设备复用 SoC 支持、OS profile 和组件构建配方。共享 SoC 仓库保存控制器资源和平台操作，设备仓库负责板级连接、固件选择和设备策略。公共修复集中维护，其他设备需要提供的输入也有明确位置。组件目录列出实现的硬件范围和 ABI 要求；按设备、OS profile 和配置划分的输出目录保存各自的补丁后内核与生成文件。
 
-## 格式识别
+本指南将已有设备仓库转换为格式 2。完成后，设备具有固定版本的 SoC 源码、板级 DTS、完整组件选择，以及可重复执行的内核、固件和 payload 构建命令。新设备从[移植设备](/zh/porting/)开始。已有格式 2 设备可按下列检查复核配置。
 
-```sh
-python3 -c 'import pathlib,tomllib; p=pathlib.Path("../UniXNU-sheng/board.toml"); print(tomllib.loads(p.read_text()).get("schema_version", 1))'
-git -C ../UniXNU-sheng status --short
-git -C ../UniXNU-sheng submodule status --recursive
-./unixnu status --json -D ../UniXNU-sheng > /tmp/sheng-before.json
-```
+## 开始前
 
-省略 `schema_version` 时使用格式 1。值为 `2` 时使用配置层、组件构建命令、有序补丁
-和按目标隔离的输出。保留本地改动，编辑前记录选中的源码版本。
-
-## 仓库清单
-
-逐项记录仓库 URL、提交、检出路径、本地改动、功能、运行时标识符、构建命令、输出
-和使用者。检查 `.gitmodules`、`feeds.toml`、`local.toml`、archive 列表、shell 脚本、
-CI、固件 package 和文档链接中的源码。
+阅读将要修改的仓库根目录 `AGENTS.md`、[设备仓库规范](/zh/porting/device-repository)和[组件目录](/zh/reference/components)，准备[主机构建工具](/zh/guide/requirements)。以下命令从 UniXNU 主仓库执行，并使用同一个 shell。将这些值改成已有设备及 defconfig：
 
 ```sh
-git -C ../UniXNU-sheng config -f .gitmodules --get-regexp '^submodule\..*\.(path|url)$'
-rg -n 'Native|drivers/|kits/|archives|patches|make-.*-adt' ../UniXNU-sheng
+DEVICE=myboard
+DEVICE_DIR="../UniXNU-$DEVICE"
+DEFCONFIG="${DEVICE}_defconfig"
+MIGRATION_DIR="$PWD/out/migration-$DEVICE"
+mkdir -p "$MIGRATION_DIR"
 ```
 
-逐个检查组件：
+`examples/device/` 提供单个文件的示例。在已有设备仓库中逐项修改，保留硬件值、补丁、脚本和源码固定版本。
+
+## 1. 记录当前配置
 
 ```sh
-git -C <component> remote get-url origin
-git -C <component> rev-parse HEAD
-git -C <component> status --short
+git -C "$DEVICE_DIR" status --short
+git -C "$DEVICE_DIR" submodule status --recursive
+python3 - "$DEVICE_DIR/board.toml" <<'PYCODE'
+import pathlib, sys, tomllib
+board = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
+print("schema_version:", board.get("schema_version", 1))
+print("defconfig:", board.get("kernel", {}).get("defconfig"))
+PYCODE
+./unixnu status --json -D "$DEVICE_DIR" > "$MIGRATION_DIR/before.json"
+cp "$DEVICE_DIR/board.toml" "$MIGRATION_DIR/board-before.toml"
 ```
 
-将 URL 与目录中的仓库身份对应。官方兼容输入解析为规范 ID。社区分支保留自己的
-源码身份、名称和固定版本。在格式 2 中选择社区组件前，将其构建输入记录在维护的
-组件目录条目中。
+省略 `schema_version` 时使用格式 1。记录本地改动和未跟踪文件，在移动文件前，将需要保留的源码改动保存到工作分支。若 `status` 失败，先补齐它报告的源码或配置，使报告能完整记录起始状态。
 
-## 组件名称
+清点 `.gitmodules`、`feeds.toml`、`local.toml`、`unixnu.lock`、构建脚本、CI、固件 DSC/FDF 和文档。逐个记录组件的 origin URL、检出提交、本地改动、使用者和构建输出：
+
+```sh
+rg -n 'Native|drivers/|kits/|archives|patches|make-.*-adt' "$DEVICE_DIR"
+git -C <component-checkout> remote get-url origin
+git -C <component-checkout> rev-parse HEAD
+git -C <component-checkout> status --short
+```
+
+**完成结果：** 保存当前配置，并列出每项能力对应的源码、版本和外部输入。
+
+## 2. 选择 SoC 与 OS profile
+
+SM8550 设备先读 [SM8550 支持](/zh/porting/sm8550)，选用 `UniXNU-sm8550-common`。其他 SoC 按[选择共享支持的步骤](/zh/porting/)选择或建立匹配的仓库，提供 `soc.toml`、`configs/`、`dts/` 和 `patches/xnu/series`。
+
+将已有配置按下表确定归属：
+
+| 配置 | 位置 |
+| --- | --- |
+| ARM64 公共配置和补丁 | `UniXNU/profiles/arch/arm64/` |
+| SoC 寄存器、中断、CPU 拓扑和平台操作 | `UniXNU-<soc>-common` |
+| XNU/IPSW 版本、预链接根组件、ABI 和 OS 修复 | `UniXNU/profiles/os/<profile>/` |
+| 板级连接、启用的外设、固件和电源策略 | 设备 DTS、`board.toml` 和 `package/` |
+| 分区布局和镜像参数 | 设备 `board.toml` |
+| 可复用驱动配方和依赖 | `UniXNU/components.toml` 与组件仓库 |
+| 私有固件来源和哈希 | 设备 `proprietary-files.txt` |
+
+移动配置前，逐项与所选 profile 比较；设备值不同时，保留板级覆盖。OS profile 必须匹配设备使用的 kernelcache 和 ABI 输入。为其他 OS 版本建立 profile 时，按[预链接指南](/zh/concepts/prelink)准备输入。
+
+以下以 SM8550 为例，检查本地 SoC 仓库并取得具体版本：
+
+```sh
+SOC_DIR=../UniXNU-sm8550-common
+```
+
+本地尚无仓库时先创建：
+
+```sh
+git clone https://github.com/UniXNU/UniXNU-sm8550-common "$SOC_DIR"
+```
+
+检查所选仓库：
+
+```sh
+git -C "$SOC_DIR" rev-parse HEAD
+git -C "$SOC_DIR" status --short
+```
+
+在设备 `feeds.toml` 中添加以下条目，将 `REQUIRED_SOC_COMMIT` 替换为已审查的 40 位提交：
+
+```toml
+[[source]]
+name = "sm8550"
+kind = "soc"
+git = "https://github.com/UniXNU/UniXNU-sm8550-common"
+commit = "REQUIRED_SOC_COMMIT"
+```
+
+保留其他必需源码。发布构建使用已提交的固定版本。开发本地 SoC 改动时，为解析设备的命令添加 `--local-module soc:sm8550=../UniXNU-sm8550-common`，并在记录中注明覆盖。
+
+**完成结果：** SoC 源码版本已固定，OS profile 已选定，每项配置都有明确归属。
+
+## 3. 按源码身份更新组件名称 {#组件名称}
 
 | 官方兼容输入 | 规范 ID |
 | --- | --- |
@@ -67,105 +125,132 @@ CI 和文档。保留 `runtime_identifiers` 记录的源文件名、运行时类
 Adreno740 提供 A740 内核 GPU 接口，AdrenoMetal 提供 Metal 前端。元数据分别记录
 A740/SM8550 实现范围和 sheng 验证结果。设备提供固件、电源策略、内存调整和显示集成。
 
-## 字段归属
+改名前，先将各组件 origin URL 与组件目录对应。社区分支保留自身仓库身份和固定版本；将其作为独立组件选择时，在维护的组件目录中补齐元数据与构建配方。
 
-| 输入 | 目标 |
-| --- | --- |
-| ARM64 公共配置和补丁 | `profiles/arch/arm64/` |
-| SoC 寄存器、中断、拓扑和共享操作 | `UniXNU-<soc>-common` |
-| XNU/IPSW 版本、预链接根组件、OS ABI、版本修复 | `profiles/os/<id>/` |
-| 板级连接、固件选择、电源策略、内存覆盖 | 设备 DTS 和 `board.toml` |
-| 分区几何、package 和镜像参数 | 设备 `board.toml` 和 `package/` |
-| 组件源码、依赖、构建命令和输出 | `components.toml` 与组件仓库 |
-| ADT 脚本中的 CPU/GIC/计时器常量 | SoC DTSI，板级覆盖放在 DTS |
-| Apple 身份和带类型的平台属性 | OS 的 `[adt]` 表 |
-| 根卷 UUID 和 payload 内存映射输入 | 设备 `[payload.adt]` |
-| 私有固件输入 | `proprietary-files.txt` 和本地 `.cache/firmware/` |
+逐个处理需要改名的官方组件：
 
-## 配置
+1. 已有子模块使用 `git -C "$DEVICE_DIR" mv <old-path> <new-path>` 移动，Git 会更新其 `.gitmodules` 路径。
+2. 按组件目录更新 `.gitmodules` 中的 URL，或更新 `feeds.toml` 条目。
+3. 修改 `.gitmodules` 后运行 `git -C "$DEVICE_DIR" submodule sync --recursive`。
+4. 根据组件目录的配方和 `outputs`，更新组件 ID、脚本名称、archive 路径及使用者。
+5. 将检出提交和本地改动与步骤 1 的清单核对。
 
-1. 在 `board.toml` 顶层加入 `schema_version = 2`。
-2. 在 `feeds.toml` 固定 `kind = "soc"` 的源码，用 `board.soc_source` 选择其名称。
-3. 选择 `board.os_profile`，将 OS 设置放在对应配置中，板级设置留在 `board.toml`。
-4. 在 `[components] include` 完整列出所需组件。添加组件前检查现有依赖。
-5. 设置 `[kernel] config_fragments`，依次应用共享片段，再应用所选设备 defconfig。
-6. 创建有序 `patches/xnu/series`，保留补丁前置关系，用 `status --json` 检查最终顺序。
-7. 在 `[kernel] archives` 中用 `component:<ID>` 指定组件构建命令在辅助脚本之间的位置。
-8. 更新脚本和 CI，使用解析器提供的输出目录和最终板级数据。
+使用[驱动适配清单](/zh/porting/drivers)将存储、GPU、Wi-Fi、亮度、输入、音频和电源对应到具体实现，同时检查设备 package 中的代码和独立组件仓库。
 
-配置层按 ARM64、SoC、OS、设备顺序合并表。`include`、`config_fragments`、
-`patch_series` 和 `archives` 等数组整体替换。series 每行是相对补丁路径或带配置/组件
-前缀的路径。每个组件构建命令按依赖顺序运行一次。显式 archive 计划覆盖所有选中的
-内核阶段构建命令。
+**完成结果：** 每个所选组件都对应预期源码与构建配方，硬件要求和板级依赖已记录。
 
-SM8550 配置依次应用 ARM64、SoC、OS 和设备补丁序列。OS 序列在 SoC 接口补丁
-之后应用启动进度集成。设备序列包含板级补丁。模板继承公共内核归档构建命令，
-并选择所需的平台组件。
+## 4. 修改 board.toml 与内核输入
 
-## DTS 转换
+在首个表之前添加 `schema_version = 2`，将以下字段合入已有表。示例选择 SM8550 和 iPadOS 17.7.11；设备名称、kit、defconfig 和 DTS 路径替换为当前设备值：
 
-1. 阅读当前 ADT 生成器和驱动读取的属性。
-2. 将已确认的 SoC 拓扑、寄存器范围、中断和引用放入 SoC DTSI。
-3. 板级 DTS 包含 DTSI，添加内存、启用的 CPU、外设和保留区域。
-4. 用 `unixnu,adt-name` 标记导出到 XNU 的硬件节点，保持运行时匹配使用的节点名和 compatible。
-5. 声明父节点 cell 宽度、`ranges`、中断提供者和引用参数数量。
-6. 将带类型的 Apple 属性放在 OS 配置，根卷 UUID 和 payload 选项放在 `[payload.adt]`。
-7. 选择 `[device_tree] source` 和 `include_dirs`，用 `dtc` 编译，并按驱动要求核对生成的 ADT 属性。
+```toml
+schema_version = 2
 
-共享生成器添加 NVRAM、熵、平台身份、根卷匹配和 payload 交接属性。
-参见[硬件绑定](/zh/porting/device-tree#硬件绑定)。
+[board]
+name = "myboard"
+kit = "myboard"
+soc = "SM8550"
+soc_source = "sm8550"
+os_profile = "ipados-17.7.11-21H461"
 
-## sheng 示例
+[components]
+include = ["ArmDTPlatform", "ArmCpu", "SoftwareAES", "XnuPrelink", "DarwinBoot"]
 
-完整输入由以下仓库维护：
+[kernel]
+defconfig = "myboard_defconfig"
+config_fragments = ["arch:configs/common.config", "soc:configs/sm8550.config", "os:configs/ipados.config"]
+patch_series = ["arch:patches/xnu/series", "soc:patches/xnu/series", "os:patches/xnu/series", "device:patches/xnu/series"]
 
-| 输入 | 路径 |
-| --- | --- |
-| SoC | [UniXNU-sm8550-common](https://github.com/UniXNU/UniXNU-sm8550-common)，`soc.toml`、`configs/`、`dts/`、`patches/`、`kits/` |
-| 设备 | [UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng)，`board.toml`、`feeds.toml`、`configs/sheng_defconfig`、`dts/sheng.dts`、`patches/xnu/series`、`proprietary-files.txt`、`package/` |
-| OS | `profiles/os/ipados-17.7.11-21H461/profile.toml` |
-| 固件 | [uefi-sheng](https://github.com/UniXNU/uefi-sheng) |
-
-设备选择 `sm8550` 和 `ipados-17.7.11-21H461`。`feeds.toml` 固定 SoC 版本，解析器
-从该检出读取 `soc.toml`。板级配置选择 Adreno740、AdrenoMetal，以及存储、输入、
-framebuffer 和打包组件。CPU 拓扑和控制器资源来自 SoC DTSI，板级 DTS 提供型号、
-内存、CPU 选择和外设策略。
-
-```sh
-git clone --recurse-submodules https://github.com/UniXNU/UniXNU-sheng ../UniXNU-sheng
-git clone https://github.com/UniXNU/uefi-sheng ../uefi-sheng
-./unixnu defconfig sheng_defconfig -D ../UniXNU-sheng
-./unixnu fetch
-./unixnu status --json > /tmp/sheng-resolved.json
-./unixnu tree
-./unixnu ipsw fetch
-./unixnu build kernel
-./unixnu build package
-./unixnu build firmware --uefi ../uefi-sheng
-./unixnu build payload --unique-chip-id <hex> --trust-cache <bundle> --data-ramdisk <seed>
-./unixnu bootimg --uefi ../uefi-sheng --dtb <firmware.dtb>
+[device_tree]
+source = "device:dts/myboard.dts"
+include_dirs = ["soc:dts"]
 ```
 
-已有检出可直接使用。根据设备输入清单提供平台种子、trust cache、Data seed、固件
-文件和固件 DTB。本地开发 SoC 时增加
-`--local-module soc:sm8550=../UniXNU-sm8550-common`，状态报告会标出本地覆盖。
+运行解析器前完成这些修改：
 
-`out/sheng/ipados-17.7.11-21H461/sheng/` 下的预期输出：
+1. 根据步骤 3，在 `components.include` 中补齐设备需要的全部驱动。
+2. 保留 `configs/<defconfig>` 及必需开关。共享片段按列表顺序应用，设备 defconfig 最后应用。
+3. 创建 `patches/xnu/series`，每行填写一个相对于该目录的板级补丁路径。全部补丁来自共享 profile 时，可使用空 series。
+4. 将继承的 archive 计划与设备必需的构建器比较。设置 `kernel.archives` 时写出完整有序列表。组件目录配方使用 `component:<ID>`，辅助构建器使用脚本文件名。[sheng 的 board.toml](https://github.com/UniXNU/UniXNU-sheng/blob/main/board.toml)提供了两者组合的完整示例。
+5. 保留设备的固件路径、分区布局、启动镜像设置和 payload 策略。OS 属性放在所选 OS profile，板级 ADT 覆盖放在设备带类型的 `[adt]` 表中。
 
-| 路径 | 结果 |
+**表按键合并，数组整体替换。** 组件、配置片段、补丁序列和 archive 列表都遵循此规则。覆盖数组时写出全部必需条目。显式 archive 计划必须覆盖每个所选内核阶段配方，组件构建顺序由依赖确定。
+
+**完成结果：** 设备配置包含四层 profile、完整组件选择、有序内核输入和原有板级设置。
+
+## 5. 将硬件描述转换为 DTS
+
+阅读[设备树规范](/zh/porting/device-tree)和[驱动匹配规则](/zh/drivers/device-tree-matching)。检查已有 ADT 脚本及驱动读取的属性，按下表转换：
+
+| 输入 | 操作 |
 | --- | --- |
-| `.config` | 合并后的配置 |
-| `tree/.cache/xnu-work/` | 目标独立的补丁后 XNU |
-| `kernel/kernel.macho` | 预链接内核 |
-| `device-tree/hardware.dtb` | 编译后的硬件树 |
-| `payload/` | 包含 `Payloads/kernel.macho.adt` 的 payload 镜像 |
-| `boot/boot.img` | BootShim、固件、固件 DTB 和 payload |
-| `logs/` | 构建日志 |
+| CPU、GIC、计时器和共享控制器资源 | 复用或补充 SoC DTSI 中的描述 |
+| 板级内存、CPU 选择、外设和保留区域 | 定义在 `dts/<device>.dts` |
+| XNU 驱动读取的节点 | 用 `unixnu,adt-name` 和 compatible 属性保留匹配名称 |
+| 地址范围、中断和引用 | 声明父节点 cell 宽度、`ranges`、中断提供者及引用参数数量 |
+| Apple 身份和带类型的 OS 属性 | 定义在 OS 的 `[adt]` 表 |
+| 根卷 UUID 和 payload 交接选项 | 保留在设备 `[payload.adt]` |
 
-检查 `/tmp/sheng-resolved.json` 的配置根目录、组件范围、源码版本、模块来源、补丁
-顺序和输出路径。[sheng 页面](/zh/devices/sheng)列出板级输入和硬件检查点。
+板级 DTS 包含所选 SoC DTSI，所有硬件值来自目标设备。准备好所选 SoC 检出后编译：
 
-## 构建输入 {#build-inputs}
+```sh
+dtc -I dts -O dtb -i "$SOC_DIR/dts" \
+  -o "$MIGRATION_DIR/hardware.dtb" "$DEVICE_DIR/dts/$DEVICE.dts"
+```
+
+按 `[device_tree] source` 调整文件名。解决编译错误，并对照绑定检查警告。格式 2 在 `./unixnu payload` 阶段将该硬件描述交给公共 ADT 生成器，添加 NVRAM、熵和 payload 交接属性。
+
+**完成结果：** 硬件 DTB 编译成功，包含所选驱动需要的资源和属性。
+
+## 6. 解析迁移后的配置
+
+```sh
+./unixnu defconfig "$DEFCONFIG" -D "$DEVICE_DIR"
+./unixnu fetch -D "$DEVICE_DIR"
+./unixnu status --json -D "$DEVICE_DIR" > "$MIGRATION_DIR/after.json"
+./unixnu tree -D "$DEVICE_DIR"
+python3 - "$MIGRATION_DIR/after.json" <<'PYCODE'
+import json, pathlib, sys
+status = json.loads(pathlib.Path(sys.argv[1]).read_text())
+for key in ("output", "configuration", "profiles", "components", "patch_order"):
+    print(key, json.dumps(status.get(key), indent=2))
+PYCODE
+```
+
+将报告与步骤 1 至 5 对照：
+
+- profile 按 ARM64、SoC、OS、设备顺序解析。
+- 源码、版本和本地覆盖与清单一致。
+- 组件范围和依赖符合设备要求。
+- 补丁前置条件位于使用者之前，每个补丁出现一次。
+- `output` 指向 `out/<device>/<os_profile>/<config>/`。
+
+更新本地脚本和 CI，使用共享解析器及其 `output` 路径。组装的 `tree/` 包含共享脚本、所选模块和位于 `kits/<board.kit>` 的设备 package。检查保留的私有脚本所需的辅助文件及源码路径。
+
+**完成结果：** 解析配置和组装目录与迁移清单一致。后续日志与产物检查使用该输出目录。
+
+## 7. 准备固件和本地构建输入
+
+在设备 UEFI 的 DSC 和 FDF 中包含 UniXNU、UniXNUDxe、DarwinBoot、`UniXNURamDiskDxe`、DiskIoDxe 和 FAT 支持。按[必需的固件集成](/zh/porting/uefi-firmware#required-integration)设置模块路径和库映射。核对 `board.toml` 的 `[firmware]` 与固件仓库中的配置名、DSC、FD 路径和 package 路径。
+
+已有 `unixnu.local.toml` 时直接编辑；尚无该文件时，将 `unixnu.example.toml` 复制到此路径。在 `[build]` 下填写设备仓库、固件仓库、固件 DTB、kernelcache 和设备需要的 payload 输入。[本地配置参考](/zh/reference/configuration#local-build-inputs)列出各字段。私有输入保存到本地路径，来源和版本写入适配记录。例如，将以下值填写为设备的实际路径和种子：
+
+```toml
+[build]
+device = "../UniXNU-myboard"
+uefi = "../uefi-myboard"
+dtb = "/path/to/firmware.dtb"
+kernelcache = "/path/to/kernelcache"
+unique_chip_id = "REQUIRED_DEVICE_SEED"
+trust_cache = "/path/to/trustcache.bundle"
+data_ramdisk = "/path/to/data-seed.dbr"
+```
+
+所选 payload 需要 trust cache 或 Data seed 时，填写对应条目。
+
+启用 `panic_screen = true` 时，固件仓库提供 `FrameBufferSerialPortLib/Font.h`，UniXNU 主仓库提供入口探针和渲染源码。参见 [panic 屏幕输入](/zh/guide/debugging#panic-屏幕)。
+
+### sheng 构建输入 {#build-inputs}
 
 sheng 的 archive 和镜像步骤需要：
 
@@ -177,48 +262,94 @@ sheng 的 archive 和镜像步骤需要：
 - Metal 插件使用的 `.cache/mesa-work`、已构建的 Turnip 和 metal2vulkan 输入。
 - 所选 IPSW 成员、平台种子、trust cache、Data seed 和固件 DTB。
 
-在迁移报告中记录各输入的来源和版本。缺少输入时，依赖它的构建步骤记为待完成。
-内核、payload 和启动镜像完成状态以实际输出为准，设备验证使用这些具体镜像。
+其他设备按所选配方和[驱动适配](/zh/porting/drivers)中链接的子系统指南准备匹配输入。
 
-## 验证报告
+**完成结果：** 固件集成和本地输入路径已配置。缺失输入与依赖它的构建步骤一并记录。
+
+## 8. 按依赖顺序构建
+
+上一条命令成功后，再执行下一条：
+
+```sh
+./unixnu ipsw fetch -D "$DEVICE_DIR"
+./unixnu kernel -D "$DEVICE_DIR"
+./unixnu build package -D "$DEVICE_DIR"
+./unixnu firmware -D "$DEVICE_DIR"
+./unixnu payload -D "$DEVICE_DIR"
+./unixnu bootimg -D "$DEVICE_DIR"
+```
+
+简写命令读取 `unixnu.local.toml`。根镜像准备和组件专用构建前置条件见[构建指南](/zh/building)。修改启动参数后，重新生成 payload 和启动镜像。
+
+| 相对于解析输出目录的路径 | 检查内容 |
+| --- | --- |
+| `.config` | 必需设备开关和 archive 路径 |
+| `tree/.cache/xnu-work/` | 目标独立的补丁后 XNU 源码 |
+| `kernel/kernel.macho` | 内核链接与预链接成功 |
+| `device-tree/hardware.dtb` | payload 组装时编译的硬件树 |
+| `payload/payload.img` | 内核、ADT 和已配置的可选输入 |
+| `payload/payload.json` | 最终启动参数和 payload 输入 |
+| `boot/boot.img` | 固件、固件 DTB 与 payload 打包成功 |
+| `logs/` | 上述命令的日志 |
+
+FD 写入固件仓库中 `[firmware] fd` 指定的路径。读取输出目录并检查打包文件：
+
+```sh
+OUTPUT_DIR=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["output"])' "$MIGRATION_DIR/after.json")
+mtype -i "$OUTPUT_DIR/payload/payload.img" ::/EFI/UniXNU/unixnu.toml
+mcopy -i "$OUTPUT_DIR/payload/payload.img" \
+  ::/EFI/UniXNU/Payloads/kernel.macho.adt "$MIGRATION_DIR/kernel.macho.adt"
+```
+
+核对最终[启动参数](/zh/xnu/boot-arguments#apply-arguments)，将导出的 ADT 与硬件 DTB 一起保存，供按[必需节点](/zh/porting/device-tree#必需节点)和驱动匹配规则复核。
+
+**完成结果：** 每项成功构建记录输出和日志，待完成步骤写明所需输入。
+
+## 9. 更新适配记录、CI 和文档
+
+缺少 `porting.toml` 或 `.github/workflows/porting-record.yml` 时，从模板补充；已有文件直接更新。填写设备身份、所选组件、源码版本及各部分的配置、操作和证据。按[适配记录指南](/zh/porting/records)完成后运行：
+
+```sh
+python3 scripts/porting-record.py check --device "$DEVICE_DIR"
+npm --prefix docs run build
+```
+
+更新设备 README 和根目录 `AGENTS.md` 中的当前命令与必读文档，同时更新受影响的中英文站点页面、组件引用、CI 路径和固件说明。发布设备改动后，在 UniXNU 的 `devices.toml` 中固定对应提交，供文档站读取记录。
+
+向其他维护者或 agent 交接时，使用以下报告：
 
 ```text
-设备：
-配置和 OS profile：
-仓库版本与本地覆盖：
-所选组件与板级输入：
-补丁顺序：
+设备、defconfig 和 OS profile：
+源码版本与本地覆盖：
+组件选择与补丁顺序：
 
 主机检查：
   命令 | 结果 | 输出或日志
-  依赖解析：
-  DTS 和 ADT 生成：
+  配置和源码解析：
+  DTS 和 ADT：
   内核与预链接：
   Package 和固件：
   Payload 和启动镜像：
-  QEMU 检查点：
-  文档构建与链接：
+  适配记录和文档：
 
-硬件：
-  镜像和设备：
-  启动：
-  存储：
-  显示：
-  输入：
-  GPU：
+设备观察：
+  设备、固件和镜像版本：
+  启动 / 存储 / 显示 / 输入 / GPU / 网络 / 音频 / 电源：
 
-待补输入：
-  所需值或文件 | 来源或维护者 | 受影响步骤
+待完成事项：
+  所需输入或操作 | 受影响步骤 | 证据
 ```
 
-无法执行的硬件检查记为待验证。构建完成与设备观察分别记录。
-用最终名称和命令更新中英文文档、根目录 README、根目录 `AGENTS.md`、组件元数据
-和固件引用。
+主机构建结果和设备观察分别记录。设备结果按[启动验证顺序](/zh/porting/bring-up)填写，共享启动检查点参见 [QEMU 指南](/zh/reference/qemu)。
 
-## 结构化适配记录
+## 完整 SM8550 示例
 
-复制模板中的 `porting.toml` 和 `.github/workflows/porting-record.yml`。按实际代码
-为每个部分填写硬件、配置、操作、经验、完成条件和证据，并覆盖所选组件及依赖。
-把板级驱动子模块放入设备仓库。运行记录检查，将 `Porting record` 设为官方设备分支
-的必需检查，并更新 UniXNU `devices.toml` 的发布版本。设备页由这份记录生成。
-详见[记录指南](/zh/porting/records)和 [UFS 指南](/zh/porting/ufs)。
+[UniXNU-sheng](https://github.com/UniXNU/UniXNU-sheng)提供维护中的格式 2 示例。结合阅读 `board.toml`、`feeds.toml`、`configs/sheng_defconfig`、`dts/sheng.dts`、`patches/xnu/series`、`package/` 和 `porting.toml`。共享源码位于 [UniXNU-sm8550-common](https://github.com/UniXNU/UniXNU-sm8550-common)，OS profile 位于 `profiles/os/ipados-17.7.11-21H461/`，固件位于 [uefi-sheng](https://github.com/UniXNU/uefi-sheng)。
+
+使用已有 sheng 仓库时，设置 `DEVICE=sheng`、`DEVICE_DIR=../UniXNU-sheng` 和 `DEFCONFIG=sheng_defconfig`，准备 [sheng 输入](#build-inputs)，再执行步骤 6 至 9。输出目录为 `out/sheng/ipados-17.7.11-21H461/sheng/`。它选择 Adreno740、AdrenoMetal，以及设备的存储、输入、显示和镜像组件。[设备页面](/zh/devices/sheng)记录实现范围与验证结果。
+
+## 下一步
+
+- [驱动适配](/zh/porting/drivers)：补齐各子系统的板级输入和集成。
+- [启动验证顺序](/zh/porting/bring-up)：使用生成的镜像记录检查点。
+- [调试](/zh/guide/debugging)：调查构建失败和启动停留阶段。
