@@ -12,7 +12,7 @@ Checks:
 - The boot image header matches the bootloader requirement.
 - `fastboot boot boot.img` starts the firmware without a reset.
 - The framebuffer shows output, or the serial port shows UEFI output.
-- Block devices and the payload volume are visible.
+- Block devices and the payload volume are visible. For a Mu-Silicium initrd payload, check `UniXNURamDiskDxe`, DiskIoDxe and FAT in the FD using the [firmware integration guide](/porting/uefi-firmware#required-integration).
 
 Tools:
 

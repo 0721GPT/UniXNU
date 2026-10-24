@@ -12,7 +12,7 @@ bring-up 按阶段推进。每个阶段都有可见结果和日志行，一次�
 - 启动镜像 header 满足 bootloader 要求。
 - `fastboot boot boot.img` 启动固件，不复位。
 - framebuffer 有输出，或串口有 UEFI 输出。
-- 块设备和负载卷可见。
+- 块设备和负载卷可见。Mu-Silicium initrd 负载需要在 FD 中包含 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT，详见[固件集成](/zh/porting/uefi-firmware#required-integration)。
 
 ```sh
 fastboot boot out/<device>/<os_profile>/<config>/boot/boot.img

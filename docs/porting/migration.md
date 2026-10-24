@@ -4,6 +4,8 @@ Read the root `AGENTS.md`, [device repository specification](/porting/device-rep
 [component catalog](/reference/components), and [device-tree specification](/porting/device-tree).
 Run commands from the UniXNU checkout unless a command selects another directory.
 
+For firmware migration, add `UniXNURamDiskDxe` and its filesystem dependencies to the device DSC and FDF, then run `./unixnu build firmware --uefi ../uefi-<device>`. Follow [required firmware integration](/porting/uefi-firmware#required-integration) before assembling the boot image.
+
 ## Format detection
 
 ```sh

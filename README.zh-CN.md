@@ -27,6 +27,10 @@ UniXNU 为不同 SoC 和设备的移植提供共享构建工具、ARM64 支持�
 
 **🎉 News:** Adreno740 和 AdrenoMetal 在 sheng 上提供 GPU 加速。render server 通过 Adreno 740 合成系统界面，列入白名单的进程会获得各自的 Metal 设备。这两个组件提供共享 GPU 实现，各设备适配提供所需的固件、电源、内存和显示集成。详见 [Adreno 740 驱动文档](https://unixnu.com/zh/drivers/adreno740)。
 
+## 固件要求
+
+运行 `./unixnu bootimg` 前，先用 `./unixnu build firmware --uefi ../uefi-<device>` 构建设备固件，并将 UniXNU、UniXNUDxe、DarwinBoot 和共享负载驱动 `UniXNURamDiskDxe` 纳入固件。步骤见[必需的固件集成](https://unixnu.com/zh/porting/uefi-firmware#required-integration)。
+
 ## 文档
 
 文档位于 [unixnu.com](https://unixnu.com)，源码、导航、翻译、资源、配置和部署工作流由本仓库维护。文档覆盖启动链、构建驱动、设备移植、驱动开发、XNU 4 KiB 页补丁、启动参数和设备说明。

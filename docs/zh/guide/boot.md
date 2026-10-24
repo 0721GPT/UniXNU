@@ -2,6 +2,8 @@
 
 启动镜像从内存运行。流程启动镜像，并保持已安装的 boot 分区不变。
 
+使用 `./unixnu build firmware --uefi ../uefi-<device>` 构建固件。Mu-Silicium initrd 负载需要在固件中加入 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 支持，并在 `./unixnu bootimg` 前构建负载。[固件集成指南](/zh/porting/uefi-firmware#required-integration)列出了必需的 DSC/FDF 条目和菜单检查步骤。
+
 ## 前提
 
 - bootloader 已解锁并支持 `fastboot`。

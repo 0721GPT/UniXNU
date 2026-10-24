@@ -2,6 +2,8 @@
 
 负载是一个 FAT 卷，作为 Android 启动镜像的 ramdisk。UniXNU 从中读取配置，DarwinBoot 从中读取内核、ADT 和可选 trust cache。
 
+使用 Mu-Silicium initrd 负载时，固件需嵌入 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 驱动，在 UniXNU 读取配置前发布负载卷。详见[负载发现](/zh/porting/uefi-firmware#payload-discovery)。
+
 ## 卷布局
 
 ```

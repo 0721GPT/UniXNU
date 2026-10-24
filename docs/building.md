@@ -2,6 +2,10 @@
 
 `unixnu` resolves ARM64, SoC, OS, and device profiles, selects component dependencies, assembles a target tree, and runs each build step. Format 2 uses `out/<device>/<os_profile>/<config>/`. Format 1 uses `out/<board>/`.
 
+::: warning Required firmware integration
+Build the device firmware with `./unixnu build firmware --uefi ../uefi-<device>` before packing the boot image. Its DSC and FDF must include UniXNU, UniXNUDxe, DarwinBoot and the payload volume driver. For the Mu-Silicium FDT initrd path, use the shared `UniXNURamDiskDxe` with DiskIoDxe and FAT support. Follow [firmware integration](/porting/uefi-firmware#required-integration).
+:::
+
 ## Quick start
 
 ```sh
@@ -19,6 +23,7 @@ git submodule update --init --recursive
 ./unixnu build kernel
 ./unixnu build package
 ./unixnu build firmware --uefi ../uefi-sheng
+./unixnu build payload --unique-chip-id <hex> --trust-cache <file> --data-ramdisk <seed>
 ./unixnu bootimg --uefi ../uefi-sheng --dtb /path/to/device.dtb
 ```
 
@@ -177,7 +182,7 @@ The output is `out/<device>/<os_profile>/<config>/kernel/kernel.macho`.
 
 ### package
 
-The package step builds `package/` with EDK II. The output is `out/<device>/<os_profile>/<config>/package/Build/Out`. It contains `UniXNU.efi`, `UniXNUDxe.efi`, `HelloPayload.efi`, `SampleDriver.efi` and `XnuTest.efi`.
+The package step builds `package/` with EDK II. The output is `out/<device>/<os_profile>/<config>/package/Build/Out`. It contains `UniXNU.efi`, `UniXNUDxe.efi`, `UniXNURamDiskDxe.efi`, `HelloPayload.efi`, `SampleDriver.efi` and `XnuTest.efi`.
 
 ### firmware
 

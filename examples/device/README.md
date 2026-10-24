@@ -4,7 +4,7 @@ This template selects shared SM8550 and iPadOS 17.7.11 support. Complete the
 hardware inputs before building.
 
 1. Copy this directory to `UniXNU-<device>` and read `AGENTS.md`.
-2. Set the board name, description, firmware paths, and complete component selection.
+2. Set the board name, description, firmware paths, and complete component selection. Add the shared `UniXNURamDiskDxe` and filesystem dependencies to the firmware DSC and FDF using the [firmware integration guide](https://unixnu.com/porting/uefi-firmware#required-integration).
 3. Pin a reviewed SoC commit in `feeds.toml`.
 4. Fill the DTS model, compatible values, memory map, CPU selection, and peripherals.
 5. List firmware sources and hashes in `proprietary-files.txt`.

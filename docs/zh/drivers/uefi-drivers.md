@@ -2,6 +2,8 @@
 
 UEFI 驱动是构建为 `.efi` 的 EDK II 模块，运行在 boot services，可以发布协议、绑定设备，为下一阶段准备硬件。
 
+共享模块 `UniXNURamDiskDxe` 位于 `package/UniXNUPkg/Driver/`，把 Mu-Silicium FDT 中的 initrd 发布为只读 Block I/O 设备。将它与 DiskIoDxe、FAT 支持一起加入固件 DSC 和 FDF。详见[固件集成](/zh/porting/uefi-firmware#required-integration)。
+
 ## 模块布局
 
 ```

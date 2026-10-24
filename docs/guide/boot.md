@@ -2,6 +2,8 @@
 
 The boot image runs from RAM. The workflow starts the image and leaves the installed boot partition unchanged.
 
+Build the firmware with `./unixnu build firmware --uefi ../uefi-<device>` and include `UniXNURamDiskDxe` plus DiskIoDxe and FAT support for a Mu-Silicium initrd payload. Build the payload before `./unixnu bootimg`. The [firmware integration guide](/porting/uefi-firmware#required-integration) lists the required DSC/FDF entries and menu checks.
+
 ## Prerequisites
 
 - An unlocked bootloader with `fastboot`.

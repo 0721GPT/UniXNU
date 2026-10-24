@@ -2,6 +2,8 @@
 
 UniXNU 通过共享配置和独立仓库组装设备构建。
 
+固件集成从[必需模块与构建命令](/zh/porting/uefi-firmware#required-integration)开始。Mu-Silicium initrd 负载通过共享的 `UniXNURamDiskDxe` 驱动向 UniXNU 提供配置中的启动项。
+
 | 仓库 | 职责 |
 | --- | --- |
 | `UniXNU` | 构建工具、组件目录、ARM64 支持、OS 配置、模板、UEFI package 和文档站 |

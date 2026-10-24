@@ -2,6 +2,8 @@
 
 A UEFI driver is an EDK II module built as a `.efi` image. It runs in boot services and can publish protocols, bind devices and prepare hardware for the next stage.
 
+The shared `UniXNURamDiskDxe` module in `package/UniXNUPkg/Driver/` exposes a Mu-Silicium FDT initrd as a read-only Block I/O device. Include it in the firmware DSC and FDF with DiskIoDxe and FAT support. See [firmware integration](/porting/uefi-firmware#required-integration).
+
 ## Module layout
 
 ```

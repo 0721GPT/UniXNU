@@ -45,7 +45,7 @@ DarwinBoot（XNU 加载器）
 - `EFI_SIMPLE_FILE_SYSTEM_PROTOCOL` 与 `EFI_BLOCK_IO_PROTOCOL`：负载卷和磁盘分区。
 - `EFI_SERIAL_IO_PROTOCOL`：板级 UART 日志。
 
-`unixnu build firmware` 会把板级补丁应用到共享 edk2 树，构建板级 DSC，并返回 `SILICIUM_UEFI.fd`。
+`./unixnu build firmware` 会把板级补丁应用到共享 edk2 树，构建板级 DSC，并返回 `SILICIUM_UEFI.fd`。使用 Mu-Silicium initrd 负载时，DSC 和 FDF 需包含共享的 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 驱动，供 UniXNU 发现负载启动项。步骤见[必需的固件集成](/zh/porting/uefi-firmware#required-integration)。
 
 ### 启动管理器
 

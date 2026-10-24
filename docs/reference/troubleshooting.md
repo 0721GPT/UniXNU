@@ -40,7 +40,7 @@
 | Firmware stalls | Random Silicium stall | Start the same image again |
 | No display | GOP driver | Use `console = "text"` or a serial console |
 | No menu | Configuration path | Place `unixnu.toml` at `\EFI\UniXNU\unixnu.toml` |
-| No boot entry | Payload volume | Check the FAT label, the entry path and the volume driver |
+| No boot entry | Payload volume | Check `boot.json` for a nonzero `ramdisk_bytes`, the FD for UniXNURamDiskDxe/DiskIoDxe/FAT, the FDT initrd range, and `EFI/UniXNU/unixnu.toml`. Follow [payload discovery](/porting/uefi-firmware#payload-discovery). |
 | Driver failed | First failure reason in the menu | Fix the driver path or its dependencies |
 | `no loader protocol installed` | DarwinBoot in the firmware volume | Add DarwinBoot to the FDS or the payload |
 | `loader revision 1 cannot accept kexts` | Loader revision | Use a revision 2 loader or remove the kexts |

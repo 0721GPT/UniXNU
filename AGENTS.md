@@ -78,6 +78,11 @@ npm ci
 npm run build
 ```
 
+For a Mu-Silicium initrd payload, include `UniXNURamDiskDxe`, DiskIoDxe and
+FAT support in the firmware DSC and FDF. Run `./unixnu build firmware` and
+build the payload before `./unixnu bootimg`. Follow
+[required firmware integration](https://unixnu.com/porting/uefi-firmware#required-integration).
+
 ## Verification and reporting
 
 Run existing checks and targeted build exercises for changed behavior. Add a

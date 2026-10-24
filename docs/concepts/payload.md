@@ -2,6 +2,8 @@
 
 The payload is a FAT volume that becomes the ramdisk of the Android boot image. UniXNU reads the configuration from it, and DarwinBoot reads the kernel, the ADT and the optional trust cache from it.
 
+For a Mu-Silicium initrd payload, embed `UniXNURamDiskDxe`, DiskIoDxe and the FAT driver in the firmware. They expose the payload volume before UniXNU reads its configuration. See [payload discovery](/porting/uefi-firmware#payload-discovery).
+
 ## Volume layout
 
 ```

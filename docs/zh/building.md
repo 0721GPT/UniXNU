@@ -2,6 +2,10 @@
 
 `unixnu` 解析 ARM64、SoC、OS 和设备配置，选择组件依赖并组装目标树。格式 2 输出位于 `out/<device>/<os_profile>/<config>/`，格式 1 使用 `out/<board>/`。
 
+::: warning 必需的固件集成
+打包启动镜像前，运行 `./unixnu build firmware --uefi ../uefi-<device>` 构建设备固件。DSC 和 FDF 必须包含 UniXNU、UniXNUDxe、DarwinBoot 和负载卷驱动。Mu-Silicium 的 FDT initrd 路径使用共享的 `UniXNURamDiskDxe`，并需要 DiskIoDxe 和 FAT 支持。步骤见[固件集成](/zh/porting/uefi-firmware#required-integration)。
+:::
+
 ## 快速开始
 
 ```sh
@@ -19,6 +23,7 @@ git submodule update --init --recursive
 ./unixnu build kernel
 ./unixnu build package
 ./unixnu build firmware --uefi ../uefi-sheng
+./unixnu build payload --unique-chip-id <hex> --trust-cache <file> --data-ramdisk <seed>
 ./unixnu bootimg --uefi ../uefi-sheng --dtb /path/to/device.dtb
 ```
 
@@ -179,7 +184,7 @@ kernelcache 来自 IPSW，除非 `--kernelcache` 指定文件。`KernelCache` IM
 
 ### package
 
-package 步骤用 EDK II 构建 `package/`，输出到 `out/<device>/<os_profile>/<config>/package/Build/Out`，包含 `UniXNU.efi`、`UniXNUDxe.efi`、`HelloPayload.efi`、`SampleDriver.efi` 和 `XnuTest.efi`。
+package 步骤用 EDK II 构建 `package/`，输出到 `out/<device>/<os_profile>/<config>/package/Build/Out`，包含 `UniXNU.efi`、`UniXNUDxe.efi`、`UniXNURamDiskDxe.efi`、`HelloPayload.efi`、`SampleDriver.efi` 和 `XnuTest.efi`。
 
 ### firmware
 

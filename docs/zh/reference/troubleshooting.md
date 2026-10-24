@@ -40,7 +40,7 @@
 | 固件停住 | Silicium 随机停顿 | 再次启动同一镜像 |
 | 无显示 | GOP 驱动 | 使用 `console = "text"` 或串口 |
 | 无菜单 | 配置路径 | 把 `unixnu.toml` 放到 `\EFI\UniXNU\unixnu.toml` |
-| 无启动项 | 负载卷 | 检查 FAT 卷标、菜单项路径和卷驱动 |
+| 无启动项 | 负载卷 | 检查 `boot.json` 的 `ramdisk_bytes` 是否大于零、FD 中的 UniXNURamDiskDxe/DiskIoDxe/FAT、FDT initrd 范围和 `EFI/UniXNU/unixnu.toml`，步骤见[负载发现](/zh/porting/uefi-firmware#payload-discovery)。 |
 | 驱动失败 | 菜单中的第一条失败原因 | 修正驱动路径或依赖 |
 | `no loader protocol installed` | 固件卷中的 DarwinBoot | 把 DarwinBoot 加入 FDS 或负载 |
 | `loader revision 1 cannot accept kexts` | 加载器 revision | 使用 revision 2 或移除 kext |

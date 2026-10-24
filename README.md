@@ -27,6 +27,10 @@ UniXNU provides shared build tools, ARM64 support, OS profiles and reusable comp
 
 **🎉 News:** Adreno740 and AdrenoMetal provide GPU acceleration on sheng. The render server composites the system UI through the Adreno 740, and listed processes get their own Metal devices. These components are shared GPU implementations; each device port supplies the required firmware, power, memory and display integration. See the [Adreno 740 driver documentation](https://unixnu.com/drivers/adreno740).
 
+## Firmware requirement
+
+Build the device firmware with `./unixnu build firmware --uefi ../uefi-<device>` before `./unixnu bootimg`. Include UniXNU, UniXNUDxe, DarwinBoot and the shared `UniXNURamDiskDxe` payload driver in the firmware. Follow the [required firmware integration](https://unixnu.com/porting/uefi-firmware#required-integration).
+
 ## Documentation
 
 The documentation is at [unixnu.com](https://unixnu.com). Its sources, navigation, translations, assets, configuration, and deployment workflow are maintained in this repository. It covers the boot chain, the build driver, device porting, driver development, the 4 KiB XNU page patches, boot arguments and per-device notes.

@@ -4,6 +4,8 @@
 [组件目录](/zh/reference/components)和[设备树规范](/zh/porting/device-tree)。
 以下命令从 UniXNU 检出目录运行，带目录参数的命令使用指定目录。
 
+迁移固件时，把 `UniXNURamDiskDxe` 及其文件系统依赖加入设备 DSC 和 FDF，再运行 `./unixnu build firmware --uefi ../uefi-<device>`。组装启动镜像前，完成[必需的固件集成](/zh/porting/uefi-firmware#required-integration)。
+
 ## 格式识别
 
 ```sh

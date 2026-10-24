@@ -45,7 +45,7 @@ The firmware comes from a Mu-Silicium checkout for the device. It provides the U
 - `EFI_SIMPLE_FILE_SYSTEM_PROTOCOL` and `EFI_BLOCK_IO_PROTOCOL` for the payload volume and disk partitions.
 - `EFI_SERIAL_IO_PROTOCOL` for logs when the board exposes a UART.
 
-The `unixnu build firmware` step applies the board patches to the shared edk2 tree, builds the board DSC and returns `SILICIUM_UEFI.fd`.
+The `./unixnu build firmware` step applies the board patches to the shared edk2 tree, builds the board DSC and returns `SILICIUM_UEFI.fd`. For a Mu-Silicium initrd payload, the DSC and FDF include the shared `UniXNURamDiskDxe`, DiskIoDxe and FAT driver so UniXNU can discover the payload entries. Follow [required firmware integration](/porting/uefi-firmware#required-integration).
 
 ### Boot manager
 

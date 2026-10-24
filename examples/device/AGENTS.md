@@ -44,6 +44,11 @@ Run from UniXNU, replacing the device path and defconfig:
 ./unixnu bootimg --uefi ../uefi-example --dtb <firmware.dtb>
 ```
 
+For a Mu-Silicium initrd payload, include `UniXNURamDiskDxe`, DiskIoDxe and
+FAT support in the firmware DSC and FDF. Follow
+[required firmware integration](https://unixnu.com/porting/uefi-firmware#required-integration)
+before building the firmware and boot image.
+
 Record commands, revisions, output paths, results, and unresolved inputs.
 Report hardware boot, storage, display, input, and GPU results separately.
 Update the device revision in UniXNU's devices.toml for publication and keep this README concise.

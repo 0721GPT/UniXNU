@@ -2,6 +2,8 @@
 
 UniXNU assembles a device from shared profiles and independent repositories.
 
+Start firmware integration with the [required modules and build commands](/porting/uefi-firmware#required-integration). Mu-Silicium initrd payloads use the shared `UniXNURamDiskDxe` driver to make their configured entries available to UniXNU.
+
 | Repository | Responsibility |
 | --- | --- |
 | `UniXNU` | Build tools, catalog, ARM64 support, OS profiles, templates, UEFI package, documentation site |
