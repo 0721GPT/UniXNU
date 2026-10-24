@@ -2,8 +2,8 @@
 """Qualify an owned offline HID source against the unchanged target IOHIDDevice."""
 import hashlib,json,struct,subprocess,sys
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'build/native-hid-input';OUT.mkdir(exist_ok=True)
-sys.path.insert(0,str(ROOT/'kits/NativePrelink'))
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'build/sheng-hid-input';OUT.mkdir(exist_ok=True)
+sys.path.insert(0,str(ROOT/'kits/XnuPrelink'))
 from native_prelink import macho,backed_offset,exports
 
 def run(cmd,**kw):return subprocess.check_output([str(x) for x in cmd],timeout=90,**kw)
@@ -14,9 +14,9 @@ def require(value,why):
 # instruction hash; every instruction/ABI check below still runs against it.
 V9_SHA='df5d6ebda4d0cb2faea663e6bb393e6e12fcf9f52a197ffd58e6f75274a076ab'
 HID_TEXT_SHA='7e4c5104814f2e773d5be13d092dec53ee44ba5a61a81264b229780406e86b72'
-p=ROOT/'build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.macho'
+p=ROOT/'build/xnu-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.macho'
 if not p.exists():
-    later=sorted((ROOT/'build/native-prelink').glob('native-owner-ufs-cpu-desktop-*-candidate.macho'),key=lambda f:f.stat().st_mtime)
+    later=sorted((ROOT/'build/xnu-prelink').glob('native-owner-ufs-cpu-desktop-*-candidate.macho'),key=lambda f:f.stat().st_mtime)
     require(later,'No reference candidate available')
     p=later[-1]
 b=p.read_bytes();plan=json.loads(p.with_suffix('.json').read_text());m=macho(b)
@@ -108,5 +108,5 @@ run([llvm/'llvm-objcopy','--remove-section=__DATA,__mod_init_func','--globalize-
 def code(data,image):
     s=next(s for g in image['segments'] for s in g['sections'] if s['name']=='__text');return data[s['fileoff']:s['fileoff']+s['size']]
 require(code(raw,om)==code(late.read_bytes(),macho(late.read_bytes())),'Owned code unchanged by deferred metaclass registration')
-(OUT/'abi-audit.json').write_text(json.dumps({'reference_candidate_sha256':plan['candidate_sha256'],'original_text_sha256':plan['original_executable_sha256']['com.apple.iokit.IOHIDFamily'],'original_slots':207,'original_instance_size':208,'owned_slots':owned,'bindings':bindings,'runtime_qualified':False,'source_sha256':hashlib.sha256((ROOT/'drivers/NativeHidInput/NativeHidInput.cpp').read_bytes()).hexdigest()},indent=2)+'\n')
+(OUT/'abi-audit.json').write_text(json.dumps({'reference_candidate_sha256':plan['candidate_sha256'],'original_text_sha256':plan['original_executable_sha256']['com.apple.iokit.IOHIDFamily'],'original_slots':207,'original_instance_size':208,'owned_slots':owned,'bindings':bindings,'runtime_qualified':False,'source_sha256':hashlib.sha256((ROOT/'drivers/ShengHidInput/NativeHidInput.cpp').read_bytes()).hexdigest()},indent=2)+'\n')
 print('PASS: original HID instruction identity, base imports, call boundaries and exact owned vtable')

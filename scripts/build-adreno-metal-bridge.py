@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build the native Metal bridge (drivers/NativeMetal/bridge/NativeMetalBridge.rs): the pinned metal2vulkan runtime behind a C ABI, as a static library.
+"""Build the native Metal bridge (drivers/AdrenoMetal/bridge/NativeMetalBridge.rs): the pinned metal2vulkan runtime behind a C ABI, as a static library.
 
 --target ios (default) cross-builds for arm64-apple-ios17.0, --target host for the macOS host simulation. The runtime's own example library
 (runtime_examples.ll) and its function-constant fixture are assembled to AIR with llvm-as and embedded for the self-tests. Only generated build files hold local paths; nothing here
-is committed. Output: build/native-metal-bridge/<target>/libnative_metal_bridge.a"""
+is committed. Output: build/adreno-metal-bridge/<target>/libadreno_metal_bridge.a"""
 import argparse
 import hashlib
 import json
@@ -19,11 +19,11 @@ SOURCE = ROOT / '.cache/gpu-reference/metal2vulkan'
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--target', choices=['ios', 'host'], default='ios')
 parser.add_argument('--manifest-only', action='store_true',
-                    help='write build/native-metal-bridge/Cargo.toml (patched source, fixtures) and stop before cargo, for `cargo fetch`')
+                    help='write build/adreno-metal-bridge/Cargo.toml (patched source, fixtures) and stop before cargo, for `cargo fetch`')
 args = parser.parse_args()
 if subprocess.check_output(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD'], text=True).strip() != PIN:
     raise SystemExit('Translator revision differs from the qualified source pin')
-PATCHES = [ROOT / 'drivers/NativeMetal/bridge/patches' / name for name in [
+PATCHES = [ROOT / 'drivers/AdrenoMetal/bridge/patches' / name for name in [
     '0001-optional-constant-output-members.patch', '0002-resource-wait-storage-dependencies.patch',
     '0003-cache-device-entry-point-priming.patch', '0004-fold-constant-global-field-loads.patch',
     '0005-keep-module-decodes-and-profile-fingerprints.patch', '0006-skip-draws-without-a-pipeline.patch',
@@ -50,7 +50,7 @@ for patch in PATCHES[states.index(tree_diff):]:
     subprocess.run(['git', '-C', str(SOURCE), 'apply', str(patch)], check=True)
 if subprocess.check_output(['git', '-C', str(SOURCE), 'diff', 'HEAD', '--'], text=True) != canonical_diff(expected):
     raise SystemExit('Translator patch result differs from its exact recorded source')
-out = ROOT / 'build/native-metal-bridge'
+out = ROOT / 'build/adreno-metal-bridge'
 out.mkdir(parents=True, exist_ok=True)
 llvm_as = next((p for p in ['/opt/homebrew/opt/llvm/bin/llvm-as', shutil.which('llvm-as') or ''] if p and Path(p).exists()), None)
 if not llvm_as:
@@ -61,8 +61,8 @@ fc_air = out / 'function_constant.air'
 subprocess.run([llvm_as, '-o', fc_air, SOURCE / 'crates/metal2vulkan-validation/fixtures/public/kernel_function_constant_gate_fold.ll'], check=True)
 manifest = out / 'Cargo.toml'
 manifest.write_text('\n'.join([
-    '[package]', 'name = "native-metal-bridge"', 'version = "0.1.0"', 'edition = "2024"', 'rust-version = "1.98"', '[workspace]',
-    '[lib]', 'crate-type = ["staticlib"]', 'path = ' + json.dumps(str(ROOT / 'drivers/NativeMetal/bridge/NativeMetalBridge.rs')),
+    '[package]', 'name = "adreno-metal-bridge"', 'version = "0.1.0"', 'edition = "2024"', 'rust-version = "1.98"', '[workspace]',
+    '[lib]', 'crate-type = ["staticlib"]', 'path = ' + json.dumps(str(ROOT / 'drivers/AdrenoMetal/bridge/NativeMetalBridge.rs')),
     '[dependencies]',
     'metal2vulkan = { path = ' + json.dumps(str(SOURCE / 'crates/metal2vulkan')) + ', features = ["ash"] }',
     'metal2vulkan-runtime = { path = ' + json.dumps(str(SOURCE / 'crates/metal2vulkan-runtime')) + ' }',
@@ -87,8 +87,8 @@ with log.open('w') as stream:
                              '--target-dir', target_dir], env=env, stdout=stream, stderr=subprocess.STDOUT, timeout=1800)
 if result.returncode:
     raise SystemExit(log.read_text()[-6000:])
-library = target_dir / triple / 'release/libnative_metal_bridge.a'
-final = out / args.target / 'libnative_metal_bridge.a'
+library = target_dir / triple / 'release/libadreno_metal_bridge.a'
+final = out / args.target / 'libadreno_metal_bridge.a'
 final.parent.mkdir(exist_ok=True)
 shutil.copyfile(library, final)
 print('PASS: native Metal bridge static library for %s (%d bytes); translator %s' % (args.target, final.stat().st_size, PIN[:12]))

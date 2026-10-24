@@ -4,7 +4,7 @@ import platform
 import shlex
 from pathlib import Path
 
-from . import ipsw
+from . import components, ipsw, patches
 from .util import Error, expand, log, run, sha256_file, tool
 
 
@@ -20,7 +20,7 @@ def xnu_env(ctx):
     return env
 
 
-def version_env(modules):
+def version_env(modules, ctx=None):
     """Source versions of the Apple references, from feeds.toml, for the kernel scripts."""
     env = {}
     for name, prefix in (('xnu', 'XNU'), ('libplatform', 'LIBPLATFORM'), ('libdispatch', 'LIBDISPATCH'), ('AvailabilityVersions', 'AVAILABILITYVERSIONS')):
@@ -35,6 +35,15 @@ def version_env(modules):
                           ('driverkit_tag', 'UNIXNU_DRIVERKIT_TAG'), ('trustcache_tag', 'UNIXNU_TRUSTCACHE_TAG')):
         if xnu.get(key):
             env[variable] = xnu[key]
+    if ctx and ctx.schema_version == 2:
+        profile = ctx.board.get('os', {})
+        for key, variable in (('xnu_revision', 'UNIXNU_XNU_COMMIT'), ('xnu_version', 'UNIXNU_XNU_VERSION'),
+                              ('darwin', 'UNIXNU_XNU_DARWIN'), ('driverkit_tag', 'UNIXNU_DRIVERKIT_TAG'),
+                              ('trustcache_tag', 'UNIXNU_TRUSTCACHE_TAG')):
+            if profile.get(key):
+                env[variable] = profile[key]
+        if profile.get('xnu_version'):
+            env['UNIXNU_XNU_TAG'] = 'xnu-' + profile['xnu_version']
     return env
 
 
@@ -71,28 +80,69 @@ def linux_env(ctx):
             'CCC_OVERRIDE_OPTIONS': '# +-Wno-missing-designated-field-initializers +-Wno-unused-but-set-global'}
 
 
-def build_archives(ctx, env):
-    """Run the board's archive builders ([kernel] archives of board.toml), in order, then check the prebuilt archives.
+def archive_plan(ctx):
+    """Expand selected component recipes at their ordered archive positions."""
+    entries = ctx.board.get('kernel', {}).get('archives', [])
+    if ctx.schema_version == 1:
+        return [('script', entry) for entry in entries]
+    specs = {spec['id']: spec for spec in ctx.component_specs}
+    required = {name for name, spec in specs.items() if spec.get('build') and spec.get('build_stage', 'kernel') == 'kernel'}
+    result, visited = [], set()
 
-    Each entry is a script of the build tree with its arguments. The kernel link needs their archives, and some of
-    them read the compile records that an XNU pass leaves behind. A configuration opts in with
-    CONFIG_XNU_BUILD_ARCHIVES; the bootstrap pass and first-console configurations have no archives to build.
-    """
+    def add_component(identifier):
+        if identifier in visited:
+            return
+        spec = specs.get(identifier)
+        if spec is None:
+            raise Error(f'[kernel] archives: component {identifier} is not selected')
+        for dependency in spec.get('dependencies', []):
+            add_component(dependency)
+        visited.add(identifier)
+        if identifier in required:
+            result.append(('component', spec))
+
+    explicit = any(entry.startswith('component:') for entry in entries)
+    if not explicit:
+        for identifier in specs:
+            add_component(identifier)
+    for entry in entries:
+        if entry.startswith('component:'):
+            add_component(entry[len('component:'):])
+        else:
+            result.append(('script', entry))
+    missing = required - visited
+    if missing:
+        raise Error('[kernel] archives needs component entries for: ' + ', '.join(sorted(missing)))
+    return result
+
+
+def build_archives(ctx, env):
+    """Build ordered component recipes and auxiliary archives from compile records."""
     if not ctx.need_config().get('XNU_BUILD_ARCHIVES'):
         return
-    entries = ctx.board.get('kernel', {}).get('archives', [])
     env = dict(env, PATH=toolchain_path(env.get('PATH')))
-    for index, entry in enumerate(entries, 1):
-        parts = shlex.split(entry)
-        script = ctx.tree / 'scripts' / parts[0]
-        if not script.is_file():
-            raise Error(f'[kernel] archives: {script} missing')
-        log(f'kernel: archive {index}/{len(entries)}: {entry}')
-        run(['python3', script, *parts[1:]], cwd=ctx.tree, env=env, log_file=ctx.logs / f'archive-{index:02d}-{Path(parts[0]).stem}.log')
-    # Archives that no builder produces (they need inputs outside the repositories) must be supplied.
+    for index, (kind, entry) in enumerate(archive_plan(ctx), 1):
+        if kind == 'component':
+            spec = entry
+            module = ctx.modules[(spec['kind'], spec['id'])]
+            replacements = {'tree': str(ctx.tree), 'component': str(module.path), 'out': str(ctx.work)}
+            parts = [part.format(**replacements) for part in spec['build']]
+            label = f'component-{spec["id"]}'
+        else:
+            parts = shlex.split(entry)
+            label = f'archive-{index:02d}-{Path(parts[0]).stem}'
+        executable = Path(parts[0])
+        if executable.suffix in ('.py', '.sh'):
+            script = executable if executable.is_absolute() else ctx.tree / 'scripts' / executable
+            if not script.is_file():
+                raise Error(f'{label}: build script missing: {script}')
+            parts = ['python3' if executable.suffix == '.py' else 'bash', str(script), *parts[1:]]
+        log(f'kernel: {label}')
+        run(parts, cwd=ctx.tree, env=env, log_file=ctx.logs / f'{label}.log')
+        components.sync_outputs(ctx, ctx.modules)
     for key, value in sorted(xnu_env(ctx).items()):
         if key.endswith('_ARCHIVE') and value.endswith('.a') and not Path(value).is_file():
-            raise Error(f'{key}: {value} not found; no builder makes it, supply the archive')
+            raise Error(f'{key}: {value} not found; supply the archive or its build recipe')
 
 
 def build(ctx, modules):
@@ -110,7 +160,12 @@ def build(ctx, modules):
             tool(name, 'brew install ' + name)
         tool('xcodebuild', 'the kernel step builds with the Xcode iphoneos SDK')
     env.update(xnu_env(ctx))
-    env.update(version_env(modules))
+    env.update(version_env(modules, ctx))
+    if ctx.schema_version == 2:
+        env['UNIXNU_PATCH_LIST'] = str(patches.prepare(ctx, modules))
+        generated = ctx.tree / 'build/generated'
+        generated.mkdir(parents=True, exist_ok=True)
+        env['UNIXNU_GENERATED_DIR'] = str(generated)
     env['JOBS'] = str(ctx.jobs)
     record = ctx.tree / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json'
     if not record.is_file():

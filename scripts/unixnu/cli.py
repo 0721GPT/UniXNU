@@ -1,10 +1,11 @@
 """Command line of the UniXNU build driver."""
 import argparse
+import json
 import platform
 import shutil
 import sys
 
-from . import bootimg, feeds, firmware, ipsw, kernel, package, payload, tree, userdata
+from . import bootimg, components, feeds, firmware, ipsw, kernel, package, patches, payload, profiles, tree, userdata
 from .config import LOCAL_KINDS, Context, parse_config
 from .util import Error, expand, git, log
 
@@ -59,7 +60,8 @@ def parser():
     w = sub.add_parser('ipsw', parents=[c], help='show or extract the components of the target IPSW')
     w.add_argument('action', choices=('info', 'fetch'))
     w.add_argument('components', nargs='*', help='components to extract (default: the small ones the board lists)')
-    sub.add_parser('status', parents=[c], help='show the device, configuration and where each module comes from')
+    status = sub.add_parser('status', parents=[c], help='show the device, configuration and where each module comes from')
+    status.add_argument('--json', action='store_true', help='print resolved configuration as JSON without fetching sources')
     sub.add_parser('clean', parents=[c], help='remove the build output of the device (keeps fetched sources)')
     return top
 
@@ -95,16 +97,35 @@ def cmd_defconfig(ctx):
     source = configs / ctx.args.name
     if not source.is_file():
         raise Error(f'{source} not found; available: {", ".join(names) or "none"}')
-    parse_config(source.read_text())
+    inputs = []
+    if ctx.schema_version == 2:
+        inputs = [profiles.resolve_path(ctx, entry) for entry in ctx.board.get('kernel', {}).get('config_fragments', [])]
+    inputs.append(source)
+    chunks = []
+    for path in inputs:
+        if not path.is_file():
+            raise Error(f'configuration fragment missing: {path}')
+        contents = path.read_text()
+        parse_config(contents)
+        chunks.append(contents.rstrip() + '\n')
     ctx.work.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, ctx.config_path)
+    ctx.config_path.write_text('\n'.join(chunks))
+    ctx.remember_config(ctx.args.name)
     log(f'configuration {ctx.args.name} -> {ctx.config_path}')
 
 
 def cmd_fetch(ctx):
+    wanted = set(ctx.args.names) or None
+    soc_commits = {}
+    if ctx.soc and (wanted is None or ctx.soc.name in wanted):
+        previous = ctx.soc.commit
+        soc_commits = feeds.fetch(ctx, {('soc', ctx.soc.name): ctx.soc}, update=ctx.args.update)
+        if soc_commits and ctx.soc.commit != previous:
+            feeds.lock_write(ctx, {**feeds.lock_read(ctx), **soc_commits})
+            ctx.board = profiles.load(ctx, allow_fetch=True)
     feeds.update_submodules(ctx)
     modules = feeds.resolve(ctx)
-    commits = feeds.fetch(ctx, modules, update=ctx.args.update, only=set(ctx.args.names) or None)
+    commits = {**soc_commits, **feeds.fetch(ctx, modules, update=ctx.args.update, only=wanted)}
     if commits:
         feeds.lock_write(ctx, {**feeds.lock_read(ctx), **commits})
         log(f'wrote {ctx.lock_path}')
@@ -172,16 +193,51 @@ def cmd_ipsw(ctx):
 
 
 def cmd_status(ctx):
+    modules = feeds.resolve(ctx)
+    if ctx.soc:
+        modules[('soc', ctx.soc.name)] = ctx.soc
+    locked = feeds.lock_read(ctx)
+    resolved = []
+    for (kind, name), module in sorted(modules.items()):
+        revision = module.commit
+        if module.path and not revision:
+            try:
+                revision = git(module.path, 'rev-parse', 'HEAD').strip()
+            except Error:
+                pass
+        spec = getattr(module, 'spec', {})
+        identity = components.source_identity(ctx, module)
+        resolved.append({'kind': kind, 'name': name, 'path': str(module.path) if module.path else None,
+                         'origin': module.origin, 'local': module.local, 'revision': revision,
+                         'pin': None if module.local else feeds.pinned_revision(ctx, module, locked) or spec.get('revision'),
+                         'scope': spec.get('scope'), 'repository': (module.source or {}).get('git') or
+                         ('https://' + identity if identity else spec.get('repository'))})
+    patch_order = patches.plan(ctx, modules) if ctx.schema_version == 2 else []
+    if ctx.args.json:
+        print(json.dumps({'schema_version': ctx.schema_version, 'device': str(ctx.device), 'name': ctx.name,
+                          'output': str(ctx.work), 'configuration': ctx.config_name,
+                          'config_path': str(ctx.config_path), 'configured': ctx.config_path.is_file(),
+                          'profiles': {key: str(value) for key, value in ctx.profile_roots.items()},
+                          'configuration_sources': [str(path) for path in ctx.profile_files],
+                          'board': ctx.board, 'components': ctx.component_specs, 'modules': resolved,
+                          'patch_order': [str(path) for path in patch_order]}, indent=2))
+        return
     print(f'device   {ctx.device} ({ctx.name})' + ('  [EXAMPLE]' if ctx.example else ''))
     print(f'output   {ctx.work}')
     print(f'config   {ctx.config_path if ctx.config_path.is_file() else "none (run defconfig)"}')
-    modules = feeds.resolve(ctx)
-    locked = feeds.lock_read(ctx)
+    if ctx.schema_version == 2:
+        for name, path in ctx.profile_roots.items():
+            print(f'profile  {name:24} {path}')
+        for module in resolved:
+            if module['scope']:
+                print(f'component {module["name"]:23} {module["scope"]}')
+        for index, path in enumerate(patch_order, 1):
+            print(f'patch    {index:02} {path}')
     unpinned = []
     for (kind, name), module in sorted(modules.items()):
         extra = ''
         if module.origin == 'git':
-            pinned = locked.get(name) or module.source.get('commit')
+            pinned = feeds.pinned_revision(ctx, module, locked)
             extra = f' pinned {pinned[:12]}' if pinned else ' NOT LOCKED'
         elif module.local:
             try:

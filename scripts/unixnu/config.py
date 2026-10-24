@@ -15,7 +15,7 @@ from pathlib import Path
 from .util import Error, expand
 
 ROOT = Path(__file__).resolve().parents[2]
-KINDS = {'driver': 'drivers', 'kit': 'kits', 'patch': 'patches', 'script': 'scripts', 'package': 'package', 'refer': 'refer'}
+KINDS = {'driver': 'drivers', 'kit': 'kits', 'patch': 'patches', 'script': 'scripts', 'package': 'package', 'refer': 'refer', 'soc': 'socs'}
 LOCAL_KINDS = ('drivers', 'kits', 'patches', 'scripts', 'package')
 
 
@@ -72,21 +72,52 @@ class Context:
         self.device = expand(device)
         if not (self.device / 'board.toml').is_file():
             raise Error(f'{self.device} has no board.toml')
-        self.board = load_toml(self.device / 'board.toml')
+        self.raw_board = load_toml(self.device / 'board.toml')
+        self.schema_version = self.raw_board.get('schema_version', 1)
+        if self.schema_version not in (1, 2):
+            raise Error(f'unsupported schema_version: {self.schema_version}')
+        self.feeds_dir = self.out_root / 'feeds'
+        self.lock_path = self.device / 'unixnu.lock'
+        self.soc = None
+        self.profile_roots = {'device': self.device}
+        self.profile_files = [self.device / 'board.toml']
+        self.component_specs = []
+        self.board = self.raw_board
+        if self.schema_version == 2:
+            from . import profiles
+            self.board = profiles.load(self, allow_fetch=args.command in ('fetch', 'tree', 'build', 'defconfig'))
         self.name = self.board.get('board', {}).get('name')
         if not self.name:
             raise Error('board.toml needs [board] name')
         self.example = bool(self.board['board'].get('example'))
+        if Path(self.name).name != self.name or self.name in ('.', '..'):
+            raise Error('[board] name must be a directory name')
         self.work = self.out_root / self.name
+        self.config_name = None
+        if self.schema_version == 2:
+            configurations = state.get('configurations', {})
+            selected = (getattr(args, 'name', None) if args.command == 'defconfig' else None)
+            selected = selected or configurations.get(str(self.device)) or self.board.get('kernel', {}).get('defconfig')
+            if not selected or Path(selected).name != selected or selected in ('.', '..'):
+                raise Error('schema_version = 2 needs [kernel] defconfig or a selected defconfig')
+            self.config_name = selected
+            self.work /= self.board['board']['os_profile']
+            self.work /= selected.removesuffix('_defconfig')
         self.tree = self.work / 'tree'
         self.logs = self.work / 'logs'
-        self.feeds_dir = self.out_root / 'feeds'
         self.config_path = self.work / '.config'
         self.uefi = None
         self.jobs = args.jobs or int(os.environ.get('JOBS', 0)) or os.cpu_count() or 2
-        self._save_state({'device': str(self.device)})
+        if args.command != 'status':
+            self._save_state({**state, 'device': str(self.device)})
         self.config = parse_config(self.config_path.read_text()) if self.config_path.is_file() else {}
-        self.lock_path = self.device / 'unixnu.lock'
+
+    def remember_config(self, name):
+        state = self._load_state()
+        configurations = state.setdefault('configurations', {})
+        configurations[str(self.device)] = name
+        state['device'] = str(self.device)
+        self._save_state(state)
 
     def _load_state(self):
         try:

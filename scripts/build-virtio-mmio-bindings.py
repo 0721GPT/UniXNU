@@ -10,15 +10,16 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'kits/NativePrelink'))
+sys.path.insert(0, str(ROOT / 'kits/XnuPrelink'))
 import native_prelink as np
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--component', choices=['NativeVirtioBlock', 'NativeRamBlock'], default='NativeVirtioBlock')
-parser.add_argument('--directory', type=Path, default=ROOT / 'build/native-virtio-block')
+parser.add_argument('--component', choices=['VirtioMmioBlock', 'RamBlock', 'NativeVirtioBlock', 'NativeRamBlock'], default='VirtioMmioBlock')
+parser.add_argument('--directory', type=Path, default=ROOT / 'build/virtio-mmio-block')
 args = parser.parse_args()
 out = args.directory.resolve()
 audit = json.loads((ROOT / 'build/storage-abi/interface-audit.json').read_text())
-component = args.component
+canonical = {'NativeVirtioBlock': 'VirtioMmioBlock', 'NativeRamBlock': 'RamBlock'}.get(args.component, args.component)
+component = {'VirtioMmioBlock': 'NativeVirtioBlock', 'RamBlock': 'NativeRamBlock'}[canonical]
 mangled = str(len(component)) + component
 obj_path = out / (component + '.o')
 obj = obj_path.read_bytes()
@@ -58,7 +59,7 @@ for row, actual in zip(audit['methods'], compiled):
         if not own or (row['slot'] not in (0, 1) and readable[actual].split('::', 1)[1] != readable[expected].split('::', 1)[1]):
             raise SystemExit('Concrete subclass dispatch mismatch at slot ' + str(row['slot']))
     overrides += own
-kernel_path = ROOT / 'build/native-prelink/native-apfs-load-positive.macho'
+kernel_path = ROOT / 'build/xnu-prelink/native-apfs-load-positive.macho'
 # The binding values come from the recorded audit; the candidate only proves the audit's identity. Build products are pruned, so a
 # missing candidate is accepted (the audit JSON is the pinned record) while a present one must still match.
 if kernel_path.exists() and hashlib.sha256(kernel_path.read_bytes()).hexdigest() != audit['candidate_sha256']:
@@ -79,7 +80,7 @@ assembly = out / 'original-bindings.S'
 assembly.write_text(''.join(f'.globl {name}\n.set {name}, {value:#x}\n' for name, value in sorted(bindings.items())))
 subprocess.run(['xcrun', 'clang', '-target', 'arm64-apple-ios17.0', '-Werror', '-Wno-incompatible-sysroot',
                 '-c', assembly, '-o', out / 'original-bindings.o'], check=True)
-archive = out / ('lib' + component + '.a')
+archive = out / ('lib' + canonical + '.a')
 archive.unlink(missing_ok=True)
 subprocess.run(['xcrun', 'ar', 'rcs', archive, obj_path, out / 'original-bindings.o'], check=True)
 (out / 'bindings.json').write_text(json.dumps(dict(original_candidate_sha256=audit['candidate_sha256'],
