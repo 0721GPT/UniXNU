@@ -162,6 +162,7 @@ kernel_args = ["-v", "serial=3", "debug=0x14e"]
 | `panic_screen` | 布尔 | 把 panic 屏幕打进负载内核 |
 | `trust_cache_sha256` | 数组 | 接受的 trust cache 哈希。用 `--owner-trust-cache` 传入的 owner 包跳过此列表 |
 | `kernel_args` | 数组 | 默认内核参数 |
+| `tools` | 布尔 | 在生成的菜单中加入 Tools；按[日志抓取步骤](/zh/porting/log-capture#firmware-setup)配置插件 |
 | `timeout` | 整数 | 菜单超时 |
 | `skip_setup_tool` | 字符串 | `--skip-setup` 使用的脚本 |
 

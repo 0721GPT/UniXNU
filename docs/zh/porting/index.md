@@ -88,6 +88,9 @@ boot image 另需设备固件使用的 DTB。
 和 payload 文件系统支持。Mu-Silicium initrd 需要在 DSC 与 FDF 中加入
 `UniXNURamDiskDxe`、DiskIoDxe 和 FAT 支持。
 
+按[固件日志导出器步骤](/zh/porting/log-capture#firmware-setup)加入插件，
+便于首次启动时从菜单扫描日志。
+
 **结果：** 可构建的固件配置，以及用途明确的两个树输入：生成 XNU ADT 的板级 DTS、组装启动镜像的固件 DTB。
 
 ## 6. 按依赖顺序适配驱动
@@ -111,6 +114,9 @@ Wi-Fi，再处理 DSP、音频和电源。每篇指南列出源码位置、板�
 
 **结果：** 构建输出，以及单独记录的设备观测。失败时记录最后完成的阶段，继续
 [调试](/zh/guide/debugging)和[故障排查](/zh/reference/troubleshooting)。
+
+在固件阶段先按[日志抓取步骤](/zh/porting/log-capture#firmware-setup)集成二维码导出，
+在内核交接前保存固件日志。存储验证完成后，继续该页的持久化抓取、手动循环和自动测试步骤。
 
 ## 8. 发布移植
 

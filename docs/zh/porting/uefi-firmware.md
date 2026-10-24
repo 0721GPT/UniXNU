@@ -54,6 +54,12 @@ FdtLib|MdePkg/Library/BaseFdtLib/BaseFdtLib.inf
 
 按设备负载配置提供所需选项，详见[负载输入](/zh/concepts/payload)。
 
+## 固件日志
+
+按[日志导出器集成步骤](/zh/porting/log-capture#firmware-setup)加入 Advanced Logger 和
+`AdvancedLogDxe`，启用 Tools 菜单。在存储适配前，使用[二维码抓取](/zh/porting/log-capture#qr-logs)
+保存固件输出，再继续内核交接。
+
 ## 负载发现 {#payload-discovery}
 
 Android bootloader 将 FAT 负载放入 RAM，并把地址写入固件 FDT 的 `/chosen/linux,initrd-start` 和 `linux,initrd-end`。两个属性均使用 32 位或 64 位大端地址。范围需要包含完整的 512 字节扇区，并在 UEFI 使用期间保持保留。

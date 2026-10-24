@@ -104,6 +104,9 @@ Follow [UEFI integration](/porting/uefi-firmware#required-integration) to includ
 UniXNU, DarwinBoot and payload filesystem support. For a Mu-Silicium initrd,
 include `UniXNURamDiskDxe`, DiskIoDxe and FAT support in the DSC and FDF.
 
+Include the [firmware log exporter](/porting/log-capture#firmware-setup) so
+you can scan logs from the menu during initial bring-up.
+
 **Result:** a buildable firmware configuration and two identified tree inputs:
 the board DTS for XNU's ADT, and the firmware DTB for boot-image assembly.
 
@@ -132,6 +135,10 @@ in [apply arguments](/xnu/boot-arguments#apply-arguments).
 **Result:** build outputs and separately recorded device observations. For a
 failure, record the last completed checkpoint and use [debugging](/guide/debugging)
 and [troubleshooting](/reference/troubleshooting).
+
+Set up [QR log export](/porting/log-capture#firmware-setup) during firmware integration
+and save the firmware log before kernel handoff. After storage verification, follow
+the same guide through persistent capture, a manual cycle and automated tests.
 
 ## 8. Publish the port
 

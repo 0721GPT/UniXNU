@@ -23,6 +23,7 @@ function taskSidebars(prefix: string, zh: boolean) {
       item('Boot the image', '启动镜像', 'guide/boot'),
       item('Boot arguments', '启动参数', 'xnu/boot-arguments'),
       item('Logs and checkpoints', '日志与检查点', 'guide/debugging'),
+      item('Capture logs', '抓取日志', 'porting/log-capture'),
       item('Troubleshooting', '故障排查', 'reference/troubleshooting'),
       item('QEMU verification', 'QEMU 验证', 'reference/qemu'),
     ]),
@@ -55,6 +56,7 @@ function taskSidebars(prefix: string, zh: boolean) {
     group('4. Verify and publish', '4. 验证与发布', [
       item('Build and boot', '构建与启动', 'building'),
       item('Bring-up sequence', '启动验证顺序', 'porting/bring-up'),
+      item('Log capture and boot tests', '日志抓取与启动测试', 'porting/log-capture'),
       item('Porting record', '适配记录', 'porting/records'),
       item('Publish documentation', '发布文档', 'contributing/documentation'),
     ]),
@@ -138,7 +140,7 @@ export default withMermaid(defineConfig({
               items: [
                 { text: '设备列表', link: '/zh/devices/' },
                 { text: '小米平板 6S Pro（sheng）', link: '/zh/devices/sheng' },
-                { text: '无人值守测试', link: '/zh/devices/sheng-unattended-test' },
+                { text: 'sheng 日志抓取示例', link: '/zh/devices/sheng-unattended-test' },
                 {
                   text: '社区移植',
                   collapsed: true,
@@ -253,7 +255,6 @@ export default withMermaid(defineConfig({
       alt: 'UniXNU',
     },
     siteTitle: 'UniXNU',
-    socialLinks: [{ icon: 'github', link: 'https://github.com/UniXNU/UniXNU' }],
     nav: [
       { text: 'Port a device', link: '/porting/', activeMatch: '^/porting/' },
       { text: 'Build and boot', link: '/building', activeMatch: '^/(guide/|building)' },
@@ -273,7 +274,7 @@ export default withMermaid(defineConfig({
           items: [
             { text: 'Devices', link: '/devices/' },
             { text: 'Xiaomi Pad 6S Pro (sheng)', link: '/devices/sheng' },
-            { text: 'Unattended test cycle', link: '/devices/sheng-unattended-test' },
+            { text: 'sheng log capture example', link: '/devices/sheng-unattended-test' },
             {
               text: 'Community ports',
               collapsed: true,

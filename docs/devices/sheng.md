@@ -9,6 +9,8 @@ porting record. Use the [record guide](/porting/records),
 [repository specification](/porting/device-repository) and
 [UFS guide](/porting/ufs) with the relevant section below.
 
-For repeated hardware runs, use the [unattended test cycle](/devices/sheng-unattended-test) to collect logs and return to fastboot.
+Follow [log capture and boot tests](/porting/log-capture) in bring-up order.
+The [sheng example](/devices/sheng-unattended-test) gives the reader inputs,
+storage region and reset commands for this board.
 
 <!--@include: ../.vitepress/records/sheng.md-->

@@ -20,7 +20,7 @@ files in UniXNU before selecting components or changing a port:
 | Component work | Component page under `docs/drivers/`, component `README.md`, catalog build command, dependencies, and relevant source |
 | Kernel work | `docs/xnu/source-and-patches.md`, `docs/xnu/patch-reference.md`, selected OS `profile.toml`, XNU source and ordered patch series |
 | Image assembly | `docs/concepts/prelink.md`, `docs/concepts/payload.md`, `docs/porting/uefi-firmware.md`, device firmware configuration |
-| Verification | `docs/building.md`, `docs/porting/bring-up.md`, selected device page |
+| Verification | `docs/building.md`, `docs/porting/bring-up.md`, `docs/porting/log-capture.md`, selected device page |
 | Migration | `docs/porting/migration.md` |
 | Documentation | `docs/contributing/documentation.md` |
 

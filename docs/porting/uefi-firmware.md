@@ -54,6 +54,13 @@ Build the payload with the selected device's inputs, then pack the image:
 
 Use the options required by the device's payload profile. See [payload inputs](/concepts/payload).
 
+## Firmware logs
+
+Follow [log exporter integration](/porting/log-capture#firmware-setup) to add
+Advanced Logger and `AdvancedLogDxe`, then enable the Tools menu. Use
+[QR capture](/porting/log-capture#qr-logs) to save firmware output before storage
+adaptation and kernel handoff.
+
 ## Payload discovery
 
 The Android bootloader places the FAT payload in RAM and writes `/chosen/linux,initrd-start` and `linux,initrd-end` into the firmware FDT. Each property is a 32-bit or 64-bit big-endian address. The range must contain complete 512-byte sectors and remain reserved while UEFI uses it.

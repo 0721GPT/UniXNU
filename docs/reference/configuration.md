@@ -163,6 +163,7 @@ Types are `s` for string, `x` for hex cells, `i` for decimal cells, `u` for unsi
 | `panic_screen` | boolean | Patch the panic screen into the payload kernel |
 | `trust_cache_sha256` | array | Accepted trust cache hashes. An owner bundle passed with `--owner-trust-cache` skips this list |
 | `kernel_args` | array | Default kernel arguments |
+| `tools` | boolean | Add Tools to the generated menu; configure plugins with [log capture](/porting/log-capture#firmware-setup) |
 | `timeout` | integer | Menu timeout |
 | `skip_setup_tool` | string | Script used by `--skip-setup` |
 
