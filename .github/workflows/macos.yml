@@ -210,6 +210,10 @@ jobs:
       # kernel step, which assembles the tree and runs the prelink.
       - name: Patch the prelink emitter
         run: |
+          # The kernel step runs its own "git submodule update --init"; creating the
+          # directory first makes that clone fail with "not an empty directory", so
+          # initialize this submodule here and only then overwrite the file.
+          git submodule update --init --depth 1 kits/NativePrelink
           cp Resources/local-kits/emit_prelink.py kits/NativePrelink/emit_prelink.py
           grep -c external_pc_relative kits/NativePrelink/emit_prelink.py
 
