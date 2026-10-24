@@ -20,7 +20,7 @@ UniXNU-<device>/
   unixnu.lock                 written by unixnu fetch
 ```
 
-The directory layout matches `UniXNU`. A module in the device repository overrides the module with the same name in the base repository. Device drivers and kits are independent repositories included as submodules.
+The directory layout matches `UniXNU`. A module in the device repository overrides the module with the same name in the base repository. Each driver has its own repository and is referenced here as a submodule under `drivers/<Name>`. A driver for this device stays independently maintained unless it serves an official device or the generic stack. Every driver repository carries the `unixnu` topic.
 
 ## board.toml
 
