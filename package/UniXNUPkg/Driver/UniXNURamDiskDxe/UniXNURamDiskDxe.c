@@ -1,7 +1,7 @@
 /** @file
   Publish the FAT initrd from a Mu-Silicium FDT handoff as a read-only block device.
 
-  SPDX-License-Identifier: BSD-2-Clause-Patent
+  SPDX-License-Identifier: BSD-2-Clause
 **/
 
 #include <Uefi.h>
