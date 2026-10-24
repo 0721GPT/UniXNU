@@ -8,7 +8,21 @@ polaris is the Xiaomi Mi MIX 2S with the SDM845 SoC, Snapdragon 845 and Adreno 6
 
 ## State
 
-The port is at the platform stage of the Darwin 23 source kernel. It has a polaris platform ADT (GICv3 at 0x17a00000/0x17a60000, virtual-timer PPI 19, 19.2 MHz timebase, PSCI SMC, the 6/8 GiB upper DDR bank option, and a 4x Cortex-A55 + 4x Cortex-A75 prefix with SDM845's Aff1 core encoding), an ArmCpu override that reads and validates the timer PPI from the ADT, a DarwinBoot override that constrains the kernel's physical allocation to the upper bank, and a fail-closed CPU prefix check. Host checks and EFI loader checks pass in CI; the source-kernel platform build is offered as a manual workflow. There is no polaris UEFI firmware, no bootable image, and no touch, display or GPU on this tree.
+The platform stage is **verified on hardware** (user-approved temporary boots,
+2026-10-24): the Renegade edk2-msm polaris firmware boots, UniXNU runs from an
+ESP flashed to userdata, DarwinBoot hands off with the real 1080x2160 GOP and
+the upper-bank memory window, and the source kernel executes through arm_init,
+the scheduler and timer interrupts, the corecrypto FIPS POST, bsd_init and
+IOKit to the designed no-root boundary (`Failed to mount root device`). The
+port has a polaris platform ADT (GICv3 at 0x17a00000/0x17a60000,
+virtual-timer PPI 19, 19.2 MHz timebase, PSCI SMC, 6/8 GiB upper DDR bank,
+4x A55 + 4x A75 prefix), an ArmCpu override that validates the timer PPI from
+the ADT, a DarwinBoot allocation-window override, a fail-closed CPU prefix
+check, and host/EFI/kernel/QEMU CI all green. Bring-up also fixed two
+UniXNU-wide bugs: the BCM2837 fixed panic-log address (0x3c0fc000) that
+bus-errors on any non-RPi hardware (now routed through the device-tree probe),
+and the FIPS POST HMAC invalidation after post-link kernel patching. No
+userland, root filesystem, touch, display or GPU on this tree yet.
 
 ### Heritage from the retired ABL-shim chain
 

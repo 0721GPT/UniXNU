@@ -46,7 +46,7 @@ The ports listed here are independent. Their maintainers own the repositories; t
 | [Xiaomi Pad 6 (pipa)](/devices/pipa) | SM8250 | Board and userdata values measured; not run on the tablet | xVanTuring |
 | [Galaxy Tab A7 10.4 (gta4l)](/devices/gta4l) | SM6115 | Board, ADT and firmware build; second repository builds a kernel in CI | NoNameBuilder, ilovemykedi |
 | [Redmi Note 10 Pro (sweet)](/devices/sweet) | SM7150 | Platform and loader bring-up; no bootable image | dipa-studio |
-| [Xiaomi Mi MIX 2S (polaris)](/devices/polaris) | SDM845 | Platform bring-up: ADT, loader checks and source-kernel CI wired; no firmware or hardware run | luuu20309 |
+| [Xiaomi Mi MIX 2S (polaris)](/devices/polaris) | SDM845 | Platform stage verified on hardware: firmware, UniXNU, DarwinBoot and the source kernel through BSD/IOKit; no root yet | luuu20309 |
 | [OnePlus 5 (cheeseburger)](/devices/cheeseburger) | MSM8998 | XNU entry bar observed; MMU and root unverified | DinnerABC |
 | [Redmi K20 Pro / Mi 9T Pro (raphael)](/devices/raphael) | SM8150 | New repository; kernel build not passing | penYo22 |
 | [Galaxy Z Fold3 (q2q)](/devices/q2q) | SM8350 | Source kernel build harness only | agcarbajo |

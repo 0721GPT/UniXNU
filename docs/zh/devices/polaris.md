@@ -8,14 +8,19 @@ polaris 是搭载 SDM845（骁龙 845、Adreno 630）的小米 MIX 2S。下面�
 
 ## 状态
 
-该移植处于 Darwin 23 源码内核的平台阶段。已有：polaris 平台 ADT（GICv3
-位于 0x17a00000/0x17a60000、虚拟定时器 PPI 19、19.2 MHz 计数频率、PSCI
-SMC、6/8 GiB 上 DDR bank 选项、按 SDM845 Aff1 编码的 4×Cortex-A55 +
-4×Cortex-A75 前缀）、从 ADT 读取并校验定时器 PPI 的 ArmCpu override、把
-内核物理分配约束在上 bank 的 DarwinBoot override，以及 fail-closed 的
-CPU 前缀检查。主机检查与 EFI 加载器检查在 CI 中通过；源码内核平台构建
-以手动 workflow 提供。本树没有 polaris UEFI 固件、没有可启动镜像，也没有
-触摸、显示或 GPU。
+平台阶段**已在真机验证**（2026-10-24，经用户批准的临时引导）：Renegade
+edk2-msm polaris 固件启动、UniXNU 从刷入 userdata 的 ESP 运行、DarwinBoot
+以真板 1080×2160 GOP 和上 bank 内存窗完成交接，源码内核依次执行过
+arm_init、调度器与 timer 中断、corecrypto FIPS 自检、bsd_init 与 IOKit，
+到达设计内的无根边界（`Failed to mount root device`）。移植包含 polaris
+平台 ADT（GICv3 0x17a00000/0x17a60000、PPI 19、19.2 MHz、PSCI SMC、
+6/8 GiB 上 bank、4×A55+4×A75 前缀）、从 ADT 校验定时器 PPI 的 ArmCpu
+override、上 bank 分配窗的 DarwinBoot override、fail-closed CPU 前缀检
+查；主机/EFI/内核/QEMU 的 CI 全绿。移植过程中还修复了两个 UniXNU 通
+用 bug：BCM2837 固定 panic-log 地址（0x3c0fc000）在任何非树莓派真机上
+的总线错误（改走设备树探测），以及内核链接后修改 `__text` 导致的 FIPS
+POST HMAC 失配（修改后自动重新封印）。本树尚无用户态、根文件系统、触
+摸、显示或 GPU。
 
 ### 承自退役 ABL-shim 链的成果
 
