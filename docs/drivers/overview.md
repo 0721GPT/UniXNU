@@ -62,6 +62,7 @@ Drivers and kits are independent repositories included as submodules. A device r
 
 ## Next steps
 
+- [Driver repositories](/drivers/repositories)
 - [UEFI drivers](/drivers/uefi-drivers)
 - [XNU drivers](/drivers/xnu-drivers)
 - [Adreno 740 driver](/drivers/native-adreno)

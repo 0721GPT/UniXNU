@@ -90,6 +90,7 @@ export default withMermaid(defineConfig({
               text: '驱动',
               items: [
                 { text: '驱动分层', link: '/zh/drivers/overview' },
+                { text: '驱动仓库', link: '/zh/drivers/repositories' },
                 { text: 'UEFI 驱动', link: '/zh/drivers/uefi-drivers' },
                 { text: 'XNU 驱动', link: '/zh/drivers/xnu-drivers' },
                 { text: 'Adreno 740 驱动', link: '/zh/drivers/native-adreno' },
@@ -315,6 +316,7 @@ export default withMermaid(defineConfig({
           text: 'Drivers',
           items: [
             { text: 'Driver layers', link: '/drivers/overview' },
+            { text: 'Driver repositories', link: '/drivers/repositories' },
             { text: 'UEFI drivers', link: '/drivers/uefi-drivers' },
             { text: 'XNU drivers', link: '/drivers/xnu-drivers' },
             { text: 'Adreno 740 driver', link: '/drivers/native-adreno' },
