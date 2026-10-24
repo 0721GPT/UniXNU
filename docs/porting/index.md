@@ -37,9 +37,9 @@ before selecting drivers. Match hardware revision, firmware protocol and OS ABI.
 | Component repository | Reusable driver, library, loader or tool |
 | `uefi-<device>` | Firmware platform and peripheral initialization |
 
-For SM8550, read [SM8550 support](/porting/sm8550). A new SoC needs its own
-`soc.toml`, DTSI, configuration fragments and patch series, following that
-repository's layout. Review every resource and operation against the new SoC.
+Follow [SoC support](/porting/soc-support) to select an existing implementation
+or create a shared repository. Check resources, platform operations and component
+dependencies, then pin the source in the device configuration.
 A new OS profile needs the [XNU and patch inputs](/xnu/source-and-patches) and
 [prelink ABI work](/concepts/prelink) before hardware drivers can be qualified.
 

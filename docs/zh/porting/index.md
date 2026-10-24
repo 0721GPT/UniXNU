@@ -30,8 +30,8 @@ UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步�
 | 组件仓库 | 可复用驱动、库、加载器或工具 |
 | `uefi-<device>` | 固件平台和外设初始化 |
 
-SM8550 先读[共享支持说明](/zh/porting/sm8550)。新 SoC 按该仓库结构建立自己的
-`soc.toml`、DTSI、配置片段和补丁序列，逐项核对新 SoC 的资源和操作。
+按[SoC 支持步骤](/zh/porting/soc-support)选择已有实现或建立新的共享仓库，
+核对资源、平台操作和组件依赖，再将源码版本固定到设备配置。
 新 OS profile 需要先完成 [XNU 与补丁输入](/zh/xnu/source-and-patches)以及
 [预链接 ABI 工作](/zh/concepts/prelink)，再验证硬件驱动。
 

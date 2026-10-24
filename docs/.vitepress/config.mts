@@ -34,7 +34,7 @@ function taskSidebars(prefix: string, zh: boolean) {
       item('Migrate a repository', '迁移已有仓库', 'porting/migration'),
       item('Device repository', '设备仓库', 'porting/device-repository'),
       item('Component selection', '选择组件', 'reference/components'),
-      item('SM8550 support', 'SM8550 支持', 'porting/sm8550'),
+      item('Select and add SoC support', '选择与添加 SoC 支持', 'porting/soc-support'),
     ]),
     group('2. Describe hardware', '2. 描述硬件', [
       item('Device tree', '设备树', 'porting/device-tree'),

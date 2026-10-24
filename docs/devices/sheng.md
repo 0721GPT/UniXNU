@@ -1,7 +1,7 @@
 # Xiaomi Pad 6S Pro (sheng)
 
 [Device repository](https://github.com/UniXNU/UniXNU-sheng),
-[SM8550 support](/porting/sm8550),
+[SM8550 support](/porting/soc-support#sm8550),
 [firmware](https://github.com/UniXNU/uefi-sheng).
 
 The device repository owns board drivers, hardware configuration and the

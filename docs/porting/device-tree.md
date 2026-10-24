@@ -49,7 +49,7 @@ The board DTS includes its SoC DTSI:
 ```
 
 The complete board source supplies memory, enabled CPUs, and peripheral inputs.
-See the [device template](/porting/device-repository) and [SM8550 support](/porting/sm8550).
+See the [device template](/porting/device-repository) and [SoC support](/porting/soc-support).
 
 ## Hardware bindings
 

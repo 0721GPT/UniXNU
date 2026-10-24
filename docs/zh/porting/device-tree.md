@@ -48,7 +48,7 @@ payload 步骤运行 `dtc`，在解析后的输出目录写入 `device-tree/hard
 ```
 
 完整板级源码提供内存、启用的 CPU 和外设输入。参见[设备模板](/zh/porting/device-repository)
-和 [SM8550 支持](/zh/porting/sm8550)。
+和 [SoC 支持](/zh/porting/soc-support)。
 
 ## 硬件绑定
 

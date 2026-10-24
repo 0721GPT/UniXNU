@@ -15,7 +15,7 @@ files in UniXNU before selecting components or changing a port:
 
 | Task | Required reading |
 | --- | --- |
-| Every port | `docs/porting/index.md`, `docs/porting/device-repository.md`, `docs/reference/components.md`, `components.toml` |
+| Every port | `docs/porting/index.md`, `docs/porting/soc-support.md`, `docs/porting/device-repository.md`, `docs/reference/components.md`, `components.toml` |
 | Hardware description | `docs/porting/device-tree.md`, `docs/drivers/device-tree-matching.md`, selected SoC `README.md`, `soc.toml`, DTSI and bindings |
 | Component work | Component page under `docs/drivers/`, component `README.md`, catalog build command, dependencies, and relevant source |
 | Kernel work | `docs/xnu/source-and-patches.md`, `docs/xnu/patch-reference.md`, selected OS `profile.toml`, XNU source and ordered patch series |

@@ -50,7 +50,8 @@ git -C <component-checkout> status --short
 
 ## 2. 选择 SoC 与 OS profile
 
-SM8550 设备先读 [SM8550 支持](/zh/porting/sm8550)，选用 `UniXNU-sm8550-common`。其他 SoC 按[选择共享支持的步骤](/zh/porting/)选择或建立匹配的仓库，提供 `soc.toml`、`configs/`、`dts/` 和 `patches/xnu/series`。
+按[SoC 支持步骤](/zh/porting/soc-support)选择或建立匹配的共享仓库，
+确认 `soc.toml`、配置片段、DTSI 和补丁系列，并选择已审查的提交。
 
 将已有配置按下表确定归属：
 

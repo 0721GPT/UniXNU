@@ -71,10 +71,9 @@ its source, revision and external inputs.
 
 ## 2. Select the SoC and OS profiles
 
-For SM8550, read [SM8550 support](/porting/sm8550) and use
-`UniXNU-sm8550-common`. For another SoC, select or create a matching repository
-with `soc.toml`, `configs/`, `dts/` and `patches/xnu/series` using the
-[shared-support procedure](/porting/).
+Follow [SoC support](/porting/soc-support) to select or create a matching shared
+repository. Check its `soc.toml`, configuration fragments, DTSI and patch series,
+then select a reviewed commit.
 
 Assign the port's existing settings to these locations:
 
