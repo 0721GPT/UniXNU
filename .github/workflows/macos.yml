@@ -240,6 +240,22 @@ jobs:
           if [ "$SKIP_SETUP" = true ]; then args+=(--skip-setup); fi
           ./unixnu build payload "${args[@]}"
 
+      # Fork addition: the upstream workflow publishes text logs only. The
+      # device images are needed to boot a real phone, so keep them as an artifact.
+      - name: Upload the built images
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unixnu-${{ steps.check.outputs.board }}-images-${{ github.run_attempt }}
+          path: |
+            out/*/kernel/kernel.macho
+            out/*/payload/payload.img
+            out/*/payload/payload.json
+            out/*/boot/boot.img
+            out/*/status.txt
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Collect the text logs
         id: logs
         if: always() && steps.check.outcome == 'success'
