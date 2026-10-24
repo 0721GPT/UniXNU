@@ -1,17 +1,25 @@
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c
-@@ -198,7 +198,13 @@
+@@ -198,9 +198,21 @@
  void
  entropy_init(void)
  {
 +	extern bool crypto_init;
 +	extern void *g_crypto_funcs;
++	extern kern_return_t source_corecrypto14_status;
 +	if (!crypto_init || g_crypto_funcs == NULL) {
-+		panic("fuxi-diag: entropy_init before registration init=%d funcs=%p",
-+		    (int)crypto_init, g_crypto_funcs);
++		/*
++		 * status tells the bootstrap apart: 5 (KERN_FAILURE) means it never ran,
++		 * 0 means it ran and still left the kernel table empty, which points at a
++		 * second copy of the provider writing its own table.
++		 */
++		panic("fuxi-diag: init=%d funcs=%p status=%d",
++		    (int)crypto_init, g_crypto_funcs, (int)source_corecrypto14_status);
 +	}
  	SHA512_Init(&entropy_data.sha512_ctx);
  
  	lck_grp_init(&entropy_data.lock_group, "entropy-data", LCK_GRP_ATTR_NULL);
  	lck_mtx_init(&entropy_data.mutex, &entropy_data.lock_group, LCK_ATTR_NULL);
+ 	SHA512_Update(&entropy_data.sha512_ctx, &entropy_data.sample_count, sizeof(entropy_data.sample_count));
+ }
