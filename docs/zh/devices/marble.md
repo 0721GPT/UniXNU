@@ -1,15 +1,7 @@
 # Redmi Note 12 Turbo / POCO F5（marble）
 
-Redmi Note 12 Turbo / POCO F5（marble） 是搭载 SM7475 的设备。下面的移植是独立的社区项目，UniXNU 组织不维护它。
+当前 GitHub 公开访问无法读取该仓库，构建和设备状态待维护者确认。使用此移植前，需要获取可访问的源码版本、板级输入和启动记录。
 
-| 仓库 | 维护者 | 状态 |
-| --- | --- | --- |
-| [UniXNU-marble](https://github.com/Enmmmmn/UniXNU-marble) | [Enmmmmn](https://github.com/Enmmmmn) |
+- [Enmmmmn/UniXNU-marble](https://github.com/Enmmmmn/UniXNU-marble)
 
-## 状态
-
-骨架设备仓库。`board.toml` 的 userdata LBA、内核参数、trust cache 固定值和 ADT 生成器仍是 TODO。内核步骤可以用 defconfig 和 IPSW 运行。
-
-## 维护
-
-维护者拥有仓库和发布决定。UniXNU 文档记录移植及其状态，不接管维护。
+按[移植记录](/zh/porting/records)补齐来源和验证结果，再按[移植设备](/zh/porting/)继续。
