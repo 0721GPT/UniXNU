@@ -17,7 +17,7 @@ The ports listed here are independent. Their maintainers own the repositories; t
 | [Lenovo Xiaoxin Pad 2022 (tb128fu)](/devices/tb128fu) | SM6225 | iPadOS 17 home screen with touch; Metal frames presented by the GPU; Adreno 610 runs | xVanTuring |
 | [OnePlus 10 Pro 5G (negroni)](/devices/negroni) | SM8450 | iOS 16.7.16 SpringBoard with touch; CPU-rendered; Wi-Fi pending | pawlickerr |
 | [Nothing Phone (2) (pong)](/devices/pong) | SM8475 | iOS 16.6.1 home screen with display and touch; UFS and GPU partial | Chengdong-Yu |
-| [Xiaomi 17 Pro (pandora)](/devices/pandora) | SM8850 | iOS 16.7.16 lock screen with touch and buttons; own loader, no UEFI chain | ShueiTsuki |
+| [Xiaomi 17 Pro (pandora)](/devices/pandora) | SM8850 | iOS 16.7.16 home screen with touch and buttons; GPU kernel driver runs command buffers, no rendering yet; own loader, no UEFI chain | ShueiTsuki |
 | [Xiaomi 13 (fuxi)](/devices/fuxi) | SM8550 | Kernel links and prelinks; stage B archive chain near complete; no hardware run | matejkoo217, hanzi123-bilp |
 | [OnePlus 7 Pro (guacamole)](/devices/guacamole) | SM8150 | iOS 16.7.16 userland reached; GPU pending | wochgn |
 | [OnePlus Ace 5 (giulia)](/devices/giulia) | SM8650 | Hello/Setup with full display and touch; installation, GPU and Wi-Fi pending | jasper2863, tycykp |
