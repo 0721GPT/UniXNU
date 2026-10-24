@@ -1,7 +1,8 @@
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
+index d57d48c..96a82cf 100644
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c
-@@ -198,9 +198,21 @@
+@@ -199,6 +199,18 @@ __startup_func
  void
  entropy_init(void)
  {
@@ -20,6 +21,3 @@ diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
  	SHA512_Init(&entropy_data.sha512_ctx);
  
  	lck_grp_init(&entropy_data.lock_group, "entropy-data", LCK_GRP_ATTR_NULL);
- 	lck_mtx_init(&entropy_data.mutex, &entropy_data.lock_group, LCK_ATTR_NULL);
- 	SHA512_Update(&entropy_data.sha512_ctx, &entropy_data.sample_count, sizeof(entropy_data.sample_count));
- }
