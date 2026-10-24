@@ -26,4 +26,9 @@ jobs:
       - name: Validate structure and changed areas
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: python3 tools/scripts/porting-record.py check --device device --base "$BASE"
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ -z "$BASE" || "$BASE" =~ ^0+$ ]]; then
+            BASE="refs/remotes/origin/$DEFAULT_BRANCH"
+          fi
+          python3 tools/scripts/porting-record.py check --device device --base "$BASE"
