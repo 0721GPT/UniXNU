@@ -1,0 +1,72 @@
+diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
+--- a/bsd/kern/bsd_init.c	2026-10-24 08:16:28
++++ b/bsd/kern/bsd_init.c	2026-10-24 08:16:28
+@@ -564,7 +564,21 @@
+ }
+ #endif
+ 
++/*
++ * fuxi bring-up: staged visible checkpoints. The board has no console device, so a
++ * hang looks exactly like a successful kernel entry. Select a checkpoint with the
++ * boot-arg "fuxi-diag=N"; the matching stage panics and the panic screen shows it.
++ */
+ void
++fuxi_diag_stage(int stage)
++{
++	uint32_t want = 0;
++	if (PE_parse_boot_argn("fuxi-diag", &want, sizeof(want)) && want == (uint32_t)stage) {
++		panic("fuxi-diag: reached stage %d", stage);
++	}
++}
++
++void
+ bsd_init(void)
+ {
+ 	boot_progress_stage("bsd_init enter");
+@@ -573,6 +587,7 @@
+ 	struct proc_ro_data kernproc_ro_data = {
+ 		.p_csflags = CS_VALID,
+ 	};
++	fuxi_diag_stage(1);
+ 	struct task_ro_data kerntask_ro_data = { };
+ #if CONFIG_NETBOOT || CONFIG_IMAGEBOOT
+ 	boolean_t       netboot = FALSE;
+@@ -774,6 +789,7 @@
+ 	 */
+ 	bsd_init_kprintf("calling bsd_bufferinit\n");
+ 	bsd_bufferinit();
++	fuxi_diag_stage(2);
+ 
+ #if defined(XNU_SHENG_PMGR) && XNU_SHENG_PMGR
+ 	extern void sheng_pmgr_run(void);
+@@ -1015,7 +1031,8 @@
+ 		netboot = (mountroot == netboot_mountroot);
+ #endif
+ 
+-		bsd_init_kprintf("vfs_mountroot\n");
++		fuxi_diag_stage(3);
++	bsd_init_kprintf("vfs_mountroot\n");
+ 		boot_progress_stage("vfs_mountroot enter");
+ 		if (0 == (err = vfs_mountroot())) {
+ 			boot_progress_stage("vfs_mountroot mounted; authentication pending");
+diff --git a/osfmk/kern/startup.c b/osfmk/kern/startup.c
+--- a/osfmk/kern/startup.c	2026-10-24 08:16:28
++++ b/osfmk/kern/startup.c	2026-10-24 08:16:28
+@@ -425,6 +425,9 @@
+ void
+ kernel_bootstrap(void)
+ {
++	extern void fuxi_diag_stage(int);
++	fuxi_diag_stage(4);
++
+ 	kern_return_t   result;
+ 	thread_t        thread;
+ 	char            namep[16];
+@@ -815,6 +818,7 @@
+ 	 *	Start the user bootstrap.
+ 	 */
+ #ifdef  MACH_BSD
++	fuxi_diag_stage(5);
+ 	bsd_init();
+ #endif
+ 
