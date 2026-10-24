@@ -198,6 +198,8 @@ panic_screen = true
 python3 scripts/patch-xnu-entry-probe.py <kernel> --panic-screen --no-reset
 ```
 
+UniXNU 主仓库提供入口探针和 `xnu-panic-screen.c`，构建工具将它们复制到每个设备的构建树。Panic 渲染使用 Mu-Silicium 的 `Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h`。在 `unixnu.local.toml` 的 `[build]` 中设置 `uefi`，或运行 `./unixnu payload --uefi /path/to/Mu-Silicium`。直接运行脚本时设置 `UNIXNU_UEFI`。
+
 panic 屏幕把格式化后的 panic 消息和寄存器写到 framebuffer，并保持显示。`--no-reset` 停止自动复位，屏幕保留到拍照完成。
 
 ### 交接时的绿色条 {#green-bar}
@@ -236,7 +238,7 @@ entry_probe_reset_occurrence = 1           # 第几次调用（默认 1）
 entry_probe_reset_before = false           # 在调用点复位，不执行调用，也不等待
 ```
 
-设置 `entry_probe_reset_after` 后，复位移到该调用之后，一次运行只回答一个问题：内核有没有走过这个调用。这些键对应板级 `patch-xnu-entry-probe.py` 的 `--reset-delay`、`--reset-after`、`--in`、`--occurrence` 和 `--reset-before`，可以和 `panic_screen` 同时使用。不设置 `entry_probe_reset_delay` 时，负载仍传 `--no-reset`。
+设置 `entry_probe_reset_after` 后，复位移到该调用之后，一次运行只回答一个问题：内核有没有走过这个调用。这些键对应共享 `patch-xnu-entry-probe.py` 的 `--reset-delay`、`--reset-after`、`--in`、`--occurrence` 和 `--reset-before`，可以和 `panic_screen` 同时使用。不设置 `entry_probe_reset_delay` 时，负载仍传 `--no-reset`。
 
 第一条 panic 消息也会复制到 `boot_progress_panic_text`。secondary core 上的 panic 只停住该 core，实时横幅在屏幕重绘后仍保留文本。
 

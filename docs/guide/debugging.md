@@ -198,6 +198,8 @@ The payload step runs:
 python3 scripts/patch-xnu-entry-probe.py <kernel> --panic-screen --no-reset
 ```
 
+The main UniXNU repository supplies the entry probe and `xnu-panic-screen.c`. Tree assembly copies them into every device build tree. Panic rendering uses Mu-Silicium’s `Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h`. Set `uefi` under `[build]` in `unixnu.local.toml`, or run `./unixnu payload --uefi /path/to/Mu-Silicium`. Set `UNIXNU_UEFI` when running the script directly.
+
 The panic screen writes the formatted panic message and registers to the framebuffer and keeps the image visible. `--no-reset` stops the automatic reset, so the screen stays for a photograph.
 
 ### Green bar at handoff {#green-bar}
@@ -236,7 +238,7 @@ entry_probe_reset_occurrence = 1           # which call (default 1)
 entry_probe_reset_before = false           # reset at the call site, without the call and the delay
 ```
 
-With `entry_probe_reset_after` the reset moves after that call, so one run answers one question: did the kernel get past it? The keys map to `--reset-delay`, `--reset-after`, `--in`, `--occurrence` and `--reset-before` of the board's `patch-xnu-entry-probe.py`, and they combine with `panic_screen`. Without `entry_probe_reset_delay` the payload keeps `--no-reset`.
+With `entry_probe_reset_after` the reset moves after that call, so one run answers one question: did the kernel get past it? The keys map to `--reset-delay`, `--reset-after`, `--in`, `--occurrence` and `--reset-before` of the shared `patch-xnu-entry-probe.py`, and they combine with `panic_screen`. Without `entry_probe_reset_delay` the payload keeps `--no-reset`.
 
 The first panic message is also copied to `boot_progress_panic_text`. A panic on a secondary core parks that core; the live banner keeps the text after the screen is repainted.
 
