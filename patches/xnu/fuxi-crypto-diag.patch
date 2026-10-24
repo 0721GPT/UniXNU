@@ -1,0 +1,35 @@
+diff --git a/libkern/crypto/register_crypto.c b/libkern/crypto/register_crypto.c
+--- a/libkern/crypto/register_crypto.c
++++ b/libkern/crypto/register_crypto.c
+@@ -37,12 +37,15 @@
+ int
+ register_crypto_functions(const crypto_functions_t funcs)
+ {
++	kprintf("fuxi-diag: register_crypto_functions(funcs=%p) current=%p\n",
++	    funcs, (void *)g_crypto_funcs);
+ 	if (g_crypto_funcs) {
+ 		return -1;
+ 	}
+ 
+ 	g_crypto_funcs = funcs;
+ 	crypto_init = true;
++	kprintf("fuxi-diag: g_crypto_funcs registered as %p\n", (void *)g_crypto_funcs);
+ 
+ 	return 0;
+ }
+diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
+--- a/osfmk/prng/entropy.c
++++ b/osfmk/prng/entropy.c
+@@ -198,7 +198,12 @@
+ void
+ entropy_init(void)
+ {
++	extern bool crypto_init;
++	if (!crypto_init) {
++		panic("fuxi-diag: entropy_init ran before crypto registration");
++	}
+ 	SHA512_Init(&entropy_data.sha512_ctx);
++	kprintf("fuxi-diag: entropy_init SHA512_Init returned\n");
+ 
+ 	lck_grp_init(&entropy_data.lock_group, "entropy-data", LCK_GRP_ATTR_NULL);
+ 	lck_mtx_init(&entropy_data.mutex, &entropy_data.lock_group, LCK_ATTR_NULL);
