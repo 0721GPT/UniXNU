@@ -116,8 +116,12 @@ def build(ctx, kernel=None):
     addon = expand(args.gpu_addon) if getattr(args, 'gpu_addon', None) else None
     if addon and (not addon.is_file() or addon.read_bytes()[:8] != b'NGPUADD2'):
         raise Error(f'GPU addon not found or not made by scripts/make-gpu-addon.py: {addon}')
-    seed = getattr(args, 'unique_chip_id', None) or os.environ.get('UNIXNU_UNIQUE_CHIP_ID')
     adt = spec.get('adt', {})
+    # A board may provide a fixed bring-up seed instead of requiring a secret.
+    # Honour it together with chip_id; the ADT builder requires the pair.
+    board_seed = adt.get('unique_chip_id')
+    seed = (getattr(args, 'unique_chip_id', None) or os.environ.get('UNIXNU_UNIQUE_CHIP_ID')
+            or (board_seed if board_seed != 'required' else None))
     if adt.get('unique_chip_id') == 'required' and not seed:
         raise Error('the platform seed is not stored in any repository: pass --unique-chip-id HEX (or UNIXNU_UNIQUE_CHIP_ID)')
     out, image, report = paths(ctx)
