@@ -1,6 +1,6 @@
 # Platform, memory and OS services
 
-Start with a [resolved device repository](/porting/). Read the
+Start with a [resolved device repository](/porting/steps). Read the
 [device-tree bindings](/porting/device-tree), [matching rules](/drivers/device-tree-matching),
 [ArmDTPlatform](/drivers/arm-dt-platform) and [ArmCpu](/drivers/arm-cpu).
 

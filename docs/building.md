@@ -9,7 +9,7 @@ Build the device firmware with `./unixnu build firmware --uefi ../uefi-<device>`
 ## 1. Prepare the host and repositories {#quick-start}
 
 Read [Requirements](/guide/requirements), then choose a port from
-[Devices](/devices/). New ports follow [Port a device](/porting/) first.
+[Devices](/devices/). New ports follow [Port a device](/porting/steps) first.
 Obtain the port's device and UEFI repositories, including their submodules.
 For example, sheng uses:
 

@@ -1,6 +1,6 @@
 # 平台、内存与 OS 服务
 
-先完成[设备仓库解析](/zh/porting/)。阅读[设备树绑定](/zh/porting/device-tree)、
+先完成[设备仓库解析](/zh/porting/steps)。阅读[设备树绑定](/zh/porting/device-tree)、
 [匹配规则](/zh/drivers/device-tree-matching)、[ArmDTPlatform](/zh/drivers/arm-dt-platform)
 和 [ArmCpu](/zh/drivers/arm-cpu)。
 

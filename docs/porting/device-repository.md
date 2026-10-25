@@ -1,6 +1,6 @@
 # Device repository
 
-Complete [steps 1 through 4 of Port a device](/porting/) before using this field reference. Then continue with [hardware and driver adaptation](/porting/drivers).
+Complete [steps 1 through 4 of Port a device](/porting/steps) before using this field reference. Then continue with [hardware and driver adaptation](/porting/drivers).
 
 A device repository selects shared SoC and OS support and describes one board.
 Read the [component catalog](/reference/components) before adding a driver.
@@ -35,7 +35,7 @@ overrides. Commit `unixnu.lock` after fetching the selected sources.
 
 New ports and migrated ports follow the same requirements below. Hardware
 values, component selections and verification levels describe the target board.
-The [new-port workflow](/porting/) and [migration guide](/porting/migration)
+The [new-port workflow](/porting/steps) and [migration guide](/porting/migration)
 both finish here.
 
 ### 1. Complete the tracked files

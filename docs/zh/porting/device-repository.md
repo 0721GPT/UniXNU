@@ -1,6 +1,6 @@
 # 设备仓库
 
-先完成[移植设备的第 1 至 4 步](/zh/porting/)，再用本页查阅字段，随后继续[硬件与驱动适配](/zh/porting/drivers)。
+先完成[移植设备的第 1 至 4 步](/zh/porting/steps)，再用本页查阅字段，随后继续[硬件与驱动适配](/zh/porting/drivers)。
 
 设备仓库选择共享 SoC 与 OS 支持，并描述一块板。添加驱动前阅读[组件目录](/zh/reference/components)。
 
@@ -32,7 +32,7 @@ UniXNU-<device>/
 ## 完成仓库 {#completion}
 
 新建与迁移后的设备仓库遵循以下相同要求。硬件参数、组件选择和验证等级以目标设备为准。
-[新设备流程](/zh/porting/)与[迁移指南](/zh/porting/migration)均在这里完成收尾。
+[新设备流程](/zh/porting/steps)与[迁移指南](/zh/porting/migration)均在这里完成收尾。
 
 ### 1. 完成受版本控制的文件
 

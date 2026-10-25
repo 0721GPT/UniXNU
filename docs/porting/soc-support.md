@@ -135,7 +135,7 @@ Record each board's [bring-up checkpoints](/porting/bring-up) and
 [log evidence](/porting/log-capture) separately from build results.
 
 **Result:** resolved sources, a compiled hardware description and a board-specific
-verification record. Continue with [Port a device](/porting/).
+verification record. Continue with [Port a device](/porting/steps).
 
 ## SM8550 example {#sm8550}
 

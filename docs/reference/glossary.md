@@ -38,6 +38,6 @@
 
 ## Next steps
 
-- [Port a device](/porting/)
+- [Port a device](/porting/steps)
 - [Command line](/reference/cli)
 - [Devices](/devices/)

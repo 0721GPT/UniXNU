@@ -4,4 +4,4 @@ GitHub public access cannot currently retrieve this repository. Current build an
 
 - [Enmmmmn/UniXNU-marble](https://github.com/Enmmmmn/UniXNU-marble)
 
-Complete the source and validation details in the [porting record](/porting/records), then continue with [Port a device](/porting/).
+Complete the source and validation details in the [porting record](/porting/records), then continue with [Port a device](/porting/steps).

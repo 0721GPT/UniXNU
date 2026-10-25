@@ -9,7 +9,7 @@
 ## 1. 准备主机和仓库 {#quick-start}
 
 阅读[前置条件](/zh/guide/requirements)，从[设备列表](/zh/devices/)选择移植。
-新设备先按[移植流程](/zh/porting/)操作。获取设备和 UEFI 仓库及其 submodule。
+新设备先按[移植流程](/zh/porting/steps)操作。获取设备和 UEFI 仓库及其 submodule。
 例如 sheng 使用：
 
 ```sh

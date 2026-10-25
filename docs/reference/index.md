@@ -1,7 +1,7 @@
 # Technical reference
 
 Use this page to find the file, procedure and verification for a change.
-For a complete workflow, follow [Port a device](/porting/) or
+For a complete workflow, follow [Port a device](/porting/steps) or
 [Build and boot](/building). Device values and current results are listed in
 [Devices](/devices/).
 

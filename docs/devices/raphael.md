@@ -4,4 +4,4 @@ GitHub public access cannot currently retrieve this repository. Current build an
 
 - [penYo22/UniXNU-raphael](https://github.com/penYo22/UniXNU-raphael)
 
-Complete the source and validation details in the [porting record](/porting/records), then continue with [Port a device](/porting/).
+Complete the source and validation details in the [porting record](/porting/records), then continue with [Port a device](/porting/steps).

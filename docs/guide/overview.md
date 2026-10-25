@@ -13,4 +13,4 @@ head:
       href: https://unixnu.com/porting/
 ---
 
-[Port a device](/porting/)
+[Port a device](/porting/steps)

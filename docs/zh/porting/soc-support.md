@@ -121,7 +121,7 @@ include_dirs = ["soc:dts"]
 将每块板型的[启动检查点](/zh/porting/bring-up)、[日志证据](/zh/porting/log-capture)
 与构建结果分别记录。
 
-**结果：** 源码已解析、硬件描述已编译，并有板型自己的验证记录。继续[移植设备](/zh/porting/)。
+**结果：** 源码已解析、硬件描述已编译，并有板型自己的验证记录。继续[移植设备](/zh/porting/steps)。
 
 ## SM8550 示例 {#sm8550}
 

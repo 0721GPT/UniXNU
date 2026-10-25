@@ -6,7 +6,7 @@ A device entry is a pair of repositories and the values that make the generic st
 
 1. Open the target device below and confirm its product, SoC and maintained repositories.
 2. Read its inputs, current results and unfinished areas. Use the firmware, OS profile and partition values specified by that port.
-3. Follow [Build and boot](/building) to build it, [Port a device](/porting/) to adapt new hardware, or [Migration](/porting/migration) to update the repository format.
+3. Follow [Build and boot](/building) to build it, [Port a device](/porting/steps) to adapt new hardware, or [Migration](/porting/migration) to update the repository format.
 4. Verify the checkpoints in its record and save the source, firmware and image revisions actually used.
 
 ## Organization-maintained devices
@@ -122,7 +122,7 @@ Community ports are maintained by the people listed below. Each page distinguish
 
 ## Adding a device
 
-1. Follow [Porting](/porting/).
+1. Follow [Porting](/porting/steps).
 2. Create the device repository and the UEFI repository.
 3. Build and bring up in stages.
 4. Add a page under `docs/devices/` with the values and commands.

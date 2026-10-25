@@ -1,6 +1,6 @@
 # Adapt the drivers
 
-Use this checklist after [creating and resolving the device repository](/porting/).
+Use this checklist after [creating and resolving the device repository](/porting/steps).
 Start with platform services, then add one peripheral path at a time. Read the
 linked guide before selecting that component or copying its board integration.
 

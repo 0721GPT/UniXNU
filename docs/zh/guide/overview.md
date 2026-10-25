@@ -13,4 +13,4 @@ head:
       href: https://unixnu.com/zh/porting/
 ---
 
-[移植设备](/zh/porting/)
+[移植设备](/zh/porting/steps)

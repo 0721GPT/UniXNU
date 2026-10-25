@@ -13,7 +13,7 @@ configuration's patched kernel and generated files together.
 Follow this guide to convert an existing device repository to format 2. The
 result is a pinned SoC source, a board DTS, a complete component selection and
 repeatable kernel, firmware and payload commands. A new port starts with
-[Port a device](/porting/). An existing format 2 port can use the checks below
+[Port a device](/porting/steps). An existing format 2 port can use the checks below
 to review its configuration. Both workflows finish with the same
 [repository requirements and publication steps](/porting/device-repository#completion),
 including the `unixnu` GitHub topic.

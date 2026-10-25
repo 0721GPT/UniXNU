@@ -1,13 +1,13 @@
 # 技术参考
 
-从这里查找一次修改对应的文件、操作步骤和验证方法。完整流程见[移植设备](/zh/porting/)和[构建与启动](/zh/building)；板级参数与当前结果见[设备列表](/zh/devices/)。
+从这里查找一次修改对应的文件、操作步骤和验证方法。完整流程见[移植设备](/zh/porting/steps)和[构建与启动](/zh/building)；板级参数与当前结果见[设备列表](/zh/devices/)。
 
 ## 1. 找到配置或实现
 
 | 修改内容 | 文件或实现 | 操作步骤 |
 | --- | --- | --- |
 | 本地输入路径 | 主仓库 `unixnu.local.toml` | [配置构建输入](/zh/reference/configuration#local-build-inputs) |
-| 设备、SoC 或组件选择 | 设备 `board.toml`、`feeds.toml`、`configs/` | [解析设备配置](/zh/porting/) |
+| 设备、SoC 或组件选择 | 设备 `board.toml`、`feeds.toml`、`configs/` | [解析设备配置](/zh/porting/steps) |
 | 硬件资源 | SoC DTSI 和板级 DTS | [设备树](/zh/porting/device-tree#procedure) |
 | 驱动行为 | 所选组件或设备 package | [适配硬件](/zh/porting/drivers)、[开发驱动](/zh/drivers/overview#procedure) |
 | 内核行为 | 所属 profile 或组件的补丁序列 | [修改 XNU](/zh/xnu/source-and-patches#procedure) |

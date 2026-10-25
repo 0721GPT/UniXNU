@@ -7,7 +7,7 @@ The documentation is a VitePress site in `docs/`. It is published to `https://un
 1. Identify the owning page and its English/Chinese counterpart. For device results, update the device's [structured record](#device-records).
 2. Edit the current procedure or reference. An operation needs prerequisites, working directory, ordered commands, expected results and the next step.
 3. Link the page from the relevant workflow. Follow [Add a page](#add-a-page) for navigation and locale entries.
-4. Run `npm --prefix docs run build` from the main checkout. Resolve build errors, then follow body links from [Port a device](/porting/) and [Technical reference](/reference/) to the changed page in both languages.
+4. Run `npm --prefix docs run build` from the main checkout. Resolve build errors, then follow body links from [Port a device](/porting/steps) and [Technical reference](/reference/) to the changed page in both languages.
 5. Preview the page using [local development](#local-development), check its command blocks and next-step links, then publish the documentation commit.
 
 ## Requirements
@@ -54,7 +54,7 @@ docs/
 1. Create the Markdown file under the matching section.
 2. Add the page to the sidebar in `docs/.vitepress/config.mts`.
 3. Add the Chinese page under `docs/zh/` and to the Chinese sidebar.
-4. Link the page from a relevant guide or topic index reachable from [Port a device](/porting/). Put task prerequisites and the next step in the page body.
+4. Link the page from a relevant guide or topic index reachable from [Port a device](/porting/steps). Put task prerequisites and the next step in the page body.
 5. Follow the body links from Port a device in each language to confirm the page is reachable.
 6. Run `npm run build` and fix broken links.
 7. Add the language switcher entry when a new section starts.
@@ -95,7 +95,7 @@ VitePress fails the build on a broken internal link.
 ## Next steps
 
 - [Repository layout](/contributing/repository)
-- [Port a device](/porting/)
+- [Port a device](/porting/steps)
 
 ## Device records
 

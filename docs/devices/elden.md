@@ -23,7 +23,7 @@ git submodule update --init --recursive
 ```
 
 3. Complete the build for that revision, follow the [bring-up order](/porting/bring-up), and use [log capture](/porting/log-capture) to record the last confirmed stage.
-4. Save results in the [porting record](/porting/records). See [Port a device](/porting/) for board structure and component selection.
+4. Save results in the [porting record](/porting/records). See [Port a device](/porting/steps) for board structure and component selection.
 
 ## Sources
 

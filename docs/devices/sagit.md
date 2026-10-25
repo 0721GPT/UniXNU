@@ -4,4 +4,4 @@ GitHub public access cannot currently retrieve this repository. Current build an
 
 - [dmnakzkahziamnk-a11y/UniXNU-sagit](https://github.com/dmnakzkahziamnk-a11y/UniXNU-sagit)
 
-Complete the source and validation details in the [porting record](/porting/records), then continue with [Port a device](/porting/).
+Complete the source and validation details in the [porting record](/porting/records), then continue with [Port a device](/porting/steps).

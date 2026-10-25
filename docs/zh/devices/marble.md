@@ -4,4 +4,4 @@
 
 - [Enmmmmn/UniXNU-marble](https://github.com/Enmmmmn/UniXNU-marble)
 
-按[移植记录](/zh/porting/records)补齐来源和验证结果，再按[移植设备](/zh/porting/)继续。
+按[移植记录](/zh/porting/records)补齐来源和验证结果，再按[移植设备](/zh/porting/steps)继续。
