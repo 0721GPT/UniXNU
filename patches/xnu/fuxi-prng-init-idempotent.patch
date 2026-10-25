@@ -1,19 +1,21 @@
 diff --git a/osfmk/prng/prng_random.c b/osfmk/prng/prng_random.c
-index c52f0ab..4f0c3a5 100644
+index c52f0ab..c055f40 100644
 --- a/osfmk/prng/prng_random.c
 +++ b/osfmk/prng/prng_random.c
-@@ -264,6 +264,15 @@ void
+@@ -264,6 +264,17 @@ void
  register_and_init_prng(struct cckprng_ctx *ctx, const struct cckprng_funcs *funcs)
  {
  	assert(cpu_number() == master_cpu);
 +	/*
-+	 * Fork: this kernel can reach the PRNG initialisation twice, because the bring-up
-+	 * bootstrap starts a second provider next to the one the platform already ran. The
-+	 * first call has already produced a working generator, so ignore the repeat instead
-+	 * of asserting.
++	 * Fork: two providers reach this function. The platform runs one before the bring-up
++	 * bootstrap, and the source build registers the KPI table afterwards. Returning early
++	 * here mixes them: the table then points at the source generator while the context
++	 * still belongs to the other one, and cckprng_generate jumps through a NULL pointer.
++	 * Let the later call take the generator over so context and table come from the same
++	 * provider.
 +	 */
 +	if (prng_ready) {
-+		return;
++		prng_ready = 0;
 +	}
  	assert(!prng_ready);
  
