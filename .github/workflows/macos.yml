@@ -247,6 +247,11 @@ jobs:
         run: |
           python3 device/scripts/patch-fips-post.py out/*/kernel/kernel.macho
 
+      - name: Verify fuxi storage class ownership
+        if: steps.check.outputs.board == 'fuxi' && hashFiles('device/scripts/check-storage-class-owner.py') != ''
+        run: |
+          python3 device/scripts/check-storage-class-owner.py out/fuxi/kernel/kernel.macho --report out/fuxi/logs/storage-class-owner.log
+
       - name: Build payload
         id: payload
         if: contains(inputs.steps, 'payload')
