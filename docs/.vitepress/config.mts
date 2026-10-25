@@ -30,6 +30,7 @@ function taskSidebars(prefix: string, zh: boolean) {
   ]
   const port = [
     group('1. Prepare the port', '1. 准备移植', [
+      item('Welcome', '欢迎', 'porting/welcome'),
       item('Port a device', '移植设备', 'porting/'),
       item('Migrate a repository', '迁移已有仓库', 'porting/migration'),
       item('Device repository', '设备仓库', 'porting/device-repository'),
@@ -122,7 +123,7 @@ export default withMermaid(defineConfig({
       link: '/zh/',
       themeConfig: {
         nav: [
-          { text: '移植设备', link: '/zh/porting/', activeMatch: '^/zh/porting/' },
+          { text: '移植设备', link: '/zh/porting/welcome', activeMatch: '^/zh/porting/' },
           { text: '构建与启动', link: '/zh/building', activeMatch: '^/zh/(guide/|building)' },
           { text: '设备', link: '/zh/devices/', activeMatch: '^/zh/devices/' },
           { text: '技术参考', link: '/zh/reference/', activeMatch: '^/zh/(reference|drivers|xnu|concepts|contributing)/' },
@@ -263,7 +264,7 @@ export default withMermaid(defineConfig({
     },
     siteTitle: 'UniXNU',
     nav: [
-      { text: 'Port a device', link: '/porting/', activeMatch: '^/porting/' },
+      { text: 'Port a device', link: '/porting/welcome', activeMatch: '^/porting/' },
       { text: 'Build and boot', link: '/building', activeMatch: '^/(guide/|building)' },
       { text: 'Devices', link: '/devices/', activeMatch: '^/devices/' },
       { text: 'Technical reference', link: '/reference/', activeMatch: '^/(reference|drivers|xnu|concepts|contributing)/' },

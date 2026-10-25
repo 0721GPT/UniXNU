@@ -1,6 +1,6 @@
 # Port a device
 
-UniXNU runs iOS or macOS on ARM64 devices through UEFI. Follow the eight steps
+UniXNU runs iOS or macOS on ARM64 devices through UEFI. The [welcome page](/porting/welcome) explains the architecture. Follow the eight steps
 below to collect inputs, select shared support, adapt drivers and build images.
 Each step states its expected result. New and migrated repositories use the
 same [completion and publication requirements](/porting/device-repository#completion).

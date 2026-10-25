@@ -14,7 +14,7 @@ hero:
   actions:
     - theme: brand
       text: Port a device
-      link: /porting/
+      link: /porting/welcome
     - theme: brand
       text: Supported devices
       link: /devices/

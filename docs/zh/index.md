@@ -14,7 +14,7 @@ hero:
   actions:
     - theme: brand
       text: 移植设备
-      link: /zh/porting/
+      link: /zh/porting/welcome
     - theme: brand
       text: 已支持的设备
       link: /zh/devices/

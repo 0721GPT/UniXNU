@@ -1,6 +1,6 @@
 # 移植设备
 
-UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。按下面八个步骤准备输入、选择共享支持、适配驱动并构建镜像，每一步都写明完成结果。新建与迁移后的仓库使用相同的[完成与发布要求](/zh/porting/device-repository#completion)。
+UniXNU 通过 UEFI 在 ARM64 设备上运行 iOS 或 macOS。架构见[欢迎页](/zh/porting/welcome)。按下面八个步骤准备输入、选择共享支持、适配驱动并构建镜像，每一步都写明完成结果。新建与迁移后的仓库使用相同的[完成与发布要求](/zh/porting/device-repository#completion)。
 
 - **新增设备：** 从步骤 1 开始。
 - **构建已有设备：** 在[设备列表](/zh/devices/)确认输入和当前支持范围，再按[构建指南](/zh/building)操作。
