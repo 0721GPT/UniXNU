@@ -76,10 +76,8 @@
 +	int legacy_register = 0;
 +	if (native_mobile_graphics_load_status == 0 &&
 +	    PE_parse_boot_argn("offline-legacy-register", &legacy_register, sizeof(legacy_register)) && legacy_register) {
-+#if defined(XNU_NATIVE_LEGACY_DISPLAY) && XNU_NATIVE_LEGACY_DISPLAY
 +		extern void native_legacy_display_probe(void);
 +		native_legacy_display_probe();
-+#endif
 +	}
 +#endif
 +	int client_probe = 0;
