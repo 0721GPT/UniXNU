@@ -1,77 +1,78 @@
-diff --git a/libkern/crypto/corecrypto_sha1.c b/libkern/crypto/corecrypto_sha1.c
-index 5fd982b..dcfd138 100644
---- a/libkern/crypto/corecrypto_sha1.c
-+++ b/libkern/crypto/corecrypto_sha1.c
-@@ -40,10 +40,10 @@ SHA1ToDi(const struct ccdigest_info *di, SHA1_CTX *sha1_ctx, struct ccdigest_ctx
+diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
+index d57d48c..fe8fa7e 100644
+--- a/osfmk/prng/entropy.c
++++ b/osfmk/prng/entropy.c
+@@ -145,6 +145,9 @@ uint64_t entropy_filter_accepted_sample_count;
+ uint64_t entropy_filter_rejected_sample_count;
+ uint64_t entropy_filter_total_sample_count;
+ 
++/* Fork: set once the SHA-512 context has been initialised with a live crypto table. */
++static bool entropy_ctx_valid;
++
+ static entropy_data_t entropy_data = {
+ 	.repetition_count_test = {
+ 		.init_observation = -1,
+@@ -199,7 +202,12 @@ __startup_func
  void
- SHA1Init(SHA1_CTX *ctx)
+ entropy_init(void)
  {
--	const struct ccdigest_info *di = g_crypto_funcs->ccsha1_di;
-+	const struct ccdigest_info *di = FUXI_CRYPTO->ccsha1_di;
- 	ccdigest_di_decl(di, di_ctx);
- 
--	g_crypto_funcs->ccdigest_init_fn(di, di_ctx);
-+	FUXI_CRYPTO->ccdigest_init_fn(di, di_ctx);
- 
- 	DiToSHA1(di, di_ctx, ctx);
- }
-@@ -51,18 +51,18 @@ SHA1Init(SHA1_CTX *ctx)
- void
- SHA1Update(SHA1_CTX *ctx, const void *data, size_t len)
- {
--	const struct ccdigest_info *di = g_crypto_funcs->ccsha1_di;
-+	const struct ccdigest_info *di = FUXI_CRYPTO->ccsha1_di;
- 	ccdigest_di_decl(di, di_ctx);
- 
- 	SHA1ToDi(di, ctx, di_ctx);
--	g_crypto_funcs->ccdigest_update_fn(di, di_ctx, len, data);
-+	FUXI_CRYPTO->ccdigest_update_fn(di, di_ctx, len, data);
- 	DiToSHA1(di, di_ctx, ctx);
- }
- 
- void
- SHA1Final(void *digest, SHA1_CTX *ctx)
- {
--	const struct ccdigest_info *di = g_crypto_funcs->ccsha1_di;
-+	const struct ccdigest_info *di = FUXI_CRYPTO->ccsha1_di;
- 	ccdigest_di_decl(di, di_ctx);
- 
- 	SHA1ToDi(di, ctx, di_ctx);
-@@ -86,6 +86,34 @@ SHA1Final_r(SHA1_CTX *context, void *digest)
- #include <libkern/OSAtomic.h>
- #include <sys/systm.h>
- 
-+/*
-+ * Fork: the FIPS POST runs before the KPI table is registered, and it digests through
-+ * these wrappers. Fall back to corecrypto's own entry points, which are linked into this
-+ * kernel, so the POST sees real digests instead of a NULL table.
-+ */
-+#if defined(XNU_SOURCE_CORECRYPTO14)
-+#include <corecrypto/ccsha1.h>
-+#include <corecrypto/ccsha2.h>
-+extern const struct ccdigest_info *ccsha384_di(void);
+-	SHA512_Init(&entropy_data.sha512_ctx);
++	extern void *g_crypto_funcs;
 +
-+static const struct crypto_functions fuxi_direct_crypto = {
-+	.ccsha1_di          = ccsha1_di,
-+	.ccsha256_di        = ccsha256_di,
-+	.ccsha384_di        = ccsha384_di,
-+	.ccsha512_di        = ccsha512_di,
-+	.ccdigest_init_fn   = ccdigest_init,
-+	.ccdigest_update_fn = ccdigest_update,
-+	.ccdigest_final_fn  = ccdigest_final,
-+	.ccdigest_fn        = ccdigest,
-+};
-+
-+#define FUXI_CRYPTO \
-+	(g_crypto_funcs ? g_crypto_funcs : (crypto_functions_t)&fuxi_direct_crypto)
-+#else
-+#define FUXI_CRYPTO g_crypto_funcs
-+#endif
-+
-+
- typedef kern_return_t (*InKernelPerformSHA1Func)(void *ref, const void *data, size_t dataLen, u_int32_t *inHash, u_int32_t options, u_int32_t *outHash, Boolean usePhysicalAddress);
- void sha1_hardware_hook(Boolean option, InKernelPerformSHA1Func func, void *ref);
- static void *SHA1Ref;
++	if (g_crypto_funcs != NULL) {
++		SHA512_Init(&entropy_data.sha512_ctx);
++		entropy_ctx_valid = true;
++	}
+ 
+ 	lck_grp_init(&entropy_data.lock_group, "entropy-data", LCK_GRP_ATTR_NULL);
+ 	lck_mtx_init(&entropy_data.mutex, &entropy_data.lock_group, LCK_ATTR_NULL);
+@@ -519,7 +527,9 @@ entropy_provide(size_t *entropy_size, void *entropy, __unused void *arg)
+ 		// We accumulate the samples regardless of whether the test
+ 		// failed or a particular sample was filtered. It cannot hurt.
+ 		entropy_data.total_sample_count += filtered_sample_count;
+-		SHA512_Update(&entropy_data.sha512_ctx, e->samples, cpu_sample_count * sizeof(e->samples[0]));
++		if (entropy_ctx_valid) {
++			SHA512_Update(&entropy_data.sha512_ctx, e->samples, cpu_sample_count * sizeof(e->samples[0]));
++		}
+ 
+ 		// "Drain" the per-CPU buffer by resetting its sample count.
+ 		os_atomic_store(&e->sample_count, 0, relaxed);
+@@ -561,14 +571,20 @@ entropy_provide(size_t *entropy_size, void *entropy, __unused void *arg)
+ 
+ 	// Extract the entropy seed from the digest context and adjust
+ 	// counters accordingly.
+-	SHA512_Final(entropy, &entropy_data.sha512_ctx);
++	if (entropy_ctx_valid) {
++		SHA512_Final(entropy, &entropy_data.sha512_ctx);
++	} else {
++		memset(entropy, 0, SHA512_DIGEST_LENGTH);
++	}
+ 	entropy_data.read_sample_count = entropy_data.total_sample_count;
+ 	sample_count = n;
+ 	*entropy_size = SHA512_DIGEST_LENGTH;
+ 
+ 	// Reinitialize the digest context for future entropy
+ 	// conditioning.
+-	SHA512_Init(&entropy_data.sha512_ctx);
++	if (entropy_ctx_valid) {
++		SHA512_Init(&entropy_data.sha512_ctx);
++	}
+ 
+ 	// To harden the entropy conditioner against an attacker with
+ 	// partial or temporary control of interrupts, we roll the
+@@ -584,8 +600,10 @@ entropy_provide(size_t *entropy_size, void *entropy, __unused void *arg)
+ 	// internal SHA512 block size. This will force an additional
+ 	// compression to provide backtracking resistance.
+ 	assert(sizeof(label) + *entropy_size == SHA512_BLOCK_LENGTH);
+-	SHA512_Update(&entropy_data.sha512_ctx, label, sizeof(label));
+-	SHA512_Update(&entropy_data.sha512_ctx, entropy, *entropy_size);
++	if (entropy_ctx_valid) {
++		SHA512_Update(&entropy_data.sha512_ctx, label, sizeof(label));
++		SHA512_Update(&entropy_data.sha512_ctx, entropy, *entropy_size);
++	}
+ 
+ out:
+ 	lck_mtx_unlock(&entropy_data.mutex);
 diff --git a/libkern/crypto/corecrypto_sha2.c b/libkern/crypto/corecrypto_sha2.c
 index 7392f0c..0b56e55 100644
 --- a/libkern/crypto/corecrypto_sha2.c
