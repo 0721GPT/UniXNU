@@ -1,0 +1,65 @@
+name: fuxi panic diagnostics payload
+
+on:
+  workflow_dispatch:
+    inputs:
+      device_ref:
+        description: Pinned fuxi device commit with the bounded diagnostic renderer
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  payload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: 0721GPT/UniXNU-fuxi
+          ref: ${{ inputs.device_ref }}
+          path: device
+          persist-credentials: false
+      - name: Install payload tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang llvm lld mtools
+      - name: Download already compiled kernel and base FAT payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 40184732090 -R 0721GPT/UniXNU -n unixnu-fuxi-images-1 -D source-kernel
+          gh run download 40183169623 -R 0721GPT/UniXNU -n unixnu-fuxi-images-1 -D base-payload
+          git clone --depth 1 https://github.com/Sohytrs/uefi-fuxi.git firmware
+      - name: Compile and insert read-only panic diagnostics
+        env:
+          UNIXNU_FUXI_IMAGE4_DIAG: '1'
+          UNIXNU_UEFI: ${{ github.workspace }}/firmware
+        run: |
+          mkdir -p result/fuxi/kernel result/fuxi/payload
+          cp source-kernel/fuxi/kernel/kernel.macho result/fuxi/kernel/kernel.macho
+          cp result/fuxi/kernel/kernel.macho diagnostic-kernel.macho
+          python3 device/scripts/patch-xnu-entry-probe.py diagnostic-kernel.macho --panic-screen --no-reset
+          cp base-payload/fuxi/payload/payload.img result/fuxi/payload/payload.img
+          mcopy -o -i result/fuxi/payload/payload.img diagnostic-kernel.macho ::/EFI/UniXNU/Payloads/kernel.macho
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          report=json.loads(Path('base-payload/fuxi/payload/payload.json').read_text())
+          report.update(kernel_sha256=sha('result/fuxi/kernel/kernel.macho'),
+                        payload_kernel_sha256=sha('diagnostic-kernel.macho'),
+                        payload_sha256=sha('result/fuxi/payload/payload.img'),
+                        image4_runtime_diagnostics=True, hardware_tested=False,
+                        kernel_source_run=40184732090, base_payload_run=40183169623)
+          assert b'FIX055 diagnostics' in Path('diagnostic-kernel.macho').read_bytes()
+          Path('result/fuxi/payload/payload.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+          python3 device/scripts/check-storage-class-owner.py result/fuxi/kernel/kernel.macho
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: unixnu-fuxi-images-1
+          path: result/
+          retention-days: 7
