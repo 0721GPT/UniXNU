@@ -226,9 +226,10 @@ jobs:
           # The kernel step runs its own "git submodule update --init"; creating the
           # directory first makes that clone fail with "not an empty directory", so
           # initialize this submodule here and only then overwrite the file.
-          git submodule update --init --depth 1 kits/NativePrelink
-          cp Resources/local-kits/emit_prelink.py kits/NativePrelink/emit_prelink.py
-          grep -c external_pc_relative kits/NativePrelink/emit_prelink.py
+          # Upstream renamed the submodule from kits/NativePrelink to kits/XnuPrelink.
+          git submodule update --init --depth 1 kits/XnuPrelink
+          cp Resources/local-kits/emit_prelink.py kits/XnuPrelink/emit_prelink.py
+          grep -c external_pc_relative kits/XnuPrelink/emit_prelink.py
 
       - name: Build kernel
         id: kernel
