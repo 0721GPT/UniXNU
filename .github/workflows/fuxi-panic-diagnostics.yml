@@ -55,7 +55,7 @@ jobs:
                         image4_runtime_diagnostics=True, hardware_tested=False,
                         kernel_source_run=40184732090, base_payload_run=40183169623)
           diagnostic = Path('diagnostic-kernel.macho').read_bytes()
-          assert any(marker in diagnostic for marker in (b'FIX055 diagnostics', b'FIX056 diagnostics'))
+          assert b'FIX057 diagnostics' in diagnostic
           Path('result/fuxi/payload/payload.json').write_text(json.dumps(report,indent=2)+'\n')
           PY
           python3 device/scripts/check-storage-class-owner.py result/fuxi/kernel/kernel.macho
