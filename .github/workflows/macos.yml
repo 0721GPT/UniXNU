@@ -345,7 +345,10 @@ jobs:
             echo "| payload | ${PAYLOAD:-skipped} |"
             echo
             echo "This workflow only checks that the build works. It publishes text logs (7 days) and no images."
-            (xcodebuild -version 2>/dev/null || echo "xcodebuild unavailable") | head -n 1
+            # Avoid `head` here: with the workflow's pipefail setting, it can
+            # close the pipe after the first line and turn a successful build
+            # into a SIGPIPE failure in this summary-only step.
+            xcodebuild -version 2>/dev/null || echo "xcodebuild unavailable"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove proprietary inputs
