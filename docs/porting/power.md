@@ -56,7 +56,9 @@ For Qualcomm AudioReach/GPR firmware, use these references in execution order:
 
 | Source | Purpose |
 | --- | --- |
-| [ShengGpr.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengGpr.h#L24), [AudioProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/AudioProbe.cpp#L148) | Packet headers, tokens, APM readiness query, response timeout and retry |
+| [ShengGpr.h](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengGpr.h), [ShengAudioReach.h](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengAudioReach.h) | Packet headers, APM readiness, graph open and configuration, memory map, PRM votes and clocks |
+| [AudioProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/AudioProbe.cpp), [ShengCs35l43.c](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengCs35l43.c) | Amplifier setup over I2C, graph bring-up, period buffer flow, codec SoundWire start |
+| [ShengAudioService.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengAudioService.cpp), [ShengAudioPlugIn.c](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/hal/ShengAudioPlugIn.c) | Audio service for the OS audio server and its plug-in |
 | [Linux q6apm.h](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm.h), [q6apm.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm.c) | Graph lifecycle, memory mapping and read/write requests |
 | [Linux audioreach.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/audioreach.c), [topology.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/topology.c) | Module configuration, graph connections, media formats and endpoint parameters |
 | [Linux q6apm-dai.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm-dai.c) | `q6apm_dai_prepare`, stream events and period-buffer flow |
@@ -92,6 +94,13 @@ interfaces, and retain the applicable source licenses when reusing code.
    channel order, rate, position and buffer contents. Repeat start/stop and test
    buffer starvation, timeout and DSP restart. Verify OS application playback
    or recording after the direct stream path succeeds.
+
+On SM8550 these firmware details decide whether a route starts:
+
+- The DSP takes a buffer as a 32-bit address with the stream index (`0x1001 & 0xf`) in the upper word. Place the period buffer below 4 GiB.
+- The DSP offers small GLINK intents first and grants a larger one on request. Keep the granted intent even when the remote intent table is full.
+- PRM requests use the PRM's own port and PRM clock IDs; the TX core clock is `0x30c`, not the device tree index.
+- The VA macro gates the TX SoundWire master clock as well as the TX macro.
 
 **Result:** a complete route carries PCM data, reports progress and releases its
 resources. Save the route description, format, stream counters and captured

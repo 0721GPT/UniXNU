@@ -47,7 +47,9 @@ Qualcomm AudioReach/GPR 固件按执行顺序参考以下源码：
 
 | 源码 | 用途 |
 | --- | --- |
-| [ShengGpr.h](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/ShengGpr.h#L24)、[AudioProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/516a780473a2ac59c8b438e132bb60204dda9e22/package/AudioProbe.cpp#L148) | 包头、token、APM 就绪查询、响应超时和重试 |
+| [ShengGpr.h](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengGpr.h)、[ShengAudioReach.h](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengAudioReach.h) | 包头、APM 就绪查询、graph 打开与配置、内存映射、PRM 投票和时钟 |
+| [AudioProbe.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/AudioProbe.cpp)、[ShengCs35l43.c](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengCs35l43.c) | 通过 I2C 配置功放、graph 启动、周期缓冲区流程、codec SoundWire 启动 |
+| [ShengAudioService.cpp](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/package/ShengAudioService.cpp)、[ShengAudioPlugIn.c](https://github.com/UniXNU/UniXNU-sheng/blob/a516f43fc1901e0a3a4fede4f4b61dae0abcfe4a/hal/ShengAudioPlugIn.c) | 供系统音频服务使用的音频服务及其插件 |
 | [Linux q6apm.h](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm.h)、[q6apm.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm.c) | 图生命周期、内存映射和读写请求 |
 | [Linux audioreach.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/audioreach.c)、[topology.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/topology.c) | 模块配置、图连接、媒体格式和端点参数 |
 | [Linux q6apm-dai.c](https://github.com/torvalds/linux/blob/v6.12/sound/soc/qcom/qdsp6/q6apm-dai.c) | `q6apm_dai_prepare`、流事件和周期缓冲区数据流 |
@@ -70,6 +72,13 @@ Linux 提供协议和流生命周期参考。使用选定 XNU 的接口实现其
    将格式选择、启停、位置和缓冲完成接到流引擎，仅发布端点已经实现的格式和路由。
 6. **验证路由。** 播放已知 PCM 信号或录制已知输入，检查声道顺序、采样率、流位置和缓冲内容。
    重复启停，检查缓冲耗尽、超时和 DSP 重启。直接流路径成功后，再验证 OS 应用的播放或录音。
+
+在 SM8550 上，以下固件细节决定通路能否启动：
+
+- DSP 接收的缓冲区地址是 32 位地址，高 32 位放流索引（`0x1001 & 0xf`）。周期缓冲区要放在 4 GiB 以下。
+- DSP 先提供小的 GLINK intent，请求后再给大的。远端 intent 表满时也要保留新给的 intent。
+- PRM 请求从 PRM 自己的端口发出，使用 PRM 时钟 ID；TX core 时钟是 `0x30c`，不是设备树里的编号。
+- VA macro 和 TX macro 都要打开 TX SoundWire master 的时钟门控。
 
 **结果：** 一条完整路由传输 PCM 数据、报告进度并释放资源。
 保存路由描述、格式、流计数和采集结果。下一端点使用自己的路由配置和观察记录。
