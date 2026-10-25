@@ -60,6 +60,9 @@ on:
 
 permissions:
   contents: read
+  # The fuxi PMGR diagnostic pre-build downloads a hash-pinned baseline
+  # kernel from an earlier run of this same repository.
+  actions: read
 
 # One build per device configuration and ref. A dispatch for another device or defconfig runs next to it,
 # and a running build is never cancelled by a later dispatch.
