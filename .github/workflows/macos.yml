@@ -242,6 +242,10 @@ jobs:
           ./unixnu build userdata
           df -h "$GITHUB_WORKSPACE"
 
+      - name: Neutralise the corecrypto self-test
+        run: |
+          python3 device/scripts/patch-fips-post.py out/*/kernel/kernel.macho
+
       - name: Build payload
         id: payload
         if: contains(inputs.steps, 'payload')
