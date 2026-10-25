@@ -1,4 +1,5 @@
 name: macOS build
+# Keep this workflow indexed in downstream forks used for device bring-up.
 
 on:
   workflow_dispatch:
