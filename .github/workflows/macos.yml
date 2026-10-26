@@ -244,7 +244,7 @@ jobs:
         run: |
           [[ "$REUSE_RUN" =~ ^[0-9]+$ ]]
           gh run download "$REUSE_RUN" -R "$GITHUB_REPOSITORY" -n unixnu-fuxi-images-1 -D "$RUNNER_TEMP/reuse-kernel"
-          mkdir -p out/fuxi/kernel out/fuxi/tree/.cache/fuxi-qud-module/include device/.cache/fuxi-qud-module/include
+          mkdir -p out/fuxi/logs out/fuxi/kernel out/fuxi/tree/.cache/fuxi-qud-module/include device/.cache/fuxi-qud-module/include
           cp "$RUNNER_TEMP/reuse-kernel/fuxi/kernel/kernel.macho" out/fuxi/kernel/kernel.macho
           git -C device submodule update --init --depth 1 drivers/QcomXnuUsbDebug
           cp device/drivers/QcomXnuUsbDebug/include/*.h out/fuxi/tree/.cache/fuxi-qud-module/include/
