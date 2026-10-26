@@ -288,6 +288,11 @@ jobs:
             out/*/payload/payload.json
             out/*/boot/boot.img
             out/*/status.txt
+            out/*/tree/.cache/fuxi-qud-build/libQcomXnuUsbDebug.a
+            out/*/tree/.cache/fuxi-qud-build/build-report.json
+            out/*/tree/.cache/fuxi-qud-module/fuxi-stage.json
+            out/*/tree/.cache/fuxi-qud-model-check/check-report.json
+            out/*/tree/.cache/fuxi-qud-xnu-check/xnu-check-report.json
           if-no-files-found: warn
           retention-days: 7
 
