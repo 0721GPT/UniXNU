@@ -33,6 +33,10 @@ on:
         description: IPSW URL (empty uses board.toml)
         required: false
         default: ""
+      reuse_kernel_run:
+        description: Optional run ID in this repository whose compiled kernel is reused for payload recovery
+        required: false
+        default: ""
       pre_build:
         description: Optional shell commands run in the UniXNU checkout before the kernel build
         required: false
@@ -231,8 +235,27 @@ jobs:
           cp Resources/local-kits/emit_prelink.py kits/NativePrelink/emit_prelink.py
           grep -c external_pc_relative kits/NativePrelink/emit_prelink.py
 
+      - name: Restore a compiled kernel for payload recovery
+        id: reuse_kernel
+        if: inputs.reuse_kernel_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_RUN: ${{ inputs.reuse_kernel_run }}
+        run: |
+          [[ "$REUSE_RUN" =~ ^[0-9]+$ ]]
+          gh run download "$REUSE_RUN" -R "$GITHUB_REPOSITORY" -n unixnu-fuxi-images-1 -D "$RUNNER_TEMP/reuse-kernel"
+          mkdir -p out/fuxi/kernel out/fuxi/tree/.cache/fuxi-qud-module/include device/.cache/fuxi-qud-module/include
+          cp "$RUNNER_TEMP/reuse-kernel/fuxi/kernel/kernel.macho" out/fuxi/kernel/kernel.macho
+          git -C device submodule update --init --depth 1 drivers/QcomXnuUsbDebug
+          cp device/drivers/QcomXnuUsbDebug/include/*.h out/fuxi/tree/.cache/fuxi-qud-module/include/
+          cp device/drivers/QcomXnuUsbDebug/include/*.h device/.cache/fuxi-qud-module/include/
+          cp out/fuxi/kernel/kernel.macho "$RUNNER_TEMP/renderer-check.macho"
+          python3 device/scripts/patch-xnu-entry-probe.py "$RUNNER_TEMP/renderer-check.macho" --panic-screen --no-reset
+          echo "Kernel reused from Actions run $REUSE_RUN; native source unchanged" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Build kernel
         id: kernel
+        if: inputs.reuse_kernel_run == ''
         env:
           # prepare-xnu-source.py lists Apple sources through the GitHub API; anonymous calls from hosted runners hit
           # the shared rate limit (HTTP 403).
@@ -247,6 +270,7 @@ jobs:
           df -h "$GITHUB_WORKSPACE"
 
       - name: Neutralise the corecrypto self-test
+        if: inputs.reuse_kernel_run == ''
         run: |
           python3 device/scripts/patch-fips-post.py out/*/kernel/kernel.macho
 
@@ -293,6 +317,7 @@ jobs:
             out/*/tree/.cache/fuxi-qud-module/fuxi-stage.json
             out/*/tree/.cache/fuxi-qud-model-check/check-report.json
             out/*/tree/.cache/fuxi-qud-xnu-check/xnu-check-report.json
+          include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7
 
@@ -344,7 +369,7 @@ jobs:
         if: always()
         env:
           BOARD: ${{ steps.check.outputs.board }}
-          KERNEL: ${{ steps.kernel.outcome }}
+          KERNEL: ${{ inputs.reuse_kernel_run != '' && steps.reuse_kernel.outcome || steps.kernel.outcome }}
           USERDATA: ${{ steps.userdata.outcome }}
           PAYLOAD: ${{ steps.payload.outcome }}
         run: |
